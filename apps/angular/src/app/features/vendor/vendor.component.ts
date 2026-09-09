@@ -6,8 +6,8 @@ import { AuctionLot } from '../../core/models/auction.model';
 import { AuctionStateService } from '../../core/services/auction-state.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AnimatedTabsComponent, TabItem } from '../../shared/components/animated-tabs/animated-tabs.component';
-import { ExpandableAuctionCardComponent } from '../../shared/components/expandable-auction-card/expandable-auction-card.component';
-import { HoverBorderGradientComponent } from '../../shared/components/hover-border-gradient/hover-border-gradient.component';
+import { EnterpriseNavbarComponent } from '../../shared/components/enterprise-navbar/enterprise-navbar.component';
+import { LotDetailModalComponent } from '../../shared/components/lot-detail-modal/lot-detail-modal.component';
 import { StatItem, StatsSectionComponent } from '../../shared/components/stats-section/stats-section.component';
 
 interface ActiveBidRecord {
@@ -25,6 +25,8 @@ interface ActiveBidRecord {
   imports: [
     CommonModule,
     FormsModule,
+    EnterpriseNavbarComponent,
+    LotDetailModalComponent,
     AnimatedTabsComponent,
     StatsSectionComponent,
   ],
@@ -39,6 +41,7 @@ export class VendorComponent {
   readonly selectedCategory = signal<string>('ALL');
   readonly searchQuery = signal<string>('');
   readonly selectedLotForBid = signal<AuctionLot | null>(null);
+  readonly inspectingLot = signal<AuctionLot | null>(null);
   readonly chosenIncrement = signal<number>(5000000);
   readonly quickBidSuccess = signal<string | null>(null);
 
@@ -89,7 +92,8 @@ export class VendorComponent {
         subtext: 'Terbuka untuk Penawaran Langsung',
         trend: 'Lelang Berjalan',
         isPositive: true,
-        iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>',
+        iconSvg:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>',
       },
       {
         label: 'Tawaran Memimpin Saya',
@@ -97,7 +101,8 @@ export class VendorComponent {
         subtext: `Dari total ${this.myBids().length} lot yang diikuti`,
         trend: winningCount > 0 ? 'Posisi Tertinggi' : 'Perlu Penawaran',
         isPositive: winningCount > 0,
-        iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+        iconSvg:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"></polyline></svg>',
       },
       {
         label: 'Partisipasi Lelang',
@@ -105,7 +110,8 @@ export class VendorComponent {
         subtext: 'Aktivitas Terbuka Real-Time',
         trend: 'Aktif Menawar',
         isPositive: true,
-        iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
+        iconSvg:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
       },
       {
         label: 'Kategori Scrap Siap Angkut',
@@ -113,7 +119,8 @@ export class VendorComponent {
         subtext: 'Besi, Tembaga, Alat Berat, Genset',
         trend: 'Terkurasi',
         isPositive: true,
-        iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>',
+        iconSvg:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="14" rx="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>',
       },
     ];
   });
@@ -157,6 +164,30 @@ export class VendorComponent {
     this.quickBidSuccess.set(null);
   }
 
+  openDetailModal(lot: AuctionLot) {
+    this.inspectingLot.set(lot);
+  }
+
+  closeDetailModal() {
+    this.inspectingLot.set(null);
+  }
+
+  handleDetailBid(event: { lotId: string; amount: number }) {
+    const lot = this.auctionState.getLotById(event.lotId);
+    if (!lot) return;
+
+    this.auctionState.placeBid(event.lotId, event.amount);
+
+    // Update Vendor's local active bids tracker
+    this.updateMyBidsTracker(event.lotId, lot.title, event.amount, lot.timeRemaining || 'Live');
+
+    // Update inspecting lot view
+    const updated = this.auctionState.getLotById(event.lotId);
+    if (updated) {
+      this.inspectingLot.set(updated);
+    }
+  }
+
   placeConfirmedBid() {
     const lot = this.selectedLotForBid();
     if (!lot) return;
@@ -167,23 +198,7 @@ export class VendorComponent {
     // Call AuctionStateService -> directly updates price & bids in shared state!
     this.auctionState.placeBid(lot.id, increment);
 
-    // Update Vendor's local active bids tracker
-    this.myBids.update((bids) => {
-      const idx = bids.findIndex((b) => b.lotId === lot.id);
-      const newRecord: ActiveBidRecord = {
-        lotId: lot.id,
-        lotTitle: lot.title,
-        myBidAmount: newHighest,
-        highestBidAmount: newHighest,
-        isWinning: true,
-        timeRemaining: lot.timeRemaining || 'Live',
-      };
-
-      if (idx >= 0) {
-        return bids.map((b, i) => (i === idx ? newRecord : b));
-      }
-      return [newRecord, ...bids];
-    });
+    this.updateMyBidsTracker(lot.id, lot.title, newHighest, lot.timeRemaining || 'Live');
 
     this.quickBidSuccess.set(
       `✓ Penawaran Rp ${newHighest.toLocaleString('id-ID')} berhasil diajukan! Anda memimpin lelang ini.`
@@ -192,6 +207,30 @@ export class VendorComponent {
     setTimeout(() => {
       this.closeBidModal();
     }, 1400);
+  }
+
+  private updateMyBidsTracker(
+    lotId: string,
+    title: string,
+    amount: number,
+    timeRemaining: string
+  ) {
+    this.myBids.update((bids) => {
+      const idx = bids.findIndex((b) => b.lotId === lotId);
+      const newRecord: ActiveBidRecord = {
+        lotId,
+        lotTitle: title,
+        myBidAmount: amount,
+        highestBidAmount: amount,
+        isWinning: true,
+        timeRemaining,
+      };
+
+      if (idx >= 0) {
+        return bids.map((b, i) => (i === idx ? newRecord : b));
+      }
+      return [newRecord, ...bids];
+    });
   }
 
   navigateTo(path: string) {

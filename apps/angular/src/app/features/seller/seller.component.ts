@@ -6,8 +6,8 @@ import { AuctionLot, LotCategory } from '../../core/models/auction.model';
 import { AuctionStateService } from '../../core/services/auction-state.service';
 import { AuthService } from '../../core/services/auth.service';
 import { AnimatedTabsComponent, TabItem } from '../../shared/components/animated-tabs/animated-tabs.component';
-import { ExpandableAuctionCardComponent } from '../../shared/components/expandable-auction-card/expandable-auction-card.component';
-import { HoverBorderGradientComponent } from '../../shared/components/hover-border-gradient/hover-border-gradient.component';
+import { EnterpriseNavbarComponent } from '../../shared/components/enterprise-navbar/enterprise-navbar.component';
+import { LotDetailModalComponent } from '../../shared/components/lot-detail-modal/lot-detail-modal.component';
 import { StatItem, StatsSectionComponent } from '../../shared/components/stats-section/stats-section.component';
 
 @Component({
@@ -16,6 +16,8 @@ import { StatItem, StatsSectionComponent } from '../../shared/components/stats-s
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    EnterpriseNavbarComponent,
+    LotDetailModalComponent,
     AnimatedTabsComponent,
     StatsSectionComponent,
   ],
@@ -29,6 +31,7 @@ export class SellerComponent {
   private readonly fb = inject(FormBuilder);
 
   readonly isCreateModalOpen = signal(false);
+  readonly inspectingLot = signal<AuctionLot | null>(null);
   readonly selectedFilter = signal<string>('ALL');
   readonly submissionSuccessMsg = signal<string | null>(null);
 
@@ -80,7 +83,8 @@ export class SellerComponent {
         subtext: 'Manifest Terdaftar di Sistem',
         trend: 'Scrap & Aset Industri',
         isPositive: true,
-        iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
+        iconSvg:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>',
       },
       {
         label: 'Menunggu Review Admin',
@@ -88,7 +92,8 @@ export class SellerComponent {
         subtext: 'Verifikasi Manifest & Limit Harga',
         trend: pending > 0 ? 'Sedang Ditinjau' : 'Semua Disetujui',
         isPositive: pending === 0,
-        iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
+        iconSvg:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
       },
       {
         label: 'Tayang di Vendor Floor',
@@ -96,7 +101,8 @@ export class SellerComponent {
         subtext: 'Sedang Berjalan & Ditawar Vendor',
         trend: 'Live Terbuka',
         isPositive: true,
-        iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>',
+        iconSvg:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>',
       },
       {
         label: 'Total Nilai Aktif',
@@ -104,7 +110,8 @@ export class SellerComponent {
         subtext: 'Berdasarkan Penawaran Tertinggi',
         trend: 'Likuiditas Terbuka',
         isPositive: true,
-        iconSvg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>',
+        iconSvg:
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>',
       },
     ];
   });
@@ -113,11 +120,12 @@ export class SellerComponent {
     title: ['', [Validators.required, Validators.maxLength(255)]],
     description: ['', [Validators.required]],
     category: ['SCRAP_METAL' as LotCategory, [Validators.required]],
+    grade: ['HMS 1 & 2 (Standar Pabrik Baja)', [Validators.required]],
     quantity: [10, [Validators.required, Validators.min(1)]],
     unit: ['Ton', [Validators.required]],
     weightKg: [10000, [Validators.required, Validators.min(1)]],
     startingPrice: [50000000, [Validators.required, Validators.min(1000000)]],
-    locationNotes: ['Gudang Utama Cilegon, Akses Crane Truk Kontainer Siap', [Validators.required]],
+    locationNotes: ['Gudang Konsinyasi Scrap Cilegon, Yard A', [Validators.required]],
     imageUrl: [''],
   });
 
@@ -129,13 +137,21 @@ export class SellerComponent {
     this.isCreateModalOpen.set(false);
   }
 
+  openDetailModal(lot: AuctionLot) {
+    this.inspectingLot.set(lot);
+  }
+
+  closeDetailModal() {
+    this.inspectingLot.set(null);
+  }
+
   submitLot() {
     if (this.createForm.invalid) return;
 
     const v = this.createForm.value;
-    const fullDescription = `${v.description}\nLokasi & Akses: ${v.locationNotes}`;
+    const fullDescription = `${v.description}\nLokasi: ${v.locationNotes}`;
 
-    // Kirim langsung ke AuctionStateService -> status otomatis PENDING_REVIEW
+    // Kirim ke AuctionStateService -> status otomatis PENDING_REVIEW & sync ke NestJS
     this.auctionState.submitNewLot({
       title: v.title!,
       description: fullDescription,
@@ -144,28 +160,31 @@ export class SellerComponent {
       quantity: v.quantity!,
       unit: v.unit!,
       startingPrice: v.startingPrice!,
+      warehouseLocation: v.locationNotes!,
+      grade: v.grade!,
       sellerName: 'Budi Santoso',
       companyName: 'PT Cilegon Baja Mandiri',
       imageUrl:
         v.imageUrl ||
         (v.category === 'SCRAP_METAL'
-          ? 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=800&q=80'
+          ? 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1200&q=80'
           : v.category === 'MACHINERY'
-            ? 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80'
-            : 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=800&q=80'),
+            ? 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80'
+            : 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=1200&q=80'),
     });
 
     this.submissionSuccessMsg.set(
-      '✓ Pengajuan penjualan barang lelang berhasil dikirim ke Admin! Barang masuk ke antrean peninjauan sebelum dipublikasikan ke Vendor.'
+      '✓ Pengajuan barang lelang berhasil dikirim ke Admin! Barang masuk ke antrean verifikasi manifest sebelum dipublikasikan ke lantai lelang Vendor.'
     );
 
     this.createForm.reset({
       category: 'SCRAP_METAL',
+      grade: 'HMS 1 & 2 (Standar Pabrik Baja)',
       unit: 'Ton',
       quantity: 10,
       weightKg: 10000,
       startingPrice: 50000000,
-      locationNotes: 'Gudang Utama Cilegon, Akses Crane Truk Kontainer Siap',
+      locationNotes: 'Gudang Konsinyasi Scrap Cilegon, Yard A',
     });
 
     this.closeCreateModal();
