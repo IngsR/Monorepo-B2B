@@ -5,6 +5,8 @@ import { CommonModule } from './common/common.module.js';
 import { validateEnv } from './config/env.validation.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
+import { AuctionsModule } from './auctions/auctions.module.js';
+import { BidsModule } from './bids/bids.module.js';
 import { CompaniesModule } from './companies/companies.module.js';
 import { UsersModule } from './users/users.module.js';
 
@@ -21,6 +23,8 @@ import { UsersModule } from './users/users.module.js';
     CompaniesModule,
     UsersModule,
     AuthModule,
+    AuctionsModule,
+    BidsModule,
   ],
 })
 export class AppModule {}
