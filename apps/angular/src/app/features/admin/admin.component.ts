@@ -65,6 +65,14 @@ export class AdminComponent implements OnInit {
     return members.filter((m) => m.type === filter);
   });
 
+  // Computed GMV for telemetry tab
+  readonly totalActiveGmv = computed<string>(() => {
+    const gmv = this.auctionState
+      .activeLots()
+      .reduce((sum, l) => sum + Number(l.currentPrice), 0);
+    return (gmv / 1000000000).toFixed(2);
+  });
+
   readonly sectionTabs = computed<TabItem[]>(() => [
     {
       id: 'auctions',
