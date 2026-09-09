@@ -1,0 +1,170 @@
+<div class="dashboard-layout">
+  <!-- Top Navigation Header -->
+  <header class="top-nav">
+    <div class="brand-section">
+      <div class="brand-badge">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+      <span class="brand-title">ScrapBid CRM</span>
+      <span class="version-tag">v0.1</span>
+    </div>
+
+    <div class="user-section">
+      @if (authService.currentUser(); as user) {
+        <div class="user-meta">
+          <span class="user-name">{{ user.firstName || 'User' }} {{ user.lastName || '' }}</span>
+          <span class="user-email">{{ user.email }}</span>
+        </div>
+
+        <div class="role-badge" [ngClass]="'role-' + (user.role?.toLowerCase() || 'guest')">
+          <span class="badge-dot"></span>
+          <span>{{ user.role }}</span>
+        </div>
+      }
+
+      <button type="button" class="logout-btn" (click)="logout()" title="Sign out">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        <span>Logout</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Content -->
+  <main class="dashboard-content">
+    <!-- Welcome Greeting Banner -->
+    <div class="welcome-banner">
+      <div class="welcome-info">
+        <h1>Welcome back, {{ authService.currentUser()?.firstName || 'Valued User' }}!</h1>
+        <p>Enterprise multi-tenant portal with JWT authentication & role-based access control.</p>
+      </div>
+      
+      <!-- API Health indicator -->
+      <div class="health-card" [class.health-ok]="healthStatus()?.status === 'ok'">
+        <div class="health-indicator">
+          <span class="pulse-dot"></span>
+          <div>
+            <div class="health-title">Backend Gateway</div>
+            <div class="health-val">
+              @if (isHealthLoading()) {
+                Checking...
+              } @else if (healthStatus()?.status === 'ok') {
+                Live ({{ healthStatus()?.service }})
+              } @else {
+                Disconnected
+              }
+            </div>
+          </div>
+        </div>
+        <button type="button" class="health-refresh-btn" (click)="checkHealth()" [disabled]="isHealthLoading()">
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Active User Context Card -->
+    <div class="grid-overview">
+      <div class="card profile-card">
+        <div class="card-header">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <h3>Active Session Profile</h3>
+        </div>
+        <div class="profile-details">
+          <div class="detail-row">
+            <span class="detail-label">User ID</span>
+            <code class="detail-code">{{ authService.currentUser()?.id || '—' }}</code>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Email</span>
+            <span class="detail-val">{{ authService.currentUser()?.email }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Assigned Role</span>
+            <span class="role-pill" [ngClass]="'role-' + (authService.userRole()?.toLowerCase() || 'guest')">
+              {{ authService.userRole() }}
+            </span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Account Status</span>
+            <span class="status-pill status-active">{{ authService.currentUser()?.status || 'ACTIVE' }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">JWT Token</span>
+            <span class="token-preview">Active (Session Bearer)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action / Modules based on RBAC -->
+      <div class="card modules-card">
+        <div class="card-header">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          <h3>Available Modules (Role: {{ authService.userRole() }})</h3>
+        </div>
+
+        <div class="module-grid">
+          <!-- ADMIN Modules -->
+          @if (authService.userRole() === UserRole.ADMIN) {
+            <div class="module-item module-admin">
+              <div class="module-icon">👥</div>
+              <div class="module-title">User Management</div>
+              <p class="module-desc">Manage tenant users, assign roles, inspect account statuses.</p>
+              <span class="module-badge">Admin Only</span>
+            </div>
+            <div class="module-item module-admin">
+              <div class="module-icon">🏢</div>
+              <div class="module-title">Company Settings</div>
+              <p class="module-desc">Configure multi-tenant companies and business entities.</p>
+              <span class="module-badge">Admin Only</span>
+            </div>
+          }
+
+          <!-- SELLER Modules -->
+          @if (authService.userRole() === UserRole.SELLER || authService.userRole() === UserRole.ADMIN) {
+            <div class="module-item module-seller">
+              <div class="module-icon">🔨</div>
+              <div class="module-title">Auctions & Listings</div>
+              <p class="module-desc">Publish scrap auction batches, set reserve prices, and monitor bids.</p>
+              <span class="module-badge">Seller</span>
+            </div>
+          }
+
+          <!-- VENDOR Modules -->
+          @if (authService.userRole() === UserRole.VENDOR || authService.userRole() === UserRole.ADMIN) {
+            <div class="module-item module-vendor">
+              <div class="module-icon">🏷️</div>
+              <div class="module-title">Bidding Hall</div>
+              <p class="module-desc">Browse live scrap auctions, place competitive bids in real-time.</p>
+              <span class="module-badge">Vendor</span>
+            </div>
+          }
+
+          <!-- WAREHOUSE_OPERATOR Modules -->
+          @if (authService.userRole() === UserRole.WAREHOUSE_OPERATOR || authService.userRole() === UserRole.ADMIN) {
+            <div class="module-item module-warehouse">
+              <div class="module-icon">📦</div>
+              <div class="module-title">Warehouse Inventory</div>
+              <p class="module-desc">Inspect lots, manage inbound/outbound scrap weighing and dispatch.</p>
+              <span class="module-badge">Warehouse</span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
