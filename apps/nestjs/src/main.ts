@@ -12,7 +12,7 @@ async function bootstrap(): Promise<void> {
     credentials: true,
   });
 
-  const port = config.get<number>('PORT', 3000);
+  const port = config.get<number>('PORT', 8000);
   await app.listen(port);
 }
 

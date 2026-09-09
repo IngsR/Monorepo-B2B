@@ -59,7 +59,7 @@ export class LoginComponent {
     });
   }
 
-  fillDemo(email: string, password = 'Password1!'): void {
+  fillDemo(email: string, password = 'Password123'): void {
     this.loginForm.setValue({ email, password });
   }
 }

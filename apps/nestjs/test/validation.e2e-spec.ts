@@ -2,7 +2,6 @@ import { IsEmail, IsString } from 'class-validator';
 import { Body, Controller, INestApplication, Module, Post } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { CommonModule } from '../src/common/common.module.js';
 import { ErrorCode } from '../src/common/constants/error-codes.js';
 
@@ -29,7 +28,7 @@ class SampleController {
 class SampleModule {}
 
 describe('Validation (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({

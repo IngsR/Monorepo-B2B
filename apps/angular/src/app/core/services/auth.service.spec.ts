@@ -52,7 +52,7 @@ describe('AuthService', () => {
       data: { accessToken: 'dummy.jwt.token' },
     };
 
-    service.login({ email: 'admin@test.com', password: 'Password1!' }).subscribe((res) => {
+    service.login({ email: 'admin@test.com', password: 'Password123' }).subscribe((res) => {
       expect(res.data.accessToken).toBe('dummy.jwt.token');
     });
 

@@ -14,7 +14,7 @@ export function createTypeOrmOptions(
     password: config.get<string>('DATABASE_PASSWORD', ''),
     database: config.get<string>('DATABASE_NAME'),
     autoLoadEntities: true,
-    synchronize: false,
+    synchronize: nodeEnv === 'development',
     logging: nodeEnv === 'development' ? ['error'] : false,
   };
 }

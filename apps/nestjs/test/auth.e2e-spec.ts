@@ -9,7 +9,6 @@ import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { CommonModule } from '../src/common/common.module.js';
 import { UserRole } from '../src/common/enums/user-role.enum.js';
 import { UserStatus } from '../src/common/enums/user-status.enum.js';
@@ -158,16 +157,16 @@ class AuthTestModule {}
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('Auth (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
   let jwtService: JwtService;
 
   beforeAll(async () => {
     // Hash password sebelum test berjalan
     [ACTIVE_USER_PASSWORD_HASH, INACTIVE_USER_PASSWORD_HASH, SELLER_USER_PASSWORD_HASH] =
       await Promise.all([
-        bcrypt.hash('Password1!', 10),
-        bcrypt.hash('Password1!', 10),
-        bcrypt.hash('Password1!', 10),
+        bcrypt.hash('Password123', 10),
+        bcrypt.hash('Password123', 10),
+        bcrypt.hash('Password123', 10),
       ]);
 
     ACTIVE_USER.passwordHash = ACTIVE_USER_PASSWORD_HASH;
@@ -195,7 +194,7 @@ describe('Auth (e2e)', () => {
     it('returns 200 and accessToken on valid credentials', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email: ACTIVE_USER.email, password: 'Password1!' });
+        .send({ email: ACTIVE_USER.email, password: 'Password123' });
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveProperty('accessToken');
@@ -212,7 +211,7 @@ describe('Auth (e2e)', () => {
     it('returns 401 for INACTIVE user', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
-        .send({ email: INACTIVE_USER.email, password: 'Password1!' });
+        .send({ email: INACTIVE_USER.email, password: 'Password123' });
 
       expect(res.status).toBe(401);
     });

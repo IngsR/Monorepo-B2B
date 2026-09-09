@@ -9,7 +9,7 @@ export default defineConfig({
     include: ['**/*.spec.ts'],
     env: {
       NODE_ENV: 'test',
-      PORT: '3000',
+      PORT: '8000',
       DATABASE_HOST: 'localhost',
       DATABASE_PORT: '5432',
       DATABASE_NAME: 'scrapbid',
@@ -17,7 +17,7 @@ export default defineConfig({
       DATABASE_PASSWORD: 'postgres',
       JWT_SECRET: 'test-secret',
       JWT_EXPIRES_IN: '1d',
-      CORS_ORIGIN: 'http://localhost:4200',
+      CORS_ORIGIN: 'http://localhost:3000',
     },
   },
 });
