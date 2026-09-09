@@ -1,0 +1,572 @@
+<div class="admin-portal-root">
+  <!-- Top Corporate Navbar -->
+  <header class="top-nav-bar glass-panel">
+    <div class="nav-left">
+      <div class="brand-logo-glow">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+          <path d="M2 17l10 5 10-5"></path>
+          <path d="M2 12l10 5 10-5"></path>
+        </svg>
+      </div>
+      <div class="brand-meta">
+        <div class="brand-name">
+          <span>ScrapBid</span>
+          <span class="badge-role">ADMIN PORTAL</span>
+        </div>
+        <span class="brand-sub">Governance & Auction Orchestration</span>
+      </div>
+    </div>
+
+    <!-- Quick Role Switchers with Intuitive Icons -->
+    <div class="nav-middle">
+      <button type="button" class="portal-nav-btn" (click)="navigateTo('/seller')" title="Buka Portal Seller">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+        </svg>
+        <span>Seller Workbench</span>
+      </button>
+
+      <button type="button" class="portal-nav-btn" (click)="navigateTo('/vendor')" title="Buka Portal Vendor">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="10 8 16 12 10 16 10 8"></polygon>
+        </svg>
+        <span>Vendor Bidding</span>
+      </button>
+
+      <button type="button" class="portal-nav-btn" (click)="navigateTo('/dashboard')" title="Buka Global Overview">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        <span>Global Dashboard</span>
+      </button>
+    </div>
+
+    <div class="nav-right">
+      <button type="button" class="btn-action btn-primary" (click)="openCompanyModal()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Tambah Partner</span>
+      </button>
+
+      <button type="button" class="btn-icon-logout" (click)="logout()" title="Logout dari Sesi Admin">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="main-content">
+    <div class="section-intro">
+      <h1 class="page-title text-gradient">Admin & Governance Control</h1>
+      <p class="page-desc">Pusat persetujuan lelang seller, kontrol penerbitan barang ke vendor, kurasi anggota mitra, dan telemetri gateway backend.</p>
+    </div>
+
+    <!-- Notification Feedback Banner -->
+    @if (notificationMsg()) {
+      <div class="app-alert-banner alert-success">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span>{{ notificationMsg() }}</span>
+      </div>
+    }
+
+    <!-- Admin KPI Cards -->
+    <app-stats-section [stats]="adminStats()"></app-stats-section>
+
+    <!-- Main Navigation Section Tabs -->
+    <div class="tabs-bar">
+      <app-animated-tabs
+        [tabs]="sectionTabs()"
+        [activeTabId]="activeSection()"
+        (tabChange)="onTabChange($event)"
+      ></app-animated-tabs>
+    </div>
+
+    <!-- =========================================================
+         SECTION 1: KELOLA LELANG & APPROVAL QUEUE
+         ========================================================= -->
+    @if (activeSection() === 'auctions') {
+      <div class="governance-panel glass-panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Alur Persetujuan & Publikasi Lelang</h2>
+            <p class="panel-subtitle">Barang yang diajukan oleh Seller harus disetujui Admin sebelum otomatis tayang di lantai lelang terbuka Vendor.</p>
+          </div>
+
+          <!-- Subfilter Pills -->
+          <div class="subfilter-group">
+            <button
+              type="button"
+              class="subfilter-pill"
+              [class.active]="auctionSubFilter() === 'PENDING'"
+              (click)="setAuctionSubFilter('PENDING')"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Menunggu Review ({{ auctionState.pendingLots().length }})</span>
+            </button>
+
+            <button
+              type="button"
+              class="subfilter-pill"
+              [class.active]="auctionSubFilter() === 'ACTIVE'"
+              (click)="setAuctionSubFilter('ACTIVE')"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+              <span>Lelang Aktif di Vendor ({{ auctionState.activeLots().length }})</span>
+            </button>
+
+            <button
+              type="button"
+              class="subfilter-pill"
+              [class.active]="auctionSubFilter() === 'CANCELLED'"
+              (click)="setAuctionSubFilter('CANCELLED')"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              <span>Dibatalkan ({{ auctionState.cancelledLots().length }})</span>
+            </button>
+
+            <button
+              type="button"
+              class="subfilter-pill"
+              [class.active]="auctionSubFilter() === 'ALL'"
+              (click)="setAuctionSubFilter('ALL')"
+            >
+              <span>Semua Status</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Lots Table / Cards -->
+        <div class="auction-cards-grid">
+          @if (filteredLots().length === 0) {
+            <div class="empty-state-card">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <p>Tidak ada barang lelang dalam status filter ini.</p>
+            </div>
+          } @else {
+            @for (lot of filteredLots(); track lot.id) {
+              <div class="auction-admin-card" [class.pending-border]="lot.status === 'PENDING_REVIEW'">
+                <div class="card-thumb-wrap">
+                  <img [src]="lot.images[0]" [alt]="lot.title" class="card-thumb" />
+                  <span class="badge-status" [ngClass]="'status-' + lot.status.toLowerCase()">
+                    {{ lot.status }}
+                  </span>
+                </div>
+
+                <div class="card-content">
+                  <div class="lot-header-row">
+                    <span class="lot-category-tag">{{ lot.category }}</span>
+                    <span class="lot-code">{{ lot.id }}</span>
+                  </div>
+
+                  <h3 class="lot-name">{{ lot.title }}</h3>
+                  <p class="lot-description">{{ lot.description }}</p>
+
+                  <div class="lot-meta-grid">
+                    <div class="meta-item">
+                      <span class="meta-label">Seller / Pengaju:</span>
+                      <span class="meta-val font-semibold">{{ lot.companyName || lot.sellerName }}</span>
+                    </div>
+                    <div class="meta-item">
+                      <span class="meta-label">Volume & Satuan:</span>
+                      <span class="meta-val">{{ lot.quantity }} {{ lot.unit }} @if(lot.weightKg) { ({{ lot.weightKg | number }} kg) }</span>
+                    </div>
+                    <div class="meta-item">
+                      <span class="meta-label">Harga Buka:</span>
+                      <span class="meta-val highlight-price">Rp {{ lot.startingPrice | number:'1.0-0' }}</span>
+                    </div>
+                    @if (lot.status === 'ACTIVE') {
+                      <div class="meta-item">
+                        <span class="meta-label">Penawaran Tertinggi:</span>
+                        <span class="meta-val text-success">Rp {{ lot.currentPrice | number:'1.0-0' }} ({{ lot.totalBids }} tawaran)</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- ADMIN ACTION BAR -->
+                  <div class="card-action-bar">
+                    @if (lot.status === 'PENDING_REVIEW') {
+                      <button
+                        type="button"
+                        class="btn-action btn-success"
+                        (click)="approveLot(lot.id)"
+                        title="Setujui dan langsung tayangkan di portal vendor"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Setujui & Terbitkan ke Vendor</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        class="btn-action btn-outline-danger"
+                        (click)="cancelLot(lot.id)"
+                        title="Tolak atau batalkan lelang ini"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        <span>Tolak Pengajuan</span>
+                      </button>
+                    } @else if (lot.status === 'ACTIVE') {
+                      <span class="live-indicator">
+                        <span class="pulsing-dot"></span>
+                        <span>Sedang Live di Portal Vendor</span>
+                      </span>
+
+                      <button
+                        type="button"
+                        class="btn-action btn-outline-danger"
+                        (click)="cancelLot(lot.id)"
+                        title="Batalkan lelang aktif ini jika ada sengketa"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                        </svg>
+                        <span>Batalkan Lelang</span>
+                      </button>
+                    } @else if (lot.status === 'CANCELLED') {
+                      <span class="text-muted text-sm">Status: Lelang telah dibatalkan oleh Admin.</span>
+                    }
+                  </div>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    }
+
+    <!-- =========================================================
+         SECTION 2: KELOLA VENDOR & SELLER (MITRA DIRECTORY)
+         ========================================================= -->
+    @if (activeSection() === 'members') {
+      <div class="data-card glass-panel">
+        <div class="data-card-header">
+          <div>
+            <h3>Direktori Anggota (Vendor & Seller)</h3>
+            <p>Admin memiliki otoritas penuh untuk mengelola, meninjau, dan menangguhkan akun vendor maupun seller.</p>
+          </div>
+
+          <!-- Subfilter Pills -->
+          <div class="subfilter-group">
+            <button
+              type="button"
+              class="subfilter-pill"
+              [class.active]="memberSubFilter() === 'ALL'"
+              (click)="setMemberSubFilter('ALL')"
+            >
+              Semua Mitra ({{ auctionState.members().length }})
+            </button>
+            <button
+              type="button"
+              class="subfilter-pill"
+              [class.active]="memberSubFilter() === 'SELLER'"
+              (click)="setMemberSubFilter('SELLER')"
+            >
+              Seller / Penjual ({{ auctionState.sellers().length }})
+            </button>
+            <button
+              type="button"
+              class="subfilter-pill"
+              [class.active]="memberSubFilter() === 'VENDOR'"
+              (click)="setMemberSubFilter('VENDOR')"
+            >
+              Vendor / Pembeli ({{ auctionState.vendors().length }})
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="corporate-table">
+            <thead>
+              <tr>
+                <th>ID Mitra</th>
+                <th>Nama Kontak & Perusahaan</th>
+                <th>Peran</th>
+                <th>Kontak Resmi</th>
+                <th>Tanggal Bergabung</th>
+                <th>Status Otoritas</th>
+                <th>Aksi Kontrol</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of filteredMembers(); track m.id) {
+                <tr>
+                  <td><span class="code-badge">{{ m.id }}</span></td>
+                  <td>
+                    <div class="contact-wrap">
+                      <span class="font-bold">{{ m.name }}</span>
+                      <span class="sub-contact">{{ m.companyName }}</span>
+                    </div>
+                  </td>
+                  <td>
+                    @if (m.type === 'SELLER') {
+                      <span class="role-badge-cell role-seller">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                        <span>SELLER (PENJUAL)</span>
+                      </span>
+                    } @else {
+                      <span class="role-badge-cell role-vendor">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <polygon points="10 8 16 12 10 16 10 8"></polygon>
+                        </svg>
+                        <span>VENDOR (PEMBELI)</span>
+                      </span>
+                    }
+                  </td>
+                  <td>
+                    <div class="contact-wrap">
+                      <span>{{ m.email }}</span>
+                      <span class="sub-contact">{{ m.phone }}</span>
+                    </div>
+                  </td>
+                  <td class="text-muted">{{ m.joinedDate }}</td>
+                  <td>
+                    <span class="status-pill" [class.active]="m.status === 'ACTIVE'" [class.suspended]="m.status === 'SUSPENDED'">
+                      {{ m.status }}
+                    </span>
+                  </td>
+                  <td>
+                    @if (m.status === 'ACTIVE') {
+                      <button
+                        type="button"
+                        class="btn-action btn-outline-danger btn-sm"
+                        (click)="toggleMember(m.id)"
+                        title="Tangguhkan akses mitra ini"
+                      >
+                        <span>Tangguhkan</span>
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="btn-action btn-success btn-sm"
+                        (click)="toggleMember(m.id)"
+                        title="Aktifkan kembali akses mitra ini"
+                      >
+                        <span>Aktifkan</span>
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- =========================================================
+         SECTION 3: ENTERPRISE TENANTS (COMPANIES DARI BACKEND)
+         ========================================================= -->
+    @if (activeSection() === 'companies') {
+      <div class="data-card glass-panel">
+        <div class="data-card-header">
+          <div>
+            <h3>Enterprise Tenant Registry</h3>
+            <p>Data tersinkronisasi langsung dengan PostgreSQL backend (tabel <code>companies</code>).</p>
+          </div>
+          <button type="button" class="btn-action btn-primary" (click)="openCompanyModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Tambah Perusahaan Baru</span>
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="corporate-table">
+            <thead>
+              <tr>
+                <th>Kode</th>
+                <th>Nama Perusahaan</th>
+                <th>Kontak Perusahaan</th>
+                <th>Kota Operasional</th>
+                <th>Status Tenant</th>
+                <th>Terdaftar</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (companyService.isLoading()) {
+                <tr>
+                  <td colspan="7" class="loading-cell">Memuat data dari PostgreSQL backend...</td>
+                </tr>
+              } @else if (companyService.companies().length === 0) {
+                <tr>
+                  <td colspan="7" class="empty-cell">Belum ada tenant terdaftar. Klik "Tambah Perusahaan Baru".</td>
+                </tr>
+              } @else {
+                @for (c of companyService.companies(); track c.id) {
+                  <tr>
+                    <td><span class="code-badge">{{ c.code }}</span></td>
+                    <td class="font-bold">{{ c.name }}</td>
+                    <td>
+                      <div class="contact-wrap">
+                        <span>{{ c.email || '-' }}</span>
+                        <span class="sub-contact">{{ c.phone || '-' }}</span>
+                      </div>
+                    </td>
+                    <td>{{ c.city || 'Indonesia' }}</td>
+                    <td>
+                      <span class="status-pill" [class.active]="c.status === 'ACTIVE'">
+                        {{ c.status }}
+                      </span>
+                    </td>
+                    <td class="text-muted">{{ c.createdAt | date:'mediumDate' }}</td>
+                    <td>
+                      @if (c.status === 'ACTIVE') {
+                        <button type="button" class="btn-text-danger" (click)="deactivateCompany(c.id)">
+                          Nonaktifkan
+                        </button>
+                      } @else {
+                        <span class="text-muted">Inaktif</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- =========================================================
+         SECTION 4: DIREKTORI USER
+         ========================================================= -->
+    @if (activeSection() === 'users') {
+      <div class="data-card glass-panel">
+        <div class="data-card-header">
+          <div>
+            <h3>Direktori Akun Pengguna</h3>
+            <p>Akun aman terenkripsi bcrypt dengan JWT authentication dan RBAC role guard.</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="corporate-table">
+            <thead>
+              <tr>
+                <th>Pengguna</th>
+                <th>Email</th>
+                <th>Peran Sistem</th>
+                <th>Status</th>
+                <th>ID Perusahaan</th>
+                <th>Terdaftar</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (userService.isLoading()) {
+                <tr>
+                  <td colspan="6" class="loading-cell">Memuat direktori akun...</td>
+                </tr>
+              } @else if (userService.users().length === 0) {
+                <tr>
+                  <td colspan="6" class="empty-cell">Tidak ada user ditemukan.</td>
+                </tr>
+              } @else {
+                @for (u of userService.users(); track u.id) {
+                  <tr>
+                    <td class="font-bold">{{ u.firstName }} {{ u.lastName }}</td>
+                    <td>{{ u.email }}</td>
+                    <td>
+                      <span class="role-badge-cell" [ngClass]="'role-' + u.role?.toLowerCase()">
+                        {{ u.role }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="status-pill active">{{ u.status }}</span>
+                    </td>
+                    <td class="code-font">{{ u.companyId || 'Platform Administrator' }}</td>
+                    <td class="text-muted">{{ u.createdAt | date:'shortDate' }}</td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    <!-- =========================================================
+         SECTION 5: GATEWAY TELEMETRY
+         ========================================================= -->
+    @if (activeSection() === 'telemetry') {
+      <app-bento-grid>
+        <app-bento-item [colSpan]="2">
+          <h3>NestJS Microservice Gateway</h3>
+          <p>Diagnostik endpoint kesehatan sistem: <code>GET /health</code></p>
+          <div class="telemetry-box">
+            <div class="telem-row">
+              <span>Status Operasional:</span>
+              <span class="highlight-green">{{ healthStatus()?.status === 'ok' ? 'HEALTHY (AKTIF)' : 'ONLINE' }}</span>
+            </div>
+            <div class="telem-row">
+              <span>Pengenal Layanan:</span>
+              <span>{{ healthStatus()?.service || 'backend-crm-core' }}</span>
+            </div>
+            <div class="telem-row">
+              <span>Mesin Basis Data:</span>
+              <span>PostgreSQL 16 dengan TypeORM Connection Pool</span>
+            </div>
+          </div>
+        </app-bento-item>
+
+        <app-bento-item [colSpan]="2">
+          <h3>Protokol Keamanan & RBAC</h3>
+          <p>Guard dan Decorator yang diterapkan pada backend gateway:</p>
+          <ul class="security-list">
+            <li><span>@Roles(UserRole.ADMIN)</span> - Diterapkan pada manajemen tenant dan kontrol lelang</li>
+            <li><span>JwtAuthGuard</span> - Ekstraksi bearer token dengan sliding expiration</li>
+            <li><span>ParseUUIDPipe</span> - Sanitasi parameter pada seluruh primary key</li>
+            <li><span>TransformInterceptor</span> - Envelope respons terpadu sesuai standar korporat</li>
+          </ul>
+        </app-bento-item>
+      </app-bento-grid>
+    }
+  </main>
+
+  <!-- Register Company Modal -->
+  @if (isCompanyModalOpen()) {
+    <app-company-modal
+      (closed)="closeCompanyModal()"
+      (created)="refreshData()"
+    ></app-company-modal>
+  }
+</div>
