@@ -1,0 +1,7 @@
+export enum AuctionStatus {
+  DRAFT = 'DRAFT',
+  PENDING_REVIEW = 'PENDING_REVIEW',
+  ACTIVE = 'ACTIVE',
+  CLOSED = 'CLOSED',
+  CANCELLED = 'CANCELLED',
+}
