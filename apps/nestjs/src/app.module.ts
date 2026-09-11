@@ -9,7 +9,13 @@ import { CommonModule } from './common/common.module.js';
 import { validateEnv } from './config/env.validation.js';
 import { DatabaseModule } from './database/database.module.js';
 import { HealthModule } from './health/health.module.js';
+<<<<<<< HEAD
 import { ProductsModule } from './products/products.module.js';
+=======
+import { AuctionsModule } from './auctions/auctions.module.js';
+import { BidsModule } from './bids/bids.module.js';
+import { CompaniesModule } from './companies/companies.module.js';
+>>>>>>> origin/main
 import { UsersModule } from './users/users.module.js';
 import { VendorsModule } from './vendors/vendors.module.js';
 
@@ -31,6 +37,8 @@ import { VendorsModule } from './vendors/vendors.module.js';
     AuctionsModule,
     BidsModule,
     AuthModule,
+    AuctionsModule,
+    BidsModule,
   ],
 })
 export class AppModule {}

@@ -1,0 +1,189 @@
+// ============================================================
+//  ScrapBid — Auction System Database Schema
+//  PostgreSQL + Prisma ORM
+//
+//  Scope: User, Vendor, Bidder, Category, Product, Auction, Bid
+//  plus infra: PasswordResetToken
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+// Prisma 7: the connection URL lives in prisma.config.ts (datasource.url),
+// not in the schema. Runtime uses a driver adapter (@prisma/adapter-pg).
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================
+//  ENUMS
+// ============================================================
+
+/// One user owns exactly one role. Simple, no RBAC tables yet.
+enum UserRole {
+  ADMIN
+  VENDOR
+  BIDDER
+}
+
+/// Generic lifecycle for a product record.
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// Minimum lifecycle for an auction event.
+/// SOLD / UNSOLD are derived from the outcome, not stored here.
+enum AuctionStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  ENDED
+  CANCELLED
+}
+
+// ============================================================
+//  MODELS
+// ============================================================
+
+/// Base identity for every actor in the system.
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  name      String   @db.VarChar(255)
+  role      UserRole
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  vendor              Vendor?
+  bidder              Bidder?
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+/// Short-lived, single-use token to reset a user's password.
+/// Only the SHA-256 hash of the token is stored — never the raw value.
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("password_reset_tokens")
+}
+
+/// A VENDOR user: the party that owns/supplies products.
+model Vendor {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @unique @map("user_id") @db.Uuid
+  companyName    String   @map("company_name") @db.VarChar(255)
+  companyAddress String?  @map("company_address") @db.Text
+  phone          String?  @db.VarChar(50)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  products Product[]
+
+  @@map("vendors")
+}
+
+/// A BIDDER user: the party that places bids.
+model Bidder {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  phone     String?  @db.VarChar(50)
+  address   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  bids Bid[]
+
+  @@map("bidders")
+}
+
+/// Flat category list (no hierarchy yet).
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+/// A product supplied by a vendor; later put up for auction.
+model Product {
+  id          String        @id @default(uuid()) @db.Uuid
+  code        String        @unique @db.VarChar(50)
+  name        String        @db.VarChar(255)
+  description String?       @db.Text
+  status      ProductStatus @default(ACTIVE)
+  vendorId    String        @map("vendor_id") @db.Uuid
+  categoryId  String?       @map("category_id") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  vendor   Vendor    @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  auctions Auction[]
+
+  @@index([vendorId])
+  @@index([categoryId])
+  @@map("products")
+}
+
+/// An auction event on a product. Prices are Decimal, never Float.
+model Auction {
+  id            String        @id @default(uuid()) @db.Uuid
+  code          String        @unique @db.VarChar(50)
+  productId     String        @map("product_id") @db.Uuid
+  startingPrice Decimal       @map("starting_price") @db.Decimal(18, 2)
+  currentPrice  Decimal       @map("current_price") @db.Decimal(18, 2)
+  bidIncrement  Decimal       @map("bid_increment") @db.Decimal(18, 2)
+  startAt       DateTime      @map("start_at")
+  endAt         DateTime      @map("end_at")
+  status        AuctionStatus @default(DRAFT)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  bids    Bid[]
+
+  @@index([productId])
+  @@index([status])
+  @@index([startAt])
+  @@index([endAt])
+  @@map("auctions")
+}
+
+/// A single bid placed by a bidder on an auction.
+/// Historical record: no cascade delete from auction/bidder.
+model Bid {
+  id        String   @id @default(uuid()) @db.Uuid
+  auctionId String   @map("auction_id") @db.Uuid
+  bidderId  String   @map("bidder_id") @db.Uuid
+  amount    Decimal  @db.Decimal(18, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  auction Auction @relation(fields: [auctionId], references: [id], onDelete: Restrict)
+  bidder  Bidder  @relation(fields: [bidderId], references: [id], onDelete: Restrict)
+
+  @@index([auctionId, amount])
+  @@index([auctionId, createdAt])
+  @@index([bidderId])
+  @@map("bids")
+}
