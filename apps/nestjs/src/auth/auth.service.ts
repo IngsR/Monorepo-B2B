@@ -5,13 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { Repository } from 'typeorm';
-import { UserStatus } from '../common/enums/user-status.enum.js';
-import { PasswordResetToken } from '../users/entities/password-reset-token.entity.js';
-import { User } from '../users/entities/user.entity.js';
+import { PrismaService } from '../database/prisma.service.js';
+import {
+  toPublicUser,
+  type PublicUser,
+  type User,
+} from '../database/prisma.types.js';
 import { UsersService } from '../users/users.service.js';
 import type { JwtPayload } from './interfaces/jwt-payload.interface.js';
 
@@ -24,8 +25,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    @InjectRepository(PasswordResetToken)
-    private readonly resetTokenRepo: Repository<PasswordResetToken>,
+    private readonly prisma: PrismaService,
   ) {}
 
   /** Validasi email + password. Return null jika gagal (tidak throw). */
@@ -36,7 +36,7 @@ export class AuthService {
       return null;
     }
 
-    const isMatch = await bcrypt.compare(password, user.passwordHash);
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return null;
@@ -57,29 +57,26 @@ export class AuthService {
     return { accessToken: this.jwtService.sign(payload) };
   }
 
-  /** Ambil profil user saat ini. */
-  async getProfile(userId: string): Promise<Omit<User, 'passwordHash'>> {
+  /** Ambil profil user saat ini (tanpa password). */
+  async getProfile(userId: string): Promise<PublicUser> {
     const user = await this.usersService.findById(userId);
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    // Hapus passwordHash dari response
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { passwordHash: _, ...profile } = user;
-    return profile as Omit<User, 'passwordHash'>;
+    return toPublicUser(user);
   }
 
   /**
    * Buat token reset password.
-   * Selalu return success — tidak reveal apakah email terdaftar.
+   * Selalu return sukses — tidak reveal apakah email terdaftar.
    * Token di-log ke console (development). Tidak dikembalikan via API.
    */
   async forgotPassword(email: string): Promise<void> {
     const user = await this.usersService.findByEmail(email);
 
-    if (!user || user.status !== UserStatus.ACTIVE) {
+    if (!user) {
       // Diam-diam skip agar tidak reveal apakah email ada
       return;
     }
@@ -92,14 +89,12 @@ export class AuthService {
 
     const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
 
-    await this.resetTokenRepo.save(
-      this.resetTokenRepo.create({ userId: user.id, tokenHash, expiresAt }),
-    );
+    await this.prisma.passwordResetToken.create({
+      data: { userId: user.id, tokenHash, expiresAt },
+    });
 
     // Di production, kirim email. Untuk sekarang, log ke console.
-    this.logger.log(
-      `[DEV] Password reset token for ${email}: ${rawToken}`,
-    );
+    this.logger.log(`[DEV] Password reset token for ${email}: ${rawToken}`);
   }
 
   /** Reset password dengan token yang valid. */
@@ -109,9 +104,8 @@ export class AuthService {
       .update(rawToken)
       .digest('hex');
 
-    const record = await this.resetTokenRepo.findOne({
+    const record = await this.prisma.passwordResetToken.findFirst({
       where: { tokenHash },
-      relations: { user: true },
     });
 
     if (!record) {
@@ -126,14 +120,18 @@ export class AuthService {
       throw new BadRequestException('Token has expired');
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const password = await bcrypt.hash(newPassword, 12);
 
-    // Update password dan mark token sebagai used
-    await Promise.all([
-      this.resetTokenRepo.manager
-        .getRepository(User)
-        .update(record.userId, { passwordHash }),
-      this.resetTokenRepo.update(record.id, { usedAt: new Date() }),
+    // Update password dan mark token sebagai used — atomik.
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { password },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      }),
     ]);
   }
 }

@@ -1,5 +1,11 @@
 import { IsEmail, IsString } from 'class-validator';
-import { Body, Controller, INestApplication, Module, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  INestApplication,
+  Module,
+  Post,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { CommonModule } from '../src/common/common.module.js';

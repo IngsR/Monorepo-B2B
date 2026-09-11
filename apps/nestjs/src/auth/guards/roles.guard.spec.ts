@@ -5,7 +5,10 @@ import { UserRole } from '../../common/enums/user-role.enum.js';
 import type { JwtPayload } from '../interfaces/jwt-payload.interface.js';
 import { RolesGuard } from './roles.guard.js';
 
-function makeContext(user: Partial<JwtPayload>, roles: UserRole[] | undefined): ExecutionContext {
+function makeContext(
+  user: Partial<JwtPayload>,
+  roles: UserRole[] | undefined,
+): ExecutionContext {
   const reflector = new Reflector();
   vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(roles);
 
@@ -29,7 +32,7 @@ describe('RolesGuard', () => {
 
   it('allows access when no roles are required', () => {
     vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(undefined);
-    const ctx = makeContext({ role: UserRole.SELLER }, undefined);
+    const ctx = makeContext({ role: UserRole.BIDDER }, undefined);
 
     expect(guard.canActivate(ctx)).toBe(true);
   });
@@ -43,7 +46,7 @@ describe('RolesGuard', () => {
 
   it('throws ForbiddenException when user does not have required role', () => {
     vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue([UserRole.ADMIN]);
-    const ctx = makeContext({ role: UserRole.SELLER }, [UserRole.ADMIN]);
+    const ctx = makeContext({ role: UserRole.BIDDER }, [UserRole.ADMIN]);
 
     expect(() => guard.canActivate(ctx)).toThrow(ForbiddenException);
   });
@@ -53,7 +56,10 @@ describe('RolesGuard', () => {
       UserRole.ADMIN,
       UserRole.VENDOR,
     ]);
-    const ctx = makeContext({ role: UserRole.VENDOR }, [UserRole.ADMIN, UserRole.VENDOR]);
+    const ctx = makeContext({ role: UserRole.VENDOR }, [
+      UserRole.ADMIN,
+      UserRole.VENDOR,
+    ]);
 
     expect(guard.canActivate(ctx)).toBe(true);
   });

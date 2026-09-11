@@ -1,7 +1,6 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto.js';
 import { UserRole } from '../../common/enums/user-role.enum.js';
-import { UserStatus } from '../../common/enums/user-status.enum.js';
 
 export class UserQueryDto extends PaginationQueryDto {
   @IsOptional()
@@ -9,14 +8,7 @@ export class UserQueryDto extends PaginationQueryDto {
   role?: UserRole;
 
   @IsOptional()
-  @IsEnum(UserStatus)
-  status?: UserStatus;
-
-  @IsOptional()
   @IsString()
-  companyId?: string;
-
-  @IsOptional()
-  @IsString()
+  @MaxLength(255)
   search?: string;
 }

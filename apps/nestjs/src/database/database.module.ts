@@ -1,38 +1,15 @@
-import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
-import { createTypeOrmOptions } from './database.options.js';
-import { createTestDataSource } from './test-data-source.js';
+import { Global, Module } from '@nestjs/common';
+import { PrismaService } from './prisma.service.js';
 
-@Module({})
-export class DatabaseModule {
-  static forRoot(): DynamicModule {
-    const isTest = process.env.NODE_ENV === 'test';
-
-    if (isTest) {
-      return {
-        module: DatabaseModule,
-        global: true,
-        providers: [
-          {
-            provide: DataSource,
-            useFactory: createTestDataSource,
-          },
-        ],
-        exports: [DataSource],
-      };
-    }
-
-    return {
-      module: DatabaseModule,
-      imports: [
-        TypeOrmModule.forRootAsync({
-          inject: [ConfigService],
-          useFactory: createTypeOrmOptions,
-        }),
-      ],
-      exports: [TypeOrmModule],
-    };
-  }
-}
+/**
+ * Global database module.
+ *
+ * Exposes a single `PrismaService` instance to the whole application so every
+ * feature module can inject it without re-declaring the provider.
+ */
+@Global()
+@Module({
+  providers: [PrismaService],
+  exports: [PrismaService],
+})
+export class DatabaseModule {}

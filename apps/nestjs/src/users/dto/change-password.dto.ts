@@ -1,5 +1,6 @@
 import { IsString, MaxLength, MinLength } from 'class-validator';
 
+/** Mengubah password milik user yang sedang login. */
 export class ChangePasswordDto {
   @IsString()
   @MinLength(1)

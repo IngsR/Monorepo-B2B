@@ -7,7 +7,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { UserRole } from '../../common/enums/user-role.enum.js';
-import { ROLES_KEY } from '../decorators/roles.decorator.js';
+import { ROLES_KEY } from '../../common/decorators/roles.decorator.js';
 import type { JwtPayload } from '../interfaces/jwt-payload.interface.js';
 
 @Injectable()

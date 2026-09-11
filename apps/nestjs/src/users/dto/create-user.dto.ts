@@ -1,9 +1,7 @@
 import {
   IsEmail,
   IsEnum,
-  IsOptional,
   IsString,
-  IsUUID,
   MaxLength,
   MinLength,
 } from 'class-validator';
@@ -20,17 +18,10 @@ export class CreateUserDto {
   password: string;
 
   @IsString()
-  @MaxLength(100)
-  firstName: string;
-
-  @IsString()
-  @MaxLength(100)
-  lastName: string;
+  @MinLength(1)
+  @MaxLength(255)
+  name: string;
 
   @IsEnum(UserRole)
   role: UserRole;
-
-  @IsOptional()
-  @IsUUID()
-  companyId?: string;
 }
