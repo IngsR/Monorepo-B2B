@@ -4,119 +4,132 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { ILike, Repository } from 'typeorm';
-import { paginate, PaginatedResponse } from '../common/dto/paginated-response.dto.js';
+import {
+  paginate,
+  PaginatedResponse,
+} from '../common/dto/paginated-response.dto.js';
+import { PrismaService } from '../database/prisma.service.js';
+import type { Prisma, User } from '../database/prisma.types.js';
+import { toPublicUser, type PublicUser } from '../database/prisma.types.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UserQueryDto } from './dto/user-query.dto.js';
-import { User } from './entities/user.entity.js';
 
 const BCRYPT_ROUNDS = 12;
 
+/** Kolom yang dikembalikan di setiap response user publik. Tanpa password. */
+export const userSelect = {
+  id: true,
+  email: true,
+  name: true,
+  role: true,
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.UserSelect;
+
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  /** Digunakan AuthService */
+  /** Digunakan AuthService. Record lengkap termasuk password hash. */
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepo.findOne({ where: { email } });
+    return this.prisma.user.findUnique({ where: { email } });
   }
 
-  /** Digunakan AuthService */
+  /** Digunakan AuthService. Record lengkap termasuk password hash. */
   async findById(id: string): Promise<User | null> {
-    return this.userRepo.findOne({ where: { id } });
+    return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async findAll(query: UserQueryDto): Promise<PaginatedResponse<Omit<User, 'passwordHash'>>> {
-    const where: Record<string, unknown> = {};
+  async findAll(query: UserQueryDto): Promise<PaginatedResponse<PublicUser>> {
+    const where: Prisma.UserWhereInput = {};
 
-    if (query.role) where['role'] = query.role;
-    if (query.status) where['status'] = query.status;
-    if (query.companyId) where['companyId'] = query.companyId;
-    if (query.search) where['email'] = ILike(`%${query.search}%`);
+    if (query.role) where.role = query.role;
+    if (query.search) {
+      where.email = { contains: query.search, mode: 'insensitive' };
+    }
 
-    const [users, total] = await this.userRepo.findAndCount({
-      where,
-      order: { createdAt: 'DESC' },
-      skip: query.skip,
-      take: query.limit,
+    const [users, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        select: userSelect,
+        orderBy: { createdAt: 'desc' },
+        skip: query.skip,
+        take: query.limit,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return paginate(users, total, query.page, query.limit);
+  }
+
+  async findOneOrFail(id: string): Promise<PublicUser> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: userSelect,
     });
-
-    const data = users.map((u) => this.sanitizeUser(u));
-    return paginate(data, total, query.page, query.limit);
-  }
-
-  async findOneOrFail(id: string): Promise<Omit<User, 'passwordHash'>> {
-    const user = await this.userRepo.findOne({ where: { id } });
 
     if (!user) {
       throw new NotFoundException(`User with id "${id}" not found`);
     }
 
-    return this.sanitizeUser(user);
+    return user;
   }
 
-  private sanitizeUser(user: User): Omit<User, 'passwordHash'> {
-    const copy = { ...user };
-    delete (copy as { passwordHash?: string }).passwordHash;
-    return copy;
-  }
-
-  async create(dto: CreateUserDto): Promise<Omit<User, 'passwordHash'>> {
-    const existing = await this.userRepo.findOne({ where: { email: dto.email } });
+  async create(dto: CreateUserDto): Promise<PublicUser> {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
 
     if (existing) {
       throw new ConflictException(`Email "${dto.email}" already registered`);
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-    const user = this.userRepo.create({
-      email: dto.email,
-      passwordHash,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      role: dto.role,
-      companyId: dto.companyId ?? null,
-    });
+    const password = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
 
-    const saved = await this.userRepo.save(user);
-    const { passwordHash: _, ...profile } = saved;
-    return profile;
+    return this.prisma.user.create({
+      data: { email: dto.email, password, name: dto.name, role: dto.role },
+      select: userSelect,
+    });
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<Omit<User, 'passwordHash'>> {
-    const user = await this.userRepo.findOne({ where: { id } });
+  async update(id: string, dto: UpdateUserDto): Promise<PublicUser> {
+    const existing = await this.prisma.user.findUnique({ where: { id } });
 
-    if (!user) {
+    if (!existing) {
       throw new NotFoundException(`User with id "${id}" not found`);
     }
 
-    Object.assign(user, dto);
-    const saved = await this.userRepo.save(user);
-    const { passwordHash: _, ...profile } = saved;
-    return profile;
+    return this.prisma.user.update({
+      where: { id },
+      data: { name: dto.name, role: dto.role },
+      select: userSelect,
+    });
   }
 
   async changePassword(id: string, dto: ChangePasswordDto): Promise<void> {
-    const user = await this.userRepo.findOne({ where: { id } });
+    const user = await this.prisma.user.findUnique({ where: { id } });
 
     if (!user) {
       throw new NotFoundException(`User with id "${id}" not found`);
     }
 
-    const isMatch = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
 
     if (!isMatch) {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
-    user.passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
-    await this.userRepo.save(user);
+    await this.prisma.user.update({
+      where: { id },
+      data: { password: await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS) },
+    });
+  }
+
+  /** Salinan user tanpa password. */
+  sanitize(user: User): PublicUser {
+    return toPublicUser(user);
   }
 }

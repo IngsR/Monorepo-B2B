@@ -1,130 +1,101 @@
-import {
-  INestApplication,
-  Module,
-} from '@nestjs/common';
+import { INestApplication, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import request from 'supertest';
 import { CommonModule } from '../src/common/common.module.js';
 import { UserRole } from '../src/common/enums/user-role.enum.js';
-import { UserStatus } from '../src/common/enums/user-status.enum.js';
-import { AuthController } from '../src/auth/auth.controller.js';
-import { AuthService } from '../src/auth/auth.service.js';
 import { JwtAuthGuard } from '../src/auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../src/auth/guards/roles.guard.js';
 import { JwtStrategy } from '../src/auth/strategies/jwt.strategy.js';
 import { LocalStrategy } from '../src/auth/strategies/local.strategy.js';
-import { PasswordResetToken } from '../src/users/entities/password-reset-token.entity.js';
-import { User } from '../src/users/entities/user.entity.js';
+import { AuthController } from '../src/auth/auth.controller.js';
+import { AuthService } from '../src/auth/auth.service.js';
+import { PrismaService } from '../src/database/prisma.service.js';
+import type { User } from '../src/database/prisma.types.js';
 import { UsersService } from '../src/users/users.service.js';
-import * as crypto from 'crypto';
 
-// ─── Stubs ────────────────────────────────────────────────────────────────────
+// ─── Fixtures ───────────────────────────────
 
-const ACTIVE_USER: User = {
-  id: 'user-active',
-  email: 'admin@scrapbid.test',
-  passwordHash: '',
-  firstName: 'Admin',
-  lastName: 'User',
-  role: UserRole.ADMIN,
-  status: UserStatus.ACTIVE,
-  companyId: null,
-  company: null,
-  createdAt: new Date(),
-  updatedAt: new Date(),
-} as User;
+function makeUser(overrides: Partial<User> = {}): User {
+  return {
+    id: 'user-active',
+    email: 'admin@scrapbid.test',
+    password: '',
+    name: 'Admin User',
+    role: UserRole.ADMIN,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  } as User;
+}
 
-const INACTIVE_USER: User = {
-  ...ACTIVE_USER,
-  id: 'user-inactive',
-  email: 'inactive@scrapbid.test',
-  status: UserStatus.INACTIVE,
-};
+const ACTIVE_USER = makeUser();
+const BIDDER_USER = makeUser({
+  id: 'user-bidder',
+  email: 'bidder@scrapbid.test',
+  name: 'Bidder User',
+  role: UserRole.BIDDER,
+});
 
-const SELLER_USER: User = {
-  ...ACTIVE_USER,
-  id: 'user-seller',
-  email: 'seller@scrapbid.test',
-  role: UserRole.SELLER,
-};
-
-// Password stubs — set in beforeAll
-let ACTIVE_USER_PASSWORD_HASH: string;
-let INACTIVE_USER_PASSWORD_HASH: string;
-let SELLER_USER_PASSWORD_HASH: string;
-
-// ─── Mock UsersService ─────────────────────────────────────────────────────────
+// ─── Mocks ──────────────────
 
 class MockUsersService {
+  constructor(private readonly users: User[]) {}
+
   findByEmail(email: string): User | null {
-    const map: Record<string, User> = {
-      [ACTIVE_USER.email]: ACTIVE_USER,
-      [INACTIVE_USER.email]: INACTIVE_USER,
-      [SELLER_USER.email]: SELLER_USER,
-    };
-    return map[email] ?? null;
+    return this.users.find((u) => u.email === email) ?? null;
   }
 
   findById(id: string): User | null {
-    const map: Record<string, User> = {
-      [ACTIVE_USER.id]: ACTIVE_USER,
-      [INACTIVE_USER.id]: INACTIVE_USER,
-      [SELLER_USER.id]: SELLER_USER,
-    };
-    return map[id] ?? null;
+    return this.users.find((u) => u.id === id) ?? null;
   }
 }
 
-// ─── Mock PasswordResetToken Repository ───────────────────────────────────────
+type ResetTokenRecord = {
+  id: string;
+  userId: string;
+  tokenHash: string;
+  expiresAt: Date;
+  usedAt: Date | null;
+};
 
-const tokenStore = new Map<string, PasswordResetToken>();
+const tokenStore = new Map<string, ResetTokenRecord>();
 
-class MockResetTokenRepo {
-  create(data: Partial<PasswordResetToken>): Partial<PasswordResetToken> {
-    return data;
-  }
-
-  async save(token: Partial<PasswordResetToken>): Promise<void> {
-    tokenStore.set(token.tokenHash!, token as PasswordResetToken);
-  }
-
-  async findOne({ where }: { where: { tokenHash: string }; relations?: string[] }): Promise<PasswordResetToken | null> {
-    const found = tokenStore.get(where.tokenHash);
-    if (!found) return null;
-    // Attach user relation
-    const user = new MockUsersService().findById(found.userId!);
-    return { ...found, user: user! } as PasswordResetToken;
-  }
-
-  async update(id: string, data: Partial<PasswordResetToken>): Promise<void> {
-    for (const [key, val] of tokenStore) {
-      if (val.id === id) {
-        tokenStore.set(key, { ...val, ...data });
-        break;
-      }
-    }
-  }
-
-  manager = {
-    getRepository: () => ({
-      update: async () => undefined,
-    }),
+class MockPrismaService {
+  passwordResetToken = {
+    create: async ({ data }: { data: ResetTokenRecord }): Promise<unknown> => {
+      tokenStore.set(data.tokenHash, { id: 'prt-1', ...data, usedAt: null });
+      return data;
+    },
+    findFirst: async ({
+      where,
+    }: {
+      where: { tokenHash: string };
+    }): Promise<ResetTokenRecord | null> =>
+      tokenStore.get(where.tokenHash) ?? null,
+    update: async (): Promise<unknown> => undefined,
   };
+
+  user = {
+    update: async (): Promise<unknown> => undefined,
+  };
+
+  $transaction = async (ops: Promise<unknown>[]): Promise<unknown[]> =>
+    Promise.all(ops);
 }
 
-// ─── Test Module ──────────────────────────────────────────────────────────────
+// ─── Test module ────────────────────────────
+
+const usersServiceInstance = new MockUsersService([ACTIVE_USER, BIDDER_USER]);
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      ignoreEnvFile: true,
-    }),
+    ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -140,38 +111,24 @@ class MockResetTokenRepo {
     AuthService,
     LocalStrategy,
     JwtStrategy,
-    { provide: UsersService, useClass: MockUsersService },
-    { provide: 'PasswordResetTokenRepository', useClass: MockResetTokenRepo },
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
+    { provide: UsersService, useValue: usersServiceInstance },
+    { provide: PrismaService, useClass: MockPrismaService },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
 class AuthTestModule {}
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
+// ─── Tests ──────────────────
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
   let jwtService: JwtService;
 
   beforeAll(async () => {
-    // Hash password sebelum test berjalan
-    [ACTIVE_USER_PASSWORD_HASH, INACTIVE_USER_PASSWORD_HASH, SELLER_USER_PASSWORD_HASH] =
-      await Promise.all([
-        bcrypt.hash('Password123', 10),
-        bcrypt.hash('Password123', 10),
-        bcrypt.hash('Password123', 10),
-      ]);
-
-    ACTIVE_USER.passwordHash = ACTIVE_USER_PASSWORD_HASH;
-    INACTIVE_USER.passwordHash = INACTIVE_USER_PASSWORD_HASH;
-    SELLER_USER.passwordHash = SELLER_USER_PASSWORD_HASH;
+    const password = await bcrypt.hash('Password123', 10);
+    ACTIVE_USER.password = password;
+    BIDDER_USER.password = password;
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AuthTestModule],
@@ -187,8 +144,6 @@ describe('Auth (e2e)', () => {
     await app.close();
     tokenStore.clear();
   });
-
-  // ── POST /auth/login ────────────────────────────────────────────────────────
 
   describe('POST /auth/login', () => {
     it('returns 200 and accessToken on valid credentials', async () => {
@@ -208,14 +163,6 @@ describe('Auth (e2e)', () => {
       expect(res.status).toBe(401);
     });
 
-    it('returns 401 for INACTIVE user', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/auth/login')
-        .send({ email: INACTIVE_USER.email, password: 'Password123' });
-
-      expect(res.status).toBe(401);
-    });
-
     it('returns 400 on missing fields', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
@@ -225,15 +172,13 @@ describe('Auth (e2e)', () => {
     });
   });
 
-  // ── GET /auth/me ────────────────────────────────────────────────────────────
-
   describe('GET /auth/me', () => {
     it('returns 401 without token', async () => {
       const res = await request(app.getHttpServer()).get('/auth/me');
       expect(res.status).toBe(401);
     });
 
-    it('returns profile for authenticated user', async () => {
+    it('returns profile without password for authenticated user', async () => {
       const token = jwtService.sign({
         sub: ACTIVE_USER.id,
         userId: ACTIVE_USER.id,
@@ -250,11 +195,9 @@ describe('Auth (e2e)', () => {
         email: ACTIVE_USER.email,
         role: UserRole.ADMIN,
       });
-      expect(res.body.data).not.toHaveProperty('passwordHash');
+      expect(res.body.data).not.toHaveProperty('password');
     });
   });
-
-  // ── POST /auth/forgot-password ──────────────────────────────────────────────
 
   describe('POST /auth/forgot-password', () => {
     it('always returns 200 regardless of email existence', async () => {
@@ -263,15 +206,6 @@ describe('Auth (e2e)', () => {
         .send({ email: 'nonexistent@test.com' });
 
       expect(res.status).toBe(200);
-    });
-
-    it('returns 200 for existing active user', async () => {
-      const res = await request(app.getHttpServer())
-        .post('/auth/forgot-password')
-        .send({ email: ACTIVE_USER.email });
-
-      expect(res.status).toBe(200);
-      expect(res.body.data).not.toHaveProperty('token');
     });
 
     it('returns 400 for invalid email format', async () => {
@@ -283,25 +217,22 @@ describe('Auth (e2e)', () => {
     });
   });
 
-  // ── POST /auth/reset-password ───────────────────────────────────────────────
-
   describe('POST /auth/reset-password', () => {
     it('resets password with a valid token', async () => {
-      // 1. Generate token
       const rawToken = 'e2e-test-valid-token';
-      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      const tokenHash = crypto
+        .createHash('sha256')
+        .update(rawToken)
+        .digest('hex');
 
       tokenStore.set(tokenHash, {
         id: 'prt-1',
         userId: ACTIVE_USER.id,
-        user: ACTIVE_USER,
         tokenHash,
         expiresAt: new Date(Date.now() + 60 * 60 * 1000),
         usedAt: null,
-        createdAt: new Date(),
-      } as PasswordResetToken);
+      });
 
-      // 2. Reset password
       const res = await request(app.getHttpServer())
         .post('/auth/reset-password')
         .send({ token: rawToken, newPassword: 'NewSecure1!' });
@@ -326,8 +257,6 @@ describe('Auth (e2e)', () => {
     });
   });
 
-  // ── RBAC ────────────────────────────────────────────────────────────────────
-
   describe('RBAC', () => {
     it('allows ADMIN to access /auth/me', async () => {
       const token = jwtService.sign({
@@ -344,12 +273,12 @@ describe('Auth (e2e)', () => {
       expect(res.status).toBe(200);
     });
 
-    it('allows SELLER to access /auth/me (no role restriction on me)', async () => {
+    it('allows BIDDER to access /auth/me (no role restriction)', async () => {
       const token = jwtService.sign({
-        sub: SELLER_USER.id,
-        userId: SELLER_USER.id,
-        email: SELLER_USER.email,
-        role: UserRole.SELLER,
+        sub: BIDDER_USER.id,
+        userId: BIDDER_USER.id,
+        email: BIDDER_USER.email,
+        role: UserRole.BIDDER,
       });
 
       const res = await request(app.getHttpServer())

@@ -7,15 +7,15 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import type { User } from '../users/entities/user.entity.js';
+import type { User } from '../database/prisma.types.js';
 import { AuthService } from './auth.service.js';
-import { CurrentUser } from './decorators/current-user.decorator.js';
+import { CurrentUser } from '../common/decorators/current-user.decorator.js';
+import type { JwtPayload } from './interfaces/jwt-payload.interface.js';
 import { Public } from './decorators/public.decorator.js';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { LocalAuthGuard } from './guards/local-auth.guard.js';
-import type { JwtPayload } from './interfaces/jwt-payload.interface.js';
 
 @Controller('auth')
 export class AuthController {
@@ -43,7 +43,9 @@ export class AuthController {
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     await this.authService.forgotPassword(dto.email);
     // Selalu return sukses tanpa reveal apakah email terdaftar
-    return { message: 'If the email is registered, a reset link has been sent' };
+    return {
+      message: 'If the email is registered, a reset link has been sent',
+    };
   }
 
   /** POST /auth/reset-password — reset password dengan token */

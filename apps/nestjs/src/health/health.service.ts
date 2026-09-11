@@ -1,18 +1,15 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { ErrorCode } from '../common/constants/error-codes.js';
 import { AppException } from '../common/exceptions/app.exception.js';
+import { PrismaService } from '../database/prisma.service.js';
 
 @Injectable()
 export class HealthService {
-  constructor(
-    @Inject(DataSource)
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async assertDatabase(): Promise<void> {
     try {
-      await this.dataSource.query('SELECT 1');
+      await this.prisma.$queryRaw`SELECT 1`;
     } catch {
       throw new AppException(
         'Database connection is unavailable',

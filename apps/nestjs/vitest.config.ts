@@ -10,11 +10,7 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       PORT: '8000',
-      DATABASE_HOST: 'localhost',
-      DATABASE_PORT: '5432',
-      DATABASE_NAME: 'scrapbid',
-      DATABASE_USER: 'postgres',
-      DATABASE_PASSWORD: 'postgres',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/scrapbid',
       JWT_SECRET: 'test-secret',
       JWT_EXPIRES_IN: '1d',
       CORS_ORIGIN: 'http://localhost:3000',

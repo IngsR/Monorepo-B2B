@@ -12,7 +12,13 @@ export class LocalAuthGuard extends AuthGuard('local') {
     super();
   }
 
-  handleRequest(err: unknown, user: any, info: any, context: ExecutionContext, status?: any) {
+  handleRequest(
+    err: unknown,
+    user: any,
+    info: any,
+    context: ExecutionContext,
+    status?: any,
+  ) {
     if (status === 400 || info?.message === 'Missing credentials') {
       throw new BadRequestException(info?.message ?? 'Missing credentials');
     }

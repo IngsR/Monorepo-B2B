@@ -21,22 +21,7 @@ export class EnvironmentVariables {
   PORT: number;
 
   @IsString()
-  DATABASE_HOST: string;
-
-  @IsInt()
-  @Min(1)
-  @Max(65535)
-  DATABASE_PORT: number;
-
-  @IsString()
-  DATABASE_NAME: string;
-
-  @IsString()
-  DATABASE_USER: string;
-
-  @IsOptional()
-  @IsString()
-  DATABASE_PASSWORD?: string;
+  DATABASE_URL: string;
 
   @IsString()
   JWT_SECRET: string;
