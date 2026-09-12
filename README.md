@@ -1,6 +1,6 @@
-# Fullstack CRM Monorepo (NestJS + Next.js)
+# BidForge — B2B Auction Platform Monorepo (NestJS + Angular)
 
-Selamat datang di repository project **Fullstack CRM/ERP**. Project ini adalah aplikasi web modern yang dibangun menggunakan arsitektur **Monorepo** untuk menggabungkan kekuatan **NestJS** (Backend) dan **Next.js** (Frontend) dalam satu workflow pengembangan yang efisien.
+Selamat datang di repository project **BidForge**, platform lelang B2B. Project ini dibangun dengan arsitektur **Monorepo** yang menggabungkan **NestJS** (Backend) dan **Angular** (Frontend) dalam satu workflow pengembangan.
 
 Project ini dirancang sebagai demonstrasi kemampuan teknis dalam membangun aplikasi skala menengah-besar dengan praktik _Software Engineering_ yang baik.
 
@@ -11,20 +11,19 @@ Project ini dirancang sebagai demonstrasi kemampuan teknis dalam membangun aplik
 - **Monorepo Manager**: [Turborepo](https://turbo.build/) (High-performance build system)
 - **Package Manager**: NPM Workspaces
 
-### Backend (`apps/backend`)
+### Backend (`apps/nestjs`)
 
 - **Framework**: [NestJS](https://nestjs.com/) (Node.js framework yang modular & scalable)
 - **Language**: TypeScript
-- **Database**: PostgreSQL (via TypeORM)
-- **API Documentation**: Swagger / OpenAPI
+- **Database**: PostgreSQL (via Prisma ORM)
+ **API Documentation**: Swagger / OpenAPI (di `/api/docs`)
 - **Authentication**: JWT (JSON Web Token) & Passport
+### Frontend (`apps/angular`)
 
-### Frontend (`apps/frontend`)
-
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Framework**: [Angular 22](https://angular.dev/) (standalone components, zoneless)
 - **Language**: TypeScript
-- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
-- **Data Fetching**: Server Components & Fetch API
+- **Styling**: SCSS (design-token based)
+- **Data Fetching**: `HttpClient` + interceptor-based API adapter
 
 ---
 
@@ -35,8 +34,8 @@ Struktur folder menggunakan konsep Monorepo untuk memisahkan tanggung jawab namu
 ```text
 .
 ├── apps/
-│   ├── backend/       # Server-side logic, REST API, Database ORM
-│   └── frontend/      # Client-side UI, SSR, Interactivity
+│   ├── nestjs/        # Server-side logic, REST API, Prisma ORM
+│   └── angular/       # Client-side UI, SPA
 ├── packages/          # Shared libraries (DTOs, configs, utilities) - *Coming Soon*
 ├── package.json       # Root configuration untuk Workspace
 └── turbo.json         # Konfigurasi pipeline build Turborepo
@@ -74,9 +73,26 @@ Perintah ini akan menjalankan **kedua aplikasi** (Backend & Frontend) secara par
 npm run dev
 ```
 
-- **Backend API**: Berjalan di [http://localhost:3000](http://localhost:3000)
-- **Swagger Docs**: [http://localhost:3000/api](http://localhost:3000/api)
-- **Frontend UI**: Berjalan di [http://localhost:3001](http://localhost:3001) (Port mungkin berbeda jika 3000 terpakai)
+- **Backend API**: Berjalan di [http://localhost:8000/api/v1](http://localhost:8000/api/v1)
+- **Swagger Docs**: [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
+- **Frontend UI**: Berjalan di [http://localhost:3000](http://localhost:3000)
+
+### Database & Seed
+Pastikan PostgreSQL berjalan, lalu:
+
+```bash
+cd apps/nestjs
+npm run prisma:migrate   # buat/selaraskan tabel
+npm run seed             # isi user, kategori, dan contoh lelang
+```
+
+Akun demo (lihat `apps/nestjs/src/database/seed.ts`):
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@scrapbid.test` | `Password123` |
+| Vendor | `vendor@scrapbid.test` | `Password123` |
+| Bidder | `bidder@scrapbid.test` | `Password123` |
 
 ### 4. Build untuk Production
 

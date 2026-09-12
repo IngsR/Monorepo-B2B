@@ -53,11 +53,22 @@ export class AuctionsService {
         orderBy,
         skip: query.skip,
         take: query.limit,
+        // Join the product (and its category/vendor) plus a bid count so the
+        // client renders a complete lot without extra round-trips.
+        include: {
+          product: { include: { category: true, vendor: true } },
+          _count: { select: { bids: true } },
+        },
       }),
       this.prisma.auction.count({ where }),
     ]);
 
-    return paginate(auctions, total, query.page, query.limit);
+    return paginate(
+      auctions.map((a) => this.withDerived(a)),
+      total,
+      query.page,
+      query.limit,
+    );
   }
 
   /** Auction milik vendor yang sedang login (lewat produknya). */
@@ -71,13 +82,29 @@ export class AuctionsService {
   }
 
   async findOne(id: string): Promise<Auction> {
-    const auction = await this.prisma.auction.findUnique({ where: { id } });
-
+    const auction = await this.prisma.auction.findUnique({
+      where: { id },
+      include: {
+        product: { include: { category: true, vendor: true } },
+        _count: { select: { bids: true } },
+      },
+    });
     if (!auction) {
       throw new NotFoundException(`Auction with id "${id}" not found`);
     }
 
-    return auction;
+    return this.withDerived(auction);
+  }
+
+  /**
+   * Normalises a joined auction row for the client: the bid count is surfaced
+   * as idCount, which is the field the UI reads.
+   */
+  private withDerived(
+    auction: Auction & { product?: unknown; _count?: { bids: number } },
+  ): Auction {
+    const { _count, ...rest } = auction;
+    return { ...rest, bidCount: _count?.bids ?? 0 } as Auction;
   }
 
   /**

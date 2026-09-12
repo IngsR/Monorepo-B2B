@@ -11,8 +11,8 @@ import {
   withRouterConfig,
 } from '@angular/router';
 import { routes } from './app.routes';
+import { apiShapeInterceptor } from './core/interceptors/api-shape.interceptor';
 import { authInterceptor, requestIdInterceptor } from './core/interceptors/auth.interceptor';
-import { mockApiInterceptor } from './core/interceptors/mock-api.interceptor';
 
 /**
  * Application configuration.
@@ -20,11 +20,11 @@ import { mockApiInterceptor } from './core/interceptors/mock-api.interceptor';
  * HTTP interceptors run in order:
  *   1. `requestIdInterceptor` — correlates client and server logs
  *   2. `authInterceptor` — attaches the bearer token and reacts to 401s
- *   3. `mockApiInterceptor` — terminates requests against the in-memory API
+ *   3. `apiShapeInterceptor` — normalises the NestJS response into the shapes
+ *      the UI models expect (pagination key, field names, timing fields)
  *
- * The mock transport sits last so it sees the fully-decorated request, exactly
- * as a real server would. Replacing it with the live NestJS backend is a matter
- * of deleting it from this array: every service already issues genuine HTTP calls.
+ * Requests go to the live NestJS backend at `environment.apiUrl`; there is no
+ * in-memory mock in the path any more.
  */
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -39,7 +39,7 @@ export const appConfig: ApplicationConfig = {
       withRouterConfig({ paramsInheritanceStrategy: 'always' }),
     ),
     provideHttpClient(
-      withInterceptors([requestIdInterceptor, authInterceptor, mockApiInterceptor]),
+      withInterceptors([requestIdInterceptor, authInterceptor, apiShapeInterceptor]),
     ),
   ],
 };
