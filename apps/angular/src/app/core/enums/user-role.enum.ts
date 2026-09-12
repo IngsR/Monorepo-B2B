@@ -1,6 +1,0 @@
-export enum UserRole {
-  ADMIN = 'ADMIN',
-  SELLER = 'SELLER',
-  VENDOR = 'VENDOR',
-  WAREHOUSE_OPERATOR = 'WAREHOUSE_OPERATOR',
-}
