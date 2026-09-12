@@ -18,7 +18,7 @@ import {
   resolveTiming,
 } from '../../core/domain/auction-lifecycle';
 import { AuctionStatus } from '../../core/domain/enums';
-import { formatAmount, formatDateTime } from '../../core/domain/format';
+import { formatAmount, formatDateTime, formatDuration } from '../../core/domain/format';
 import { Auction, Bid, Paginated } from '../../core/domain/models';
 import { AuctionService } from '../../core/services/auction.service';
 import { BidService } from '../../core/services/bid.service';
@@ -144,23 +144,74 @@ import { BidPanelComponent } from './bid-panel.component';
           <div class="auction-detail-grid">
             <!-- Main column -->
             <div class="auction-detail-main">
-              <!-- Media -->
-              <div class="auction-media">
-                <div class="auction-media-frame">
+              <!-- Gallery -->
+              <div class="gallery">
+                <div class="gallery-main">
+                  <span class="auction-card-status">
+                    <app-auction-status-badge
+                      [status]="auctionData.status"
+                      [endingSoon]="timing().endingSoon"
+                    />
+                  </span>
                   <div class="auction-card-media-fallback">
                     <div class="media-placeholder">
                       <app-icon name="image" [size]="34" />
                       <p class="state-description">
-                        Product photography is not published for this lot. Technical details are
-                        listed below.
+                        Product photography is not published for this lot. Technical details and
+                        vendor information are listed below.
                       </p>
                     </div>
+                  </div>
+                </div>
+
+                <!-- Thumbnail rail: real thumbnails once the API exposes media. -->
+                <div class="gallery-rail" aria-hidden="true">
+                  @for (i of gallerySlots; track i) {
+                    <span class="auction-thumb" [class.is-active]="i === 0">
+                      <span class="auction-card-media-fallback">
+                        <app-icon name="image" [size]="16" />
+                      </span>
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <!-- Key facts strip -->
+              <div class="card fact-strip">
+                <div class="fact">
+                  <span class="fact-icon"><app-icon name="gavel" [size]="16" /></span>
+                  <div class="fact-body">
+                    <span class="fact-label">Current price</span>
+                    <span class="fact-value text-numeric">{{ amountLabel(auctionData.currentPrice) }}</span>
+                  </div>
+                </div>
+                <div class="fact">
+                  <span class="fact-icon"><app-icon name="trending-up" [size]="16" /></span>
+                  <div class="fact-body">
+                    <span class="fact-label">Minimum next bid</span>
+                    <span class="fact-value text-numeric">{{ minimumLabel() }}</span>
+                  </div>
+                </div>
+                <div class="fact">
+                  <span class="fact-icon"><app-icon name="users" [size]="16" /></span>
+                  <div class="fact-body">
+                    <span class="fact-label">Total bids</span>
+                    <span class="fact-value text-numeric">{{ auctionData.bidCount }}</span>
+                  </div>
+                </div>
+                <div class="fact">
+                  <span class="fact-icon"><app-icon name="clock" [size]="16" /></span>
+                  <div class="fact-body">
+                    <span class="fact-label">
+                      {{ auctionData.status === AuctionStatus.ACTIVE ? 'Closes' : 'Ends' }}
+                    </span>
+                    <span class="fact-value">{{ endLabel() }}</span>
                   </div>
                 </div>
               </div>
 
               <!-- Price summary, repeated here for scanning on mobile -->
-              <div class="card card-body detail-price-strip">
+              <div class="card card-body detail-price-strip hide-desktop">
                 <app-price [amount]="auctionData.currentPrice" label="Current price" size="lg" />
                 <div class="detail-price-figures">
                   <div class="meta-item">
@@ -171,38 +222,42 @@ import { BidPanelComponent } from './bid-panel.component';
                     <span class="price-label">Bid increment</span>
                     <span class="meta-value text-numeric">{{ incrementLabel() }}</span>
                   </div>
-                  <div class="meta-item">
-                    <span class="price-label">Total bids</span>
-                    <span class="meta-value text-numeric">{{ auctionData.bidCount }}</span>
-                  </div>
                 </div>
               </div>
 
-              <!-- Schedule -->
+              <!-- Schedule & terms -->
               <section class="card">
                 <div class="card-header">
-                  <h2 class="section-heading">Schedule</h2>
+                  <h2 class="section-heading">Schedule & terms</h2>
                   @if (auctionData.status === AuctionStatus.ACTIVE && timing().acceptingBids) {
                     <app-countdown [target]="auctionData.endTime" prefix="closes" size="md" />
                   }
                 </div>
                 <div class="card-body">
-                  <div class="meta-list">
-                    <div class="meta-item">
-                      <span class="price-label">Start time</span>
-                      <span class="meta-value">{{ startLabel() }}</span>
+                  <div class="spec-list">
+                    <div class="spec-item">
+                      <span class="spec-item-label">Opening time</span>
+                      <span class="spec-item-value">{{ startLabel() }}</span>
                     </div>
-                    <div class="meta-item">
-                      <span class="price-label">End time</span>
-                      <span class="meta-value">{{ endLabel() }}</span>
+                    <div class="spec-item">
+                      <span class="spec-item-label">Closing time</span>
+                      <span class="spec-item-value">{{ endLabel() }}</span>
                     </div>
-                    <div class="meta-item">
-                      <span class="price-label">Starting price</span>
-                      <span class="meta-value text-numeric">{{ startingLabel() }}</span>
+                    <div class="spec-item">
+                      <span class="spec-item-label">Starting price</span>
+                      <span class="spec-item-value text-numeric">{{ startingLabel() }}</span>
                     </div>
-                    <div class="meta-item">
-                      <span class="price-label">Recorded status</span>
-                      <span class="meta-value">{{ auctionData.status | titlecase }}</span>
+                    <div class="spec-item">
+                      <span class="spec-item-label">Bid increment</span>
+                      <span class="spec-item-value text-numeric">{{ incrementLabel() }}</span>
+                    </div>
+                    <div class="spec-item">
+                      <span class="spec-item-label">Duration</span>
+                      <span class="spec-item-value">{{ durationLabel() }}</span>
+                    </div>
+                    <div class="spec-item">
+                      <span class="spec-item-label">Recorded status</span>
+                      <span class="spec-item-value">{{ auctionData.status | titlecase }}</span>
                     </div>
                   </div>
                 </div>
@@ -212,33 +267,98 @@ import { BidPanelComponent } from './bid-panel.component';
               <section class="card">
                 <div class="card-header">
                   <h2 class="section-heading">Product information</h2>
+                  @if (auctionData.product?.category; as category) {
+                    <span class="badge badge-plain">{{ category.name }}</span>
+                  }
                 </div>
                 <div class="card-body stack">
-                  <div class="meta-list">
-                    <div class="meta-item">
-                      <span class="price-label">Product code</span>
-                      <span class="meta-value text-numeric">{{
+                  <div class="spec-list">
+                    <div class="spec-item">
+                      <span class="spec-item-label">Product code</span>
+                      <span class="spec-item-value text-numeric">{{
                         auctionData.product?.code ?? '—'
                       }}</span>
                     </div>
-                    <div class="meta-item">
-                      <span class="price-label">Category</span>
-                      <span class="meta-value">{{
+                    <div class="spec-item">
+                      <span class="spec-item-label">Category</span>
+                      <span class="spec-item-value">{{
                         auctionData.product?.category?.name ?? '—'
                       }}</span>
                     </div>
-                    <div class="meta-item">
-                      <span class="price-label">Vendor</span>
-                      <span class="meta-value">{{ vendorName() }}</span>
+                    <div class="spec-item">
+                      <span class="spec-item-label">Listing ID</span>
+                      <span class="spec-item-value text-mono-id">{{ auctionData.id }}</span>
                     </div>
                   </div>
 
                   @if (auctionData.product?.description) {
                     <div>
                       <p class="price-label description-label">Description</p>
-                      <p class="detail-description">{{ auctionData.product?.description }}</p>
+                      <p class="detail-description">{{ auctionData.product.description }}</p>
                     </div>
+                  } @else {
+                    <p class="text-helper">
+                      The vendor has not published a description for this lot. Review the schedule
+                      and terms above before bidding.
+                    </p>
                   }
+                </div>
+              </section>
+
+              <!-- Vendor -->
+              <section class="card">
+                <div class="card-header">
+                  <h2 class="section-heading">Offered by</h2>
+                </div>
+                <div class="card-body">
+                  <div class="seller-card">
+                    <span class="seller-avatar">{{ vendorInitials() }}</span>
+                    <div class="seller-meta">
+                      <span class="seller-name">{{ vendorName() }}</span>
+                      <span class="text-helper">Verified vendor · listing this lot on BidForge</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <!-- How bidding works -->
+              <section class="card">
+                <div class="card-header">
+                  <h2 class="section-heading">How this auction works</h2>
+                </div>
+                <div class="card-body">
+                  <ol class="process-list">
+                    <li class="process-step">
+                      <span class="process-index">1</span>
+                      <div class="process-text">
+                        <p class="process-title">Place a bid at or above the minimum</p>
+                        <p class="process-copy">
+                          Every bid must clear the current price plus the increment. The server
+                          re-checks this when your bid arrives.
+                        </p>
+                      </div>
+                    </li>
+                    <li class="process-step">
+                      <span class="process-index">2</span>
+                      <div class="process-text">
+                        <p class="process-title">The price moves only on a valid higher bid</p>
+                        <p class="process-copy">
+                          If the price changes before your bid is accepted, the bid is refused and
+                          the new minimum is shown immediately.
+                        </p>
+                      </div>
+                    </li>
+                    <li class="process-step">
+                      <span class="process-index">3</span>
+                      <div class="process-text">
+                        <p class="process-title">The highest valid bid at the close determines the outcome</p>
+                        <p class="process-copy">
+                          The result is derived from the bid history at the published end time — no
+                          winner is declared before the auction closes.
+                        </p>
+                      </div>
+                    </li>
+                  </ol>
                 </div>
               </section>
 
@@ -398,6 +518,10 @@ import { BidPanelComponent } from './bid-panel.component';
       .media-placeholder .state-description {
         max-width: 36ch;
       }
+      /* The mobile price strip is a duplicate of the sticky panel on desktop. */
+      @media (min-width: 1181px) {
+        .hide-desktop { display: none; }
+      }
     `,
   ],
 })
@@ -410,6 +534,8 @@ export class AuctionDetailComponent {
 
   protected readonly AuctionStatus = AuctionStatus;
   protected readonly skeletonRows = Array.from({ length: 4 }, (_, i) => i);
+  /** Placeholder thumbnail slots until the API exposes product media. */
+  protected readonly gallerySlots = Array.from({ length: 4 }, (_, i) => i);
 
   readonly auction = new AsyncResource<Auction>();
   readonly bids = new AsyncResource<Paginated<Bid>>();
@@ -450,6 +576,25 @@ export class AuctionDetailComponent {
 
   readonly productName = computed(() => this.data()?.product?.name ?? 'Auction lot');
   readonly vendorName = computed(() => this.data()?.vendor?.companyName ?? 'Unknown vendor');
+
+  readonly vendorInitials = computed(() => {
+    const name = this.vendorName();
+    return name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase();
+  });
+
+  /** Elapsed/planned window length, derived from start and end times. */
+  readonly durationLabel = computed(() => {
+    const auction = this.data();
+    if (!auction) return '—';
+    const ms = new Date(auction.endTime).getTime() - new Date(auction.startTime).getTime();
+    if (ms <= 0) return '—';
+    return formatDuration(ms);
+  });
 
   readonly minimumLabel = computed(() => {
     const auction = this.data();

@@ -2572,3 +2572,403 @@ table {
 .hide-tablet {
   @media (max-width: 1024px) { display: none !important; }
 }
+/* -------------------------------------------------------------------------
+   28. MARKETPLACE — discovery surface
+   A hero strip, category rail, active-filter bar and a denser grid. These are
+   marketplace-only patterns; nothing here restyles shared primitives.
+   ------------------------------------------------------------------------- */
+.marketplace-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--sp-6);
+  padding: var(--sp-7);
+  color: var(--c-text-inverse);
+  background:
+    radial-gradient(120% 140% at 100% 0%, #2a4da3 0%, rgba(42, 77, 163, 0) 55%),
+    linear-gradient(135deg, #16305f 0%, #1d3a8a 55%, #16295c 100%);
+  border: 1px solid var(--c-brand-active);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+
+  @media (max-width: 960px) { grid-template-columns: 1fr; gap: var(--sp-5); }
+  @media (max-width: 640px) { padding: var(--sp-5); }
+}
+
+.marketplace-hero-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.marketplace-hero-eyebrow {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.marketplace-hero-title {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--lh-tight);
+  color: var(--c-text-inverse);
+
+  @media (max-width: 640px) { font-size: var(--fs-2xl); }
+}
+
+.marketplace-hero-copy {
+  max-width: 52ch;
+  font-size: var(--fs-md);
+  line-height: var(--lh-normal);
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.marketplace-hero-actions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-top: var(--sp-2);
+}
+
+/* Inverted buttons on the dark hero, without touching the global .btn */
+.marketplace-hero .btn-hero {
+  background: var(--c-surface);
+  color: var(--c-brand);
+  border-color: transparent;
+
+  &:hover:not(:disabled) { background: var(--c-brand-soft); }
+}
+
+.marketplace-hero .btn-hero-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--c-text-inverse);
+  border-color: rgba(255, 255, 255, 0.32);
+
+  &:hover:not(:disabled) { background: rgba(255, 255, 255, 0.16); }
+}
+
+.marketplace-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-3);
+  align-content: start;
+}
+
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-4);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-md);
+  backdrop-filter: blur(3px);
+}
+
+.hero-stat-value {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-inverse);
+}
+
+.hero-stat-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* Horizontal category rail — the fastest way to narrow the catalogue */
+.category-rail {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  padding-bottom: var(--sp-1);
+  scrollbar-width: thin;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+  height: 34px;
+  padding: 0 var(--sp-4);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text-secondary);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-full);
+  transition:
+    background-color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+
+  &:hover { border-color: var(--c-brand-border); color: var(--c-brand); background: var(--c-brand-soft); }
+
+  &.is-active {
+    color: var(--c-text-inverse);
+    background: var(--c-brand);
+    border-color: var(--c-brand);
+  }
+}
+
+.category-chip-count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  opacity: 0.7;
+}
+
+/* Active filter bar: removable chips + a result count */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--c-brand-soft);
+  border: 1px solid var(--c-brand-border);
+  border-radius: var(--r-md);
+}
+
+.filter-bar-label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--c-brand);
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 28px;
+  padding: 0 var(--sp-2) 0 var(--sp-3);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--c-text);
+  background: var(--c-surface);
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-full);
+}
+
+.filter-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--c-text-muted);
+  border-radius: var(--r-full);
+
+  &:hover { color: var(--c-danger); background: var(--c-danger-soft); }
+}
+
+/* Sort/result row above the grid */
+.grid-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.grid-toolbar-count {
+  font-size: var(--fs-base);
+  color: var(--c-text-secondary);
+
+  strong { color: var(--c-text); font-weight: var(--fw-semibold); }
+}
+
+.sort-select {
+  min-width: 210px;
+
+  @media (max-width: 640px) { min-width: 0; width: 100%; }
+}
+
+/* -------------------------------------------------------------------------
+   29. AUCTION DETAIL — richer sections
+   Seller panel, key-facts strip, specification list and a sticky CTA bar.
+   ------------------------------------------------------------------------- */
+.seller-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--c-surface-hover);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+}
+
+.seller-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-brand);
+  background: var(--c-brand-soft);
+  border: 1px solid var(--c-brand-border);
+  border-radius: var(--r-md);
+}
+
+.seller-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.seller-name {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+}
+
+/* Multi-column definition list for auction terms / product specs */
+.spec-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-4) var(--sp-6);
+}
+
+.spec-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px dashed var(--c-border);
+}
+
+.spec-item-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--c-text-muted);
+}
+
+.spec-item-value {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+  overflow-wrap: anywhere;
+}
+
+/* Fact strip across the top of the detail main column */
+.fact-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+}
+
+.fact {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.fact-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  color: var(--c-brand);
+  background: var(--c-brand-soft);
+  border-radius: var(--r-sm);
+}
+
+.fact-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.fact-label {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-caps);
+  color: var(--c-text-muted);
+}
+.fact-value {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--c-text);
+  overflow-wrap: anywhere;
+}
+
+/* Gallery with a main frame and a thumbnail rail */
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.gallery-main {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--c-surface-sunken);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+
+  @media (max-width: 640px) { aspect-ratio: 4 / 3; }
+}
+
+.gallery-rail {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  padding-bottom: var(--sp-1);
+}
+
+/* Trust / process steps shown under the description */
+.process-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.process-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.process-index {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--c-brand);
+  background: var(--c-brand-soft);
+  border: 1px solid var(--c-brand-border);
+  border-radius: var(--r-full);
+}
+
+.process-text { min-width: 0; }
+.process-title { font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--c-text); }
+.process-copy { font-size: var(--fs-sm); color: var(--c-text-secondary); line-height: var(--lh-snug); }
+
+/* Related lots at the foot of the detail page */
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--sp-4);
+}

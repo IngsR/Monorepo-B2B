@@ -13,9 +13,7 @@ import {
   AccountStatusBadgeComponent,
   AuctionStatusBadgeComponent,
 } from '../../shared/ui/badge.component';
-import { ButtonComponent } from '../../shared/ui/button.component';
 import { IconComponent } from '../../shared/ui/icon.component';
-import { PriceComponent } from '../../shared/ui/price.component';
 import { EmptyStateComponent, ErrorStateComponent } from '../../shared/ui/state-block.component';
 import { AlertComponent } from '../../shared/ui/toast.component';
 
@@ -38,10 +36,8 @@ import { AlertComponent } from '../../shared/ui/toast.component';
     AuctionStatusBadgeComponent,
     AccountStatusBadgeComponent,
     AuctionCardComponent,
-    ButtonComponent,
     IconComponent,
     AuctionLifecycleComponent,
-    PriceComponent,
     EmptyStateComponent,
     ErrorStateComponent,
     AlertComponent,
@@ -83,7 +79,7 @@ import { AlertComponent } from '../../shared/ui/toast.component';
                 <p class="vendor-name">{{ v.companyName }}</p>
                 <p class="text-meta">{{ v.contactPerson }} · {{ v.phone }}</p>
                 @if (v.user?.email) {
-                  <p class="text-helper">{{ v.user?.email }}</p>
+                  <p class="text-helper">{{ v.user.email }}</p>
                 }
               </div>
             </div>

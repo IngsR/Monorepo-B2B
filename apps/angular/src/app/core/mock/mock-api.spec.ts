@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { AccountStatus, AuctionStatus, UserRole } from '../domain/enums';
+import { describe, expect, it } from 'vitest';
+import { AuctionStatus } from '../domain/enums';
 import { MockApiError, mockApi } from './mock-api';
 import { DEMO_PASSWORD, auctions, bids } from './mock-data';
 

@@ -12,7 +12,6 @@ import {
   FormFieldComponent,
   ReadonlyFieldComponent,
 } from '../shared/ui/form-field.component';
-import { IconComponent } from '../shared/ui/icon.component';
 import { BreadcrumbsComponent, Crumb } from '../shared/ui/pagination.component';
 import { AlertComponent } from '../shared/ui/toast.component';
 
@@ -39,7 +38,6 @@ import { AlertComponent } from '../shared/ui/toast.component';
     ButtonComponent,
     FormFieldComponent,
     ReadonlyFieldComponent,
-    IconComponent,
     BreadcrumbsComponent,
     AlertComponent,
   ],
