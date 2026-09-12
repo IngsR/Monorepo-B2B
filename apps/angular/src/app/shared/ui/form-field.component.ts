@@ -77,7 +77,6 @@ export class FormFieldComponent {
 @Component({
   selector: 'app-readonly-field',
   standalone: true,
-  imports: [IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="form-group">

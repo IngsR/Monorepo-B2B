@@ -7,10 +7,7 @@ import { AsyncResource } from '../core/state/async-resource';
 import { AuctionService } from '../core/services/auction.service';
 import { CategoryService } from '../core/services/catalogue.service';
 import { BidderService, UserService, VendorService } from '../core/services/directory.service';
-import {
-  AuctionStatusBadgeComponent,
-  AccountStatusBadgeComponent,
-} from '../shared/ui/badge.component';
+import { AccountStatusBadgeComponent } from '../shared/ui/badge.component';
 import { IconComponent } from '../shared/ui/icon.component';
 import { EmptyStateComponent, ErrorStateComponent } from '../shared/ui/state-block.component';
 import { AlertComponent } from '../shared/ui/toast.component';
@@ -31,7 +28,6 @@ import { AlertComponent } from '../shared/ui/toast.component';
   standalone: true,
   imports: [
     RouterLink,
-    AuctionStatusBadgeComponent,
     AccountStatusBadgeComponent,
     IconComponent,
     EmptyStateComponent,

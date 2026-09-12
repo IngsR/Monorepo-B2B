@@ -1,14 +1,20 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  input,
+} from '@angular/core';
 import { resolveTiming } from '../../core/domain/auction-lifecycle';
 import { AuctionStatus } from '../../core/domain/enums';
 import { formatDateTime, formatDuration } from '../../core/domain/format';
 import { Auction } from '../../core/domain/models';
 import { ClockService } from '../../core/services/clock.service';
-import { BadgeComponent, AuctionStatusBadgeComponent } from './badge.component';
+import { AuctionStatusBadgeComponent } from './badge.component';
 import { CountdownComponent } from './countdown.component';
 import { IconComponent } from './icon.component';
 import { PriceComponent } from './price.component';
-import { DestroyRef, inject } from '@angular/core';
 
 /**
  * Auction card.
@@ -28,13 +34,7 @@ import { DestroyRef, inject } from '@angular/core';
 @Component({
   selector: 'app-auction-card',
   standalone: true,
-  imports: [
-    BadgeComponent,
-    AuctionStatusBadgeComponent,
-    CountdownComponent,
-    IconComponent,
-    PriceComponent,
-  ],
+  imports: [AuctionStatusBadgeComponent, CountdownComponent, IconComponent, PriceComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article class="auction-card" [class.is-terminal]="isTerminal()">

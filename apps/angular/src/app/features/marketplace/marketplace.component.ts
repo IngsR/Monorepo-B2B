@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { resolveTiming } from '../../core/domain/auction-lifecycle';
 import { AuctionStatus, DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '../../core/domain/enums';
 import { Auction, AuctionQuery, Category, Paginated } from '../../core/domain/models';
 import { AuctionService } from '../../core/services/auction.service';
@@ -7,7 +8,6 @@ import { CategoryService } from '../../core/services/catalogue.service';
 import { AsyncResource } from '../../core/state/async-resource';
 import { AuctionCardComponent } from '../../shared/ui/auction-card.component';
 import { ButtonComponent } from '../../shared/ui/button.component';
-import { FormFieldComponent } from '../../shared/ui/form-field.component';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { PaginationComponent } from '../../shared/ui/pagination.component';
 import {
@@ -15,7 +15,6 @@ import {
   EmptyStateComponent,
   ErrorStateComponent,
 } from '../../shared/ui/state-block.component';
-import { AlertComponent } from '../../shared/ui/toast.component';
 
 type OrderBy = NonNullable<AuctionQuery['orderBy']>;
 
@@ -56,9 +55,7 @@ interface MarketplaceFilters {
   standalone: true,
   imports: [
     AuctionCardComponent,
-    AlertComponent,
     ButtonComponent,
-    FormFieldComponent,
     IconComponent,
     PaginationComponent,
     CardSkeletonComponent,
@@ -68,34 +65,61 @@ interface MarketplaceFilters {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
-      <header class="page-head">
-        <div class="page-head-text">
-          <h1 class="page-title">Auction marketplace</h1>
-          <p class="page-subtitle">
-            Live and upcoming auctions across all vendors. Prices are server-authoritative and
-            update when a bid is accepted.
+      <!-- Hero: framed like a real marketplace landing band, not a plain page head -->
+      <section class="marketplace-hero">
+        <div class="marketplace-hero-text">
+          <span class="marketplace-hero-eyebrow">BidForge · Live B2B auction floor</span>
+          <h1 class="marketplace-hero-title">Source stock at the price the market sets</h1>
+          <p class="marketplace-hero-copy">
+            Browse verified vendor lots across every category. Prices are server-authoritative:
+            they move only when a higher valid bid is accepted, so what you see is the real current
+            standing.
           </p>
+          <div class="marketplace-hero-actions">
+            <button type="button" class="btn btn-hero" (click)="focusSearch()">
+              <app-icon name="search" [size]="15" />
+              Find a lot
+            </button>
+            <button type="button" class="btn btn-hero-ghost" (click)="setStatusValue(AuctionStatus.ACTIVE)">
+              <app-icon name="gavel" [size]="15" />
+              Only live auctions
+            </button>
+          </div>
         </div>
-        <div class="page-actions">
-          <app-button
-            label="Refresh"
-            icon="refresh"
-            variant="secondary"
-            [loading]="auctions.isLoading()"
-            (clicked)="reload()"
-          />
-        </div>
-      </header>
 
-      <!-- Filters -->
+        <div class="marketplace-hero-stats">
+          <div class="hero-stat">
+            <span class="hero-stat-value">{{ statTotal() }}</span>
+            <span class="hero-stat-label">Lots listed</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value">{{ statActive() }}</span>
+            <span class="hero-stat-label">Open now</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value">{{ statEndingSoon() }}</span>
+            <span class="hero-stat-label">Closing soon</span>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-value">{{ statBids() }}</span>
+            <span class="hero-stat-label">Bids placed</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Search + price + sort controls -->
       <div class="toolbar">
         <div class="toolbar-field toolbar-grow">
-          <label class="form-label" for="mp-search">Search</label>
+          <label class="form-label" for="mp-search">Search lots</label>
           <div class="input-affix-wrap">
+            <span class="search-prefix">
+              <app-icon name="search" [size]="15" />
+            </span>
             <input
               id="mp-search"
+              #searchBox
               type="search"
-              class="form-input"
+              class="form-input search-with-icon"
               placeholder="Search by lot name, product code or vendor"
               [value]="searchInput()"
               (input)="onSearchInput($event)"
@@ -114,24 +138,8 @@ interface MarketplaceFilters {
             <option value="ALL">All statuses</option>
             <option [value]="AuctionStatus.ACTIVE">Active</option>
             <option [value]="AuctionStatus.SCHEDULED">Scheduled</option>
-            <option [value]="AuctionStatus.DRAFT">Draft</option>
             <option [value]="AuctionStatus.ENDED">Ended</option>
             <option [value]="AuctionStatus.CANCELLED">Cancelled</option>
-          </select>
-        </div>
-
-        <div class="toolbar-field">
-          <label class="form-label" for="mp-category">Category</label>
-          <select
-            id="mp-category"
-            class="form-select"
-            [value]="filters().categoryId"
-            (change)="setCategory($event)"
-          >
-            <option value="ALL">All categories</option>
-            @for (category of categories(); track category.id) {
-              <option [value]="category.id">{{ category.name }}</option>
-            }
           </select>
         </div>
 
@@ -160,12 +168,83 @@ interface MarketplaceFilters {
             (change)="setMaxPrice($event)"
           />
         </div>
+      </div>
 
-        <div class="toolbar-field">
-          <label class="form-label" for="mp-sort">Sort by</label>
+      <!-- Category rail: one-tap narrowing -->
+      <div>
+        <p class="text-label category-rail-label">Browse by category</p>
+        <div class="category-rail" role="tablist" aria-label="Filter by category">
+          <button
+            type="button"
+            class="category-chip"
+            role="tab"
+            [class.is-active]="filters().categoryId === 'ALL'"
+            [attr.aria-selected]="filters().categoryId === 'ALL'"
+            (click)="setCategoryValue('ALL')"
+          >
+            All categories
+          </button>
+          @for (category of categories(); track category.id) {
+            <button
+              type="button"
+              class="category-chip"
+              role="tab"
+              [class.is-active]="filters().categoryId === category.id"
+              [attr.aria-selected]="filters().categoryId === category.id"
+              (click)="setCategoryValue(category.id)"
+            >
+              {{ category.name }}
+              @if (category.productCount) {
+                <span class="category-chip-count">{{ category.productCount }}</span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Active filters, removable one at a time -->
+      @if (hasActiveFilters()) {
+        <div class="filter-bar">
+          <span class="filter-bar-label">Filters</span>
+          @for (chip of activeChips(); track chip.key) {
+            <span class="filter-chip">
+              {{ chip.label }}
+              <button
+                type="button"
+                class="filter-chip-remove"
+                [attr.aria-label]="'Remove filter ' + chip.label"
+                (click)="removeChip(chip.key)"
+              >
+                <app-icon name="close" [size]="12" />
+              </button>
+            </span>
+          }
+          <app-button
+            label="Clear all"
+            variant="ghost"
+            icon="close"
+            (clicked)="clearFilters()"
+          />
+        </div>
+      }
+
+      <!-- Result count + sort -->
+      <div class="grid-toolbar">
+        @if (auctions.isSuccess() && data(); as result) {
+          <p class="grid-toolbar-count">
+            Showing <strong class="text-numeric">{{ result.items.length }}</strong> of
+            <strong class="text-numeric">{{ result.meta.total }}</strong>
+            {{ result.meta.total === 1 ? 'lot' : 'lots' }}
+          </p>
+        } @else {
+          <span></span>
+        }
+
+        <label class="sort-field" for="mp-sort">
+          <span class="sr-only">Sort auctions</span>
           <select
             id="mp-sort"
-            class="form-select"
+            class="form-select sort-select"
             [value]="filters().orderBy"
             (change)="setOrderBy($event)"
           >
@@ -173,34 +252,8 @@ interface MarketplaceFilters {
               <option [value]="option.value">{{ option.label }}</option>
             }
           </select>
-        </div>
-
-        @if (hasActiveFilters()) {
-          <div class="toolbar-field toolbar-reset">
-            <app-button
-              label="Clear filters"
-              variant="ghost"
-              icon="close"
-              (clicked)="clearFilters()"
-            />
-          </div>
-        }
+        </label>
       </div>
-
-      <!-- Result summary -->
-      @if (auctions.isSuccess() && data(); as result) {
-        <p class="result-summary">
-          Showing <strong class="text-numeric">{{ result.items.length }}</strong> of
-          <strong class="text-numeric">{{ result.meta.total }}</strong>
-          {{ result.meta.total === 1 ? 'auction' : 'auctions' }}
-          @if (activeFilterCount() > 0) {
-            <span class="result-filter-note">
-              · {{ activeFilterCount() }}
-              {{ activeFilterCount() === 1 ? 'filter' : 'filters' }} applied
-            </span>
-          }
-        </p>
-      }
 
       <!-- Results -->
       @switch (true) {
@@ -267,16 +320,16 @@ interface MarketplaceFilters {
   `,
   styles: [
     `
-      .toolbar-reset {
-        justify-content: flex-end;
-      }
-      .result-summary {
-        font-size: var(--fs-base);
-        color: var(--c-text-secondary);
-      }
-      .result-filter-note {
+      .search-prefix {
+        position: absolute;
+        left: 11px;
+        display: flex;
         color: var(--c-text-muted);
+        pointer-events: none;
       }
+      .search-with-icon { padding-left: 34px; }
+      .category-rail-label { margin-bottom: var(--sp-2); }
+      .sort-field { display: block; }
       .lifecycle-reference {
         gap: var(--sp-2);
         display: flex;
@@ -341,10 +394,77 @@ export class MarketplaceComponent {
 
   readonly pageSizeOptions = PAGE_SIZE_OPTIONS;
 
+  /**
+   * Headline figures shown in the hero. Derived from the page of results on
+   * screen, never invented: "Open now" counts live auctions in the current
+   * result set, and "Closing soon" counts active lots within the window.
+   */
+  readonly statTotal = computed(() => this.data()?.meta.total ?? 0);
+  readonly statActive = computed(
+    () => this.data()?.items.filter((a) => a.status === AuctionStatus.ACTIVE).length ?? 0,
+  );
+  readonly statEndingSoon = computed(
+    () =>
+      this.data()?.items.filter(
+        (a) => a.status === AuctionStatus.ACTIVE && resolveTiming(a).endingSoon,
+      ).length ?? 0,
+  );
+  readonly statBids = computed(
+    () => this.data()?.items.reduce((sum, a) => sum + a.bidCount, 0) ?? 0,
+  );
+
+  /** Active filters as removable chips, so each can be dropped individually. */
+  readonly activeChips = computed<{ key: keyof MarketplaceFilters; label: string }[]>(() => {
+    const f = this.filters();
+    const chips: { key: keyof MarketplaceFilters; label: string }[] = [];
+    if (f.search) chips.push({ key: 'search', label: `Search: "${f.search}"` });
+    if (f.status !== 'ALL') chips.push({ key: 'status', label: `Status: ${f.status.toLowerCase()}` });
+    if (f.categoryId !== 'ALL') {
+      const name = this.categories().find((c) => c.id === f.categoryId)?.name ?? 'Category';
+      chips.push({ key: 'categoryId', label: `Category: ${name}` });
+    }
+    if (f.minPrice !== null) chips.push({ key: 'minPrice', label: `Min price: $${f.minPrice}` });
+    if (f.maxPrice !== null) chips.push({ key: 'maxPrice', label: `Max price: $${f.maxPrice}` });
+    return chips;
+  });
+
   constructor() {
     this.searchInput.set(this.filters().search);
     this.loadCategories();
     this.reload();
+  }
+
+  /** Focuses the search box from the hero CTA. */
+  focusSearch(): void {
+    const el = document.getElementById('mp-search') as HTMLInputElement | null;
+    el?.focus();
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /** Clears a single active filter chip. */
+  removeChip(key: keyof MarketplaceFilters): void {
+    if (key === 'search') {
+      this.searchInput.set('');
+      this.patch({ search: '', page: 1 });
+      return;
+    }
+    if (key === 'categoryId') {
+      this.patch({ categoryId: 'ALL', page: 1 });
+      return;
+    }
+    if (key === 'status') {
+      this.patch({ status: 'ALL', page: 1 });
+      return;
+    }
+    this.patch({ [key]: null, page: 1 } as Partial<MarketplaceFilters>);
+  }
+
+  setCategoryValue(categoryId: string): void {
+    this.patch({ categoryId, page: 1 });
+  }
+
+  setStatusValue(status: AuctionStatus | 'ALL'): void {
+    this.patch({ status, page: 1 });
   }
 
   /** Stable handler passed to the card so the CTA performs client-side routing. */
