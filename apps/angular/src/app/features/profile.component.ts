@@ -14,20 +14,17 @@ import {
 } from '../shared/ui/form-field.component';
 import { BreadcrumbsComponent, Crumb } from '../shared/ui/pagination.component';
 import { AlertComponent } from '../shared/ui/toast.component';
+import { focusAndShakeFirstInvalid } from '../shared/ui/form-utils';
 
 /**
- * Profile.
+ * Profil & Akun Pengguna / Vendor.
  *
- * Three related things live on one screen, because they all answer "who am I on
- * this platform":
+ * Mengonsolidasikan identitas bisnis (data perusahaan/vendor) dan akun pengguna
+ * dalam satu pengalaman yang terstruktur dan mudah dipahami:
  *
- *   1. The account itself (name and email) — shared by every role.
- *   2. The role profile — a vendor's company details or a bidder's details. This
- *      is the record ownership hangs off, so it is presented as a distinct card.
- *   3. Security — password change.
- *
- * Read-only fields are shown as read-only blocks: the account id, role and
- * status are platform-managed and are never editable inputs.
+ *   1. Profil Bisnis / Vendor (nama perusahaan, kontak, telepon, alamat, deskripsi).
+ *   2. Data Akun Pengguna (nama dan email login).
+ *   3. Keamanan Akun (penggantian kata sandi).
  */
 @Component({
   selector: 'app-profile',
@@ -48,100 +45,23 @@ import { AlertComponent } from '../shared/ui/toast.component';
 
       <header class="page-head">
         <div class="page-head-text">
-          <h1 class="page-title">My profile</h1>
+          <h1 class="page-title">Profil & Akun</h1>
           <p class="page-subtitle">
-            Your account details, your {{ roleNoun() }} profile, and your sign-in credentials.
+            Kelola data identitas bisnis resmi Anda, informasi akun login, serta keamanan kata sandi.
           </p>
         </div>
       </header>
 
       <div class="profile-grid">
-        <!-- Account -->
-        <section class="card">
-          <div class="card-header">
-            <h2 class="section-heading">Account</h2>
-            @if (user(); as u) {
-              <app-account-status-badge [status]="u.status" />
-            }
-          </div>
-          <div class="card-body">
-            @if (accountFailure(); as f) {
-              <div class="notice-slot">
-                <app-alert [tone]="'danger'" [title]="f.message" [message]="f.detail ?? ''" />
-              </div>
-            }
-
-            <form [formGroup]="accountForm" (ngSubmit)="saveAccount()" novalidate>
-              <div class="form-grid">
-                <app-form-field
-                  label="First name"
-                  [required]="true"
-                  [control]="firstName"
-                  [errorMap]="nameErrors"
-                  controlId="profile-first-name"
-                >
-                  <input
-                    id="profile-first-name"
-                    type="text"
-                    class="form-input"
-                    formControlName="firstName"
-                  />
-                </app-form-field>
-
-                <app-form-field
-                  label="Last name"
-                  [required]="true"
-                  [control]="lastName"
-                  [errorMap]="nameErrors"
-                  controlId="profile-last-name"
-                >
-                  <input
-                    id="profile-last-name"
-                    type="text"
-                    class="form-input"
-                    formControlName="lastName"
-                  />
-                </app-form-field>
-              </div>
-
-              <app-readonly-field
-                label="Email address"
-                [value]="user()?.email ?? '—'"
-                hint="Contact an administrator to change the email address on your account."
-              />
-
-              <div class="form-grid">
-                <app-readonly-field
-                  label="Role"
-                  [value]="roleLabel()"
-                  hint="Set by an administrator."
-                />
-                <app-readonly-field
-                  label="Account ID"
-                  [value]="user()?.id ?? '—'"
-                  hint="Platform-assigned identifier."
-                />
-              </div>
-
-              <div class="card-footer card-footer-flush">
-                <app-button
-                  type="submit"
-                  label="Save changes"
-                  icon="check"
-                  variant="primary"
-                  [loading]="savingAccount()"
-                />
-              </div>
-            </form>
-          </div>
-        </section>
-
-        <!-- Role profile -->
+        <!-- 1. Role / Business Profile (Vendor or Bidder details) -->
         @if (roleProfileForm(); as form) {
-          <section class="card">
+          <section class="card profile-card">
             <div class="card-header">
-              <h2 class="section-heading">{{ roleProfileTitle() }}</h2>
-              <span class="badge badge-brand">Owned by you</span>
+              <div>
+                <h2 class="section-heading">{{ isVendor() ? 'Profil Perusahaan / Vendor' : 'Profil Peserta Lelang' }}</h2>
+                <p class="section-subtext">Informasi resmi yang terdaftar dan ditampilkan pada sistem lelang.</p>
+              </div>
+              <span class="badge badge-brand">Terverifikasi</span>
             </div>
             <div class="card-body">
               @if (profileFailure(); as f) {
@@ -155,7 +75,7 @@ import { AlertComponent } from '../shared/ui/toast.component';
                   <div class="form-grid">
                     <div class="form-grid-full">
                       <app-form-field
-                        label="Company name"
+                        label="Nama Perusahaan / Entitas Bisnis"
                         [required]="true"
                         [control]="companyName"
                         [errorMap]="companyErrors"
@@ -166,12 +86,13 @@ import { AlertComponent } from '../shared/ui/toast.component';
                           type="text"
                           class="form-input"
                           formControlName="companyName"
+                          placeholder="PT / CV Nama Perusahaan"
                         />
                       </app-form-field>
                     </div>
 
                     <app-form-field
-                      label="Contact person"
+                      label="Kontak Penanggung Jawab"
                       [required]="true"
                       [control]="contactPerson"
                       [errorMap]="contactErrors"
@@ -182,11 +103,12 @@ import { AlertComponent } from '../shared/ui/toast.component';
                         type="text"
                         class="form-input"
                         formControlName="contactPerson"
+                        placeholder="Nama lengkap kontak resmi"
                       />
                     </app-form-field>
 
                     <app-form-field
-                      label="Phone"
+                      label="Nomor Telepon Operasional"
                       [required]="true"
                       [control]="phone"
                       [errorMap]="phoneErrors"
@@ -197,12 +119,13 @@ import { AlertComponent } from '../shared/ui/toast.component';
                         type="tel"
                         class="form-input"
                         formControlName="phone"
+                        placeholder="08xxxxxxxxxx atau 021-xxxxxxx"
                       />
                     </app-form-field>
 
                     <div class="form-grid-full">
                       <app-form-field
-                        label="Address"
+                        label="Alamat Kantor / Fasilitas Penyimpanan"
                         [control]="address"
                         controlId="profile-address"
                       >
@@ -211,13 +134,14 @@ import { AlertComponent } from '../shared/ui/toast.component';
                           class="form-textarea"
                           rows="2"
                           formControlName="address"
+                          placeholder="Alamat lengkap kantor pusat atau gudang penyimpanan lot"
                         ></textarea>
                       </app-form-field>
                     </div>
 
                     <div class="form-grid-full">
                       <app-form-field
-                        label="Description"
+                        label="Deskripsi Bisnis & Portofolio Lot"
                         [control]="description"
                         controlId="profile-description"
                       >
@@ -226,6 +150,7 @@ import { AlertComponent } from '../shared/ui/toast.component';
                           class="form-textarea"
                           rows="3"
                           formControlName="description"
+                          placeholder="Gambaran umum spesialisasi material atau produk yang biasa Anda sediakan untuk lelang"
                         ></textarea>
                       </app-form-field>
                     </div>
@@ -234,7 +159,7 @@ import { AlertComponent } from '../shared/ui/toast.component';
                   <div class="form-grid">
                     <div class="form-grid-full">
                       <app-form-field
-                        label="Company name"
+                        label="Nama Perusahaan (Opsional)"
                         [control]="companyName"
                         controlId="profile-company"
                       >
@@ -243,12 +168,13 @@ import { AlertComponent } from '../shared/ui/toast.component';
                           type="text"
                           class="form-input"
                           formControlName="companyName"
+                          placeholder="Nama entitas bisnis bila ada"
                         />
                       </app-form-field>
                     </div>
 
                     <app-form-field
-                      label="Contact person"
+                      label="Nama Lengkap Kontak"
                       [required]="true"
                       [control]="contactPerson"
                       [errorMap]="contactErrors"
@@ -263,7 +189,7 @@ import { AlertComponent } from '../shared/ui/toast.component';
                     </app-form-field>
 
                     <app-form-field
-                      label="Phone"
+                      label="Nomor Telepon"
                       [required]="true"
                       [control]="phone"
                       [errorMap]="phoneErrors"
@@ -279,7 +205,7 @@ import { AlertComponent } from '../shared/ui/toast.component';
 
                     <div class="form-grid-full">
                       <app-form-field
-                        label="Address"
+                        label="Alamat"
                         [control]="address"
                         controlId="profile-address"
                       >
@@ -296,21 +222,21 @@ import { AlertComponent } from '../shared/ui/toast.component';
 
                 <div class="form-grid">
                   <app-readonly-field
-                    label="{{ isVendor() ? 'Vendor' : 'Bidder' }} profile ID"
+                    label="ID Profil {{ isVendor() ? 'Vendor' : 'Peserta' }}"
                     [value]="ownerId() ?? '—'"
-                    hint="Ownership of your products and auctions is recorded against this identifier."
+                    hint="Identitas resmi kepemilikan lot dan lelang pada platform."
                   />
                   <app-readonly-field
-                    label="Profile created"
+                    label="Tanggal Terdaftar"
                     [value]="profileCreated()"
-                    hint="Platform-managed."
+                    hint="Dikelola otomatis oleh platform."
                   />
                 </div>
 
                 <div class="card-footer card-footer-flush">
                   <app-button
                     type="submit"
-                    label="Save profile"
+                    label="Simpan Profil Bisnis"
                     icon="check"
                     variant="primary"
                     [loading]="savingProfile()"
@@ -321,10 +247,96 @@ import { AlertComponent } from '../shared/ui/toast.component';
           </section>
         }
 
-        <!-- Security -->
-        <section class="card" id="security">
+        <!-- 2. Account Information -->
+        <section class="card profile-card">
           <div class="card-header">
-            <h2 class="section-heading">Security</h2>
+            <div>
+              <h2 class="section-heading">Data Akun Pengguna</h2>
+              <p class="section-subtext">Informasi akun personal Anda untuk masuk ke sistem.</p>
+            </div>
+            @if (user()?.status; as st) {
+              <app-account-status-badge [status]="st" />
+            }
+          </div>
+          <div class="card-body">
+            @if (accountFailure(); as f) {
+              <div class="notice-slot">
+                <app-alert [tone]="'danger'" [title]="f.message" [message]="f.detail ?? ''" />
+              </div>
+            }
+
+            <form [formGroup]="accountForm" (ngSubmit)="saveAccount()" novalidate>
+              <div class="form-grid">
+                <app-form-field
+                  label="Nama Depan"
+                  [required]="true"
+                  [control]="firstName"
+                  [errorMap]="nameErrors"
+                  controlId="profile-first-name"
+                >
+                  <input
+                    id="profile-first-name"
+                    type="text"
+                    class="form-input"
+                    formControlName="firstName"
+                  />
+                </app-form-field>
+
+                <app-form-field
+                  label="Nama Belakang"
+                  [required]="true"
+                  [control]="lastName"
+                  [errorMap]="nameErrors"
+                  controlId="profile-last-name"
+                >
+                  <input
+                    id="profile-last-name"
+                    type="text"
+                    class="form-input"
+                    formControlName="lastName"
+                  />
+                </app-form-field>
+              </div>
+
+              <app-readonly-field
+                label="Alamat Email Akun"
+                [value]="user()?.email ?? '—'"
+                hint="Hubungi administrator sistem jika perlu memperbarui alamat email terdaftar."
+              />
+
+              <div class="form-grid">
+                <app-readonly-field
+                  label="Peran Pengguna"
+                  [value]="roleLabel()"
+                  hint="Ditetapkan oleh sistem administrasi."
+                />
+                <app-readonly-field
+                  label="ID Akun Pengguna"
+                  [value]="user()?.id ?? '—'"
+                  hint="Pengenal unik akun pada platform."
+                />
+              </div>
+
+              <div class="card-footer card-footer-flush">
+                <app-button
+                  type="submit"
+                  label="Simpan Perubahan Akun"
+                  icon="check"
+                  variant="primary"
+                  [loading]="savingAccount()"
+                />
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- 3. Security & Password -->
+        <section class="card profile-card" id="security">
+          <div class="card-header">
+            <div>
+              <h2 class="section-heading">Keamanan & Kata Sandi</h2>
+              <p class="section-subtext">Perbarui kata sandi secara berkala untuk melindungi akun Anda.</p>
+            </div>
           </div>
           <div class="card-body">
             @if (passwordFailure(); as f) {
@@ -335,15 +347,15 @@ import { AlertComponent } from '../shared/ui/toast.component';
 
             @if (passwordSuccess()) {
               <div class="notice-slot">
-                <app-alert tone="success" title="Password changed">
-                  Your password has been updated. Use it the next time you sign in.
+                <app-alert tone="success" title="Kata sandi berhasil diubah">
+                  Kata sandi Anda telah diperbarui. Gunakan kata sandi baru untuk login berikutnya.
                 </app-alert>
               </div>
             }
 
             <form [formGroup]="passwordForm" (ngSubmit)="savePassword()" novalidate>
               <app-form-field
-                label="Current password"
+                label="Kata Sandi Saat Ini"
                 [required]="true"
                 [control]="currentPassword"
                 [errorMap]="requiredPasswordErrors"
@@ -359,11 +371,11 @@ import { AlertComponent } from '../shared/ui/toast.component';
               </app-form-field>
 
               <app-form-field
-                label="New password"
+                label="Kata Sandi Baru"
                 [required]="true"
                 [control]="newPassword"
                 [errorMap]="newPasswordErrors"
-                hint="At least 8 characters."
+                hint="Minimal 8 karakter."
                 controlId="profile-new-password"
               >
                 <input
@@ -376,10 +388,10 @@ import { AlertComponent } from '../shared/ui/toast.component';
               </app-form-field>
 
               <app-form-field
-                label="Confirm new password"
+                label="Konfirmasi Kata Sandi Baru"
                 [required]="true"
                 [control]="confirmPassword"
-                errorText="Passwords do not match"
+                errorText="Kata sandi konfirmasi tidak cocok"
                 controlId="profile-confirm-password"
               >
                 <input
@@ -394,7 +406,7 @@ import { AlertComponent } from '../shared/ui/toast.component';
               <div class="card-footer card-footer-flush">
                 <app-button
                   type="submit"
-                  label="Change password"
+                  label="Perbarui Kata Sandi"
                   icon="lock"
                   variant="primary"
                   [loading]="savingPassword()"
@@ -410,21 +422,39 @@ import { AlertComponent } from '../shared/ui/toast.component';
     `
       .profile-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-        gap: var(--sp-5);
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: var(--sp-6);
         align-items: start;
       }
+
+      .profile-card {
+        border-radius: var(--r-md);
+      }
+
+      .section-subtext {
+        font-size: var(--fs-xs);
+        color: var(--c-text-muted);
+        margin: 2px 0 0;
+      }
+
       @media (max-width: 900px) {
         .profile-grid {
           grid-template-columns: 1fr;
         }
       }
+
       .notice-slot {
-        margin-bottom: var(--sp-5);
+        margin-bottom: var(--sp-4);
       }
+
       .card-footer-flush {
         margin: var(--sp-5) calc(var(--sp-5) * -1) calc(var(--sp-5) * -1);
-        border-radius: 0 0 var(--r-lg) var(--r-lg);
+        padding: var(--sp-3) var(--sp-5);
+        background: var(--c-surface-sunken);
+        border-top: 1px solid var(--c-border);
+        border-radius: 0 0 var(--r-md) var(--r-md);
+        display: flex;
+        justify-content: flex-end;
       }
     `,
   ],
@@ -459,10 +489,15 @@ export class ProfileComponent {
       newPassword: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', [Validators.required]],
     },
-    { validators: [passwordsMatch] },
+    {
+      validators: (group) => {
+        const next = group.get('newPassword')?.value;
+        const confirm = group.get('confirmPassword')?.value;
+        return next && confirm && next !== confirm ? { mismatch: true } : null;
+      },
+    },
   );
 
-  /** Vendor fields; unused in bidder mode but kept in one typed group. */
   readonly vendorForm = this.fb.nonNullable.group({
     companyName: ['', [Validators.required]],
     contactPerson: ['', [Validators.required]],
@@ -514,14 +549,14 @@ export class ProfileComponent {
     return this.vendorForm.controls.description;
   }
 
-  readonly nameErrors = { required: 'This field is required' };
-  readonly companyErrors = { required: 'Company name is required' };
-  readonly contactErrors = { required: 'Contact person is required' };
-  readonly phoneErrors = { required: 'A phone number is required' };
-  readonly requiredPasswordErrors = { required: 'Current password is required' };
+  readonly nameErrors = { required: 'Kolom ini wajib diisi' };
+  readonly companyErrors = { required: 'Nama perusahaan wajib diisi' };
+  readonly contactErrors = { required: 'Nama kontak penanggung jawab wajib diisi' };
+  readonly phoneErrors = { required: 'Nomor telepon operasional wajib diisi' };
+  readonly requiredPasswordErrors = { required: 'Kata sandi saat ini wajib diisi' };
   readonly newPasswordErrors = {
-    required: 'A new password is required',
-    minlength: 'Password must be at least 8 characters',
+    required: 'Kata sandi baru wajib diisi',
+    minlength: 'Kata sandi baru minimal 8 karakter',
   };
 
   readonly roleLabel = computed(() => {
@@ -529,9 +564,9 @@ export class ProfileComponent {
       case UserRole.ADMIN:
         return 'Administrator';
       case UserRole.VENDOR:
-        return 'Vendor';
+        return 'Penjual (Vendor)';
       case UserRole.BIDDER:
-        return 'Bidder';
+        return 'Peserta Lelang (Bidder)';
       default:
         return '—';
     }
@@ -540,7 +575,7 @@ export class ProfileComponent {
   readonly roleNoun = computed(() => this.roleLabel().toLowerCase());
 
   readonly roleProfileTitle = computed(() =>
-    this.isVendor() ? 'Vendor profile' : 'Bidder profile',
+    this.isVendor() ? 'Profil Perusahaan / Vendor' : 'Profil Peserta Lelang',
   );
 
   readonly profileCreated = computed(() => {
@@ -557,7 +592,7 @@ export class ProfileComponent {
         : null,
   );
 
-  readonly crumbs = computed<Crumb[]>(() => [{ label: 'My profile' }]);
+  readonly crumbs = computed<Crumb[]>(() => [{ label: 'Profil & Akun' }]);
 
   constructor() {
     this.seedForms();
@@ -576,9 +611,9 @@ export class ProfileComponent {
     if (vendor) {
       this.vendorForm.patchValue({
         companyName: vendor.companyName,
-        contactPerson: vendor.contactPerson,
-        phone: vendor.phone,
-        address: vendor.address ?? '',
+        contactPerson: vendor.contactPerson ?? '',
+        phone: vendor.phone ?? '',
+        address: vendor.address ?? vendor.companyAddress ?? '',
         description: vendor.description ?? '',
       });
     }
@@ -587,8 +622,8 @@ export class ProfileComponent {
     if (bidder) {
       this.bidderForm.patchValue({
         companyName: bidder.companyName ?? '',
-        contactPerson: bidder.contactPerson,
-        phone: bidder.phone,
+        contactPerson: bidder.contactPerson ?? '',
+        phone: bidder.phone ?? '',
         address: bidder.address ?? '',
       });
     }
@@ -597,6 +632,7 @@ export class ProfileComponent {
   saveAccount(): void {
     if (this.accountForm.invalid) {
       this.accountForm.markAllAsTouched();
+      setTimeout(() => focusAndShakeFirstInvalid(), 50);
       return;
     }
 
@@ -609,13 +645,14 @@ export class ProfileComponent {
       next: (user) => {
         this.savingAccount.set(false);
         this.auth.applyUser(user);
-        this.notifications.success('Profile updated', 'Your account details have been saved.');
+        this.notifications.success('Profil Akun Diperbarui', 'Data akun pengguna Anda telah disimpan.');
       },
       error: (error: unknown) => {
         this.savingAccount.set(false);
         const failure = toApiFailure(error);
         this.accountFailure.set(failure);
-        this.notifications.fromFailure(failure, 'Could not update profile');
+        this.notifications.fromFailure(failure, 'Gagal memperbarui profil akun');
+        setTimeout(() => focusAndShakeFirstInvalid(), 50);
       },
     });
   }
@@ -626,6 +663,7 @@ export class ProfileComponent {
 
     if (form.invalid) {
       form.markAllAsTouched();
+      setTimeout(() => focusAndShakeFirstInvalid(), 50);
       return;
     }
 
@@ -646,7 +684,7 @@ export class ProfileComponent {
           next: (vendor) => {
             this.savingProfile.set(false);
             this.auth.applyVendor(vendor);
-            this.notifications.success('Vendor profile updated');
+            this.notifications.success('Profil Bisnis Diperbarui', 'Data profil vendor/perusahaan berhasil diperbarui.');
           },
           error: (error: unknown) => this.handleProfileError(error),
         });
@@ -663,23 +701,17 @@ export class ProfileComponent {
           next: (bidder) => {
             this.savingProfile.set(false);
             this.auth.applyBidder(bidder);
-            this.notifications.success('Bidder profile updated');
+            this.notifications.success('Profil Peserta Diperbarui', 'Data profil peserta berhasil diperbarui.');
           },
           error: (error: unknown) => this.handleProfileError(error),
         });
     }
   }
 
-  private handleProfileError(error: unknown): void {
-    this.savingProfile.set(false);
-    const failure = toApiFailure(error);
-    this.profileFailure.set(failure);
-    this.notifications.fromFailure(failure, 'Could not update profile');
-  }
-
   savePassword(): void {
     if (this.passwordForm.invalid) {
       this.passwordForm.markAllAsTouched();
+      setTimeout(() => focusAndShakeFirstInvalid(), 50);
       return;
     }
 
@@ -687,36 +719,51 @@ export class ProfileComponent {
     this.passwordFailure.set(null);
     this.passwordSuccess.set(false);
 
-    const { currentPassword, newPassword } = this.passwordForm.getRawValue();
+    const value = this.passwordForm.getRawValue();
 
-    this.auth.changePassword({ currentPassword, newPassword }).subscribe({
-      next: () => {
-        this.savingPassword.set(false);
-        this.passwordSuccess.set(true);
-        this.passwordForm.reset();
-        this.notifications.success('Password changed');
-      },
-      error: (error: unknown) => {
-        this.savingPassword.set(false);
-        const failure = toApiFailure(error);
-        this.passwordFailure.set(failure);
+    this.auth
+      .changePassword({
+        currentPassword: value.currentPassword,
+        newPassword: value.newPassword,
+      })
+      .subscribe({
+        next: () => {
+          this.savingPassword.set(false);
+          this.passwordSuccess.set(true);
+          this.passwordForm.reset();
+          this.notifications.success('Kata Sandi Diperbarui', 'Kata sandi akun Anda berhasil diganti.');
+        },
+        error: (error: unknown) => {
+          this.savingPassword.set(false);
+          const failure = toApiFailure(error);
+          this.passwordFailure.set(failure);
 
-        if (failure.fieldErrors?.['currentPassword']) {
-          this.currentPassword.setErrors({ server: true });
-          this.currentPassword.markAsTouched();
-        }
-        if (failure.fieldErrors?.['newPassword']) {
-          this.newPassword.setErrors({ server: true });
-          this.newPassword.markAsTouched();
-        }
-      },
-    });
+          if (failure.fieldErrors?.['currentPassword']) {
+            this.currentPassword.setErrors({ server: failure.fieldErrors['currentPassword'] });
+            this.currentPassword.markAsTouched();
+          }
+          setTimeout(() => focusAndShakeFirstInvalid(), 50);
+        },
+      });
   }
-}
 
-function passwordsMatch(group: import('@angular/forms').AbstractControl) {
-  const password = group.get('newPassword')?.value;
-  const confirm = group.get('confirmPassword')?.value;
-  if (!password || !confirm) return null;
-  return password === confirm ? null : { mismatch: true };
+  private handleProfileError(error: unknown): void {
+    this.savingProfile.set(false);
+    const failure = toApiFailure(error);
+    this.profileFailure.set(failure);
+    this.notifications.fromFailure(failure, 'Gagal memperbarui profil');
+
+    if (failure.fieldErrors) {
+      for (const [field, message] of Object.entries(failure.fieldErrors)) {
+        const control = this.isVendor()
+          ? this.vendorForm.get(field)
+          : this.bidderForm.get(field);
+        if (control) {
+          control.setErrors({ server: message });
+          control.markAsTouched();
+        }
+      }
+    }
+    setTimeout(() => focusAndShakeFirstInvalid(), 50);
+  }
 }

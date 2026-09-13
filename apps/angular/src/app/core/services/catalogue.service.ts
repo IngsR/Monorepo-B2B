@@ -59,8 +59,9 @@ export class ProductService {
   }
 
   update(id: string, payload: UpdateProductPayload): Observable<Product> {
+    const { code, ...rest } = payload as { code?: string; [key: string]: unknown };
     return this.http
-      .patch<ApiSuccess<Product>>(`${this.api}/${id}`, payload)
+      .patch<ApiSuccess<Product>>(`${this.api}/${id}`, rest)
       .pipe(map((res) => res.data));
   }
 

@@ -31,6 +31,14 @@
   --c-brand-soft: #e8f7ee;
   --c-brand-border: #a2e2ba;
 
+  /* Seller/Vendor identity — deep indigo-slate: professional, commercial, enterprise */
+  --c-seller: #3730a3;
+  --c-seller-hover: #2e27a0;
+  --c-seller-active: #251e8f;
+  --c-seller-soft: #eef2ff;
+  --c-seller-border: #c7d2fe;
+  --c-seller-muted: #6366f1;
+
   /* Semantic state colours (never used alone — always with icon & label) */
   --c-success: #059669;
   --c-success-soft: #ecfdf5;
@@ -54,6 +62,7 @@
 
   --c-focus: #00aa5b;
   --c-overlay: rgba(15, 23, 42, 0.55);
+
 
   /* Type scale */
   --fs-2xs: 0.625rem;
@@ -430,14 +439,48 @@ table {
 
 .form-error {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--sp-1);
   font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
   color: var(--c-danger);
+  margin-top: var(--sp-1);
 }
 
-.required-marker { color: var(--c-danger); }
+.required-marker {
+  color: var(--c-danger);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  margin-left: 2px;
+  display: inline-block;
+  vertical-align: top;
+}
+
+@keyframes field-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  15%, 45%, 75% {
+    transform: translateX(-6px);
+  }
+  30%, 60%, 90% {
+    transform: translateX(6px);
+  }
+}
+
+.animate-shake {
+  animation: field-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-shake {
+    animation: none !important;
+  }
+}
+
+.alert-danger {
+  animation: field-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
 
 .form-input,
 .form-select,
@@ -487,13 +530,35 @@ table {
 /* Error state is driven by the .has-error class, not by :invalid,
    so it only appears after user interaction. */
 .has-error {
+  .form-label {
+    color: var(--c-danger);
+  }
+
+  .required-marker {
+    color: var(--c-danger);
+  }
+
   .form-input,
   .form-select,
   .form-textarea {
-    border-color: var(--c-danger);
+    border-color: var(--c-danger) !important;
+    background-color: #fff9f9;
 
-    &:focus { box-shadow: 0 0 0 3px var(--c-danger-soft); }
+    &:focus {
+      border-color: var(--c-danger) !important;
+      box-shadow: 0 0 0 3px var(--c-danger-soft) !important;
+    }
   }
+}
+
+/* Hide native number input spinners across all browsers */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
 }
 
 /* Read-only server-managed value (currentPrice, bidderId, ids) */
@@ -734,6 +799,28 @@ table {
 }
 
 .toolbar-spacer { flex: 1 1 auto; }
+
+.input-affix-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  .search-prefix {
+    position: absolute;
+    left: var(--sp-3);
+    display: inline-flex;
+    align-items: center;
+    color: var(--c-text-muted);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .search-with-icon {
+    padding-left: calc(var(--sp-3) + 22px);
+    width: 100%;
+  }
+}
 
 /* Stacked content blocks inside a page */
 .stack { display: flex; flex-direction: column; gap: var(--sp-5); }
@@ -1968,6 +2055,28 @@ table {
   }
 }
 
+/* Vendor/Seller portal: override sidebar active with indigo identity */
+.vendor-sidebar .sidebar-link.is-active {
+  color: var(--c-seller);
+  background: var(--c-seller-soft);
+  box-shadow: inset 2px 0 0 var(--c-seller);
+
+  > svg { color: var(--c-seller); }
+}
+
+.vendor-sidebar .sidebar-brand-mark {
+  background: var(--c-seller);
+}
+
+/* Vendor primary button — uses seller identity color */
+.btn-seller {
+  background: var(--c-seller);
+  color: var(--c-text-inverse);
+
+  &:hover:not(:disabled) { background: var(--c-seller-hover); }
+  &:active:not(:disabled) { background: var(--c-seller-active); }
+}
+
 .sidebar-link-badge {
   margin-left: auto;
   padding: 1px 6px;
@@ -1983,6 +2092,23 @@ table {
   flex-shrink: 0;
   padding: var(--sp-3);
   border-top: 1px solid var(--c-border);
+}
+
+/* Seller portal context chip in sidebar footer */
+.sidebar-portal-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: var(--c-seller);
+  background: var(--c-seller-soft);
+  border: 1px solid var(--c-seller-border);
+  border-radius: var(--r-sm);
+
+  > svg { flex-shrink: 0; }
 }
 
 /* --- Topbar --- */

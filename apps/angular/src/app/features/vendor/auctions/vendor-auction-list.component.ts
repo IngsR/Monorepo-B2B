@@ -45,31 +45,36 @@ import {
     <div class="page">
       <header class="page-head">
         <div class="page-head-text">
-          <h1 class="page-title">My auctions</h1>
+          <h1 class="page-title">Lelang Saya</h1>
           <p class="page-subtitle">
-            Every auction you own, with the lifecycle actions available in its current state. A new
-            auction starts as a draft and must be scheduled before it can run.
+            Semua lelang yang Anda miliki. Setiap lelang dimulai sebagai draf dan harus
+            dijadwalkan sebelum dapat dijalankan.
           </p>
         </div>
         <div class="page-actions">
-          <a class="btn btn-primary" routerLink="/vendor/auctions/new">
+          <a class="btn btn-seller" routerLink="/vendor/auctions/new">
             <app-icon name="plus" [size]="15" />
-            New auction
+            Buat Lelang Baru
           </a>
         </div>
       </header>
 
       <div class="toolbar">
         <div class="toolbar-field toolbar-grow">
-          <label class="form-label" for="auction-search">Search</label>
-          <input
-            id="auction-search"
-            type="search"
-            class="form-input"
-            placeholder="Search by lot name or product code"
-            [value]="searchInput()"
-            (input)="onSearchInput($event)"
-          />
+          <label class="form-label" for="auction-search">Cari</label>
+          <div class="input-affix-wrap">
+            <span class="search-prefix">
+              <app-icon name="search" [size]="15" />
+            </span>
+            <input
+              id="auction-search"
+              type="search"
+              class="form-input search-with-icon"
+              placeholder="Cari berdasarkan nama lot atau kode produk"
+              [value]="searchInput()"
+              (input)="onSearchInput($event)"
+            />
+          </div>
         </div>
         <div class="toolbar-field">
           <label class="form-label" for="auction-status">Status</label>
@@ -79,26 +84,26 @@ import {
             [value]="statusFilter()"
             (change)="setStatus($event)"
           >
-            <option value="ALL">All statuses</option>
-            <option [value]="AuctionStatus.DRAFT">Draft</option>
-            <option [value]="AuctionStatus.SCHEDULED">Scheduled</option>
-            <option [value]="AuctionStatus.ACTIVE">Active</option>
-            <option [value]="AuctionStatus.ENDED">Ended</option>
-            <option [value]="AuctionStatus.CANCELLED">Cancelled</option>
+            <option value="ALL">Semua Status</option>
+            <option [value]="AuctionStatus.DRAFT">Draf</option>
+            <option [value]="AuctionStatus.SCHEDULED">Terjadwal</option>
+            <option [value]="AuctionStatus.ACTIVE">Aktif</option>
+            <option [value]="AuctionStatus.ENDED">Selesai</option>
+            <option [value]="AuctionStatus.CANCELLED">Dibatalkan</option>
           </select>
         </div>
         <div class="toolbar-field">
-          <label class="form-label" for="auction-sort">Sort by</label>
+          <label class="form-label" for="auction-sort">Urutkan</label>
           <select
             id="auction-sort"
             class="form-select"
             [value]="orderBy()"
             (change)="setOrderBy($event)"
           >
-            <option value="endingSoon">Closing soonest</option>
-            <option value="newest">Newest first</option>
-            <option value="priceDesc">Highest price</option>
-            <option value="mostBids">Most bids</option>
+            <option value="endingSoon">Segera Berakhir</option>
+            <option value="newest">Terbaru</option>
+            <option value="priceDesc">Harga Tertinggi</option>
+            <option value="mostBids">Tawaran Terbanyak</option>
           </select>
         </div>
         <div class="toolbar-field toolbar-reset">
@@ -109,7 +114,7 @@ import {
             [disabled]="auctions.isLoading()"
           >
             <app-icon name="refresh" [size]="15" />
-            Refresh
+            Perbarui
           </button>
         </div>
       </div>
@@ -131,19 +136,23 @@ import {
           @case (auctionList().length === 0) {
             <app-empty-state
               icon="hammer"
-              [title]="hasFilters() ? 'No auctions match these filters' : 'No auctions yet'"
+              [title]="hasFilters() ? 'Tidak ada lelang yang sesuai' : 'Belum ada lelang'"
               [description]="
                 hasFilters()
-                  ? 'Try clearing the status filter or searching for a different lot.'
-                  : 'Create an auction against one of your products. It will start as a draft.'
+                  ? 'Coba hapus filter status atau cari lot yang berbeda.'
+                  : 'Buat lelang dari salah satu produk Anda. Lelang baru selalu dimulai sebagai draf.'
               "
             >
               @if (hasFilters()) {
                 <button type="button" class="btn btn-secondary" (click)="clearFilters()">
-                  Clear filters
+                  <app-icon name="close" [size]="14" />
+                  Hapus Filter
                 </button>
               } @else {
-                <a class="btn btn-primary" routerLink="/vendor/auctions/new">Create an auction</a>
+                <a class="btn btn-seller" routerLink="/vendor/auctions/new">
+                  <app-icon name="plus" [size]="15" />
+                  Buat Lelang
+                </a>
               }
             </app-empty-state>
           }
@@ -154,17 +163,17 @@ import {
                   <tr>
                     <th scope="col">Lot</th>
                     <th scope="col">Status</th>
-                    <th scope="col">Timing</th>
-                    <th scope="col" class="col-numeric">Current price</th>
-                    <th scope="col" class="col-numeric">Bids</th>
-                    <th scope="col" class="cell-actions">Actions</th>
+                    <th scope="col">Waktu</th>
+                    <th scope="col" class="col-numeric">Harga Saat Ini</th>
+                    <th scope="col" class="col-numeric">Tawaran</th>
+                    <th scope="col" class="cell-actions">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (auction of auctionList(); track auction.id) {
                     <tr>
                       <td data-label="Lot">
-                        <span class="cell-primary">{{ auction.product?.name ?? 'Untitled' }}</span>
+                        <span class="cell-primary">{{ auction.product?.name ?? 'Tanpa Judul' }}</span>
                         <span class="text-mono-id">{{ auction.product?.code }}</span>
                       </td>
                       <td data-label="Status">
@@ -174,38 +183,40 @@ import {
                           size="sm"
                         />
                       </td>
-                      <td data-label="Timing">
+                      <td data-label="Waktu">
                         @if (auction.status === AuctionStatus.ACTIVE && !isWindowClosed(auction)) {
                           <app-countdown [target]="auction.endTime" prefix="closes" size="sm" />
                         } @else if (auction.status === AuctionStatus.SCHEDULED) {
-                          <span class="text-meta">Opens {{ startLabel(auction) }}</span>
+                          <span class="text-meta">Buka {{ startLabel(auction) }}</span>
                         } @else if (
                           isWindowClosed(auction) && auction.status === AuctionStatus.ACTIVE
                         ) {
-                          <span class="badge badge-warning">Window closed · awaiting close</span>
+                          <span class="badge badge-warning">Waktu habis · menunggu penutupan</span>
                         } @else {
-                          <span class="text-meta">Ends {{ endLabel(auction) }}</span>
+                          <span class="text-meta">Berakhir {{ endLabel(auction) }}</span>
                         }
                       </td>
-                      <td data-label="Current price" class="col-numeric">
+                      <td data-label="Harga Saat Ini" class="col-numeric">
                         <span class="text-numeric">{{ price(auction.currentPrice) }}</span>
                       </td>
-                      <td data-label="Bids" class="col-numeric">
+                      <td data-label="Tawaran" class="col-numeric">
                         <span class="text-numeric">{{ auction.bidCount }}</span>
                       </td>
-                      <td data-label="Actions" class="cell-actions">
+                      <td data-label="Aksi" class="cell-actions">
                         <div class="row-actions">
                           <a
-                            class="btn btn-secondary btn-sm"
+                            class="btn btn-seller btn-sm"
                             [routerLink]="['/vendor/auctions', auction.id]"
                           >
-                            Manage
+                            <app-icon name="hammer" [size]="13" />
+                            Kelola
                           </a>
                           <a
                             class="btn btn-ghost btn-sm"
                             [routerLink]="['/marketplace', auction.id]"
                           >
-                            View
+                            <app-icon name="external" [size]="13" />
+                            Lihat
                           </a>
                         </div>
                       </td>

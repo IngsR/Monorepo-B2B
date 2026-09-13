@@ -57,12 +57,28 @@ export class AuctionService {
   }
 
   create(payload: CreateAuctionPayload): Observable<Auction> {
-    return this.http.post<ApiSuccess<Auction>>(this.api, payload).pipe(map((res) => res.data));
+    const startAt = payload.startAt ?? payload.startTime;
+    const endAt = payload.endAt ?? payload.endTime;
+    const body: Record<string, unknown> = {
+      productId: payload.productId,
+      startingPrice: String(payload.startingPrice),
+      bidIncrement: String(payload.bidIncrement),
+      startAt: startAt ? new Date(startAt).toISOString() : '',
+      endAt: endAt ? new Date(endAt).toISOString() : '',
+    };
+    return this.http.post<ApiSuccess<Auction>>(this.api, body).pipe(map((res) => res.data));
   }
 
   update(id: string, payload: Partial<CreateAuctionPayload>): Observable<Auction> {
+    const body: Record<string, unknown> = {};
+    if (payload.startingPrice !== undefined) {
+      body['startingPrice'] = String(payload.startingPrice);
+    }
+    if (payload.bidIncrement !== undefined) {
+      body['bidIncrement'] = String(payload.bidIncrement);
+    }
     return this.http
-      .patch<ApiSuccess<Auction>>(`${this.api}/${id}`, payload)
+      .patch<ApiSuccess<Auction>>(`${this.api}/${id}`, body)
       .pipe(map((res) => res.data));
   }
 

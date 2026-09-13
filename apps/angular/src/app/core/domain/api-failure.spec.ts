@@ -135,10 +135,10 @@ describe('formatRelative', () => {
   const ago = (ms: number) => new Date(NOW - ms).toISOString();
 
   it('describes recent activity', () => {
-    expect(formatRelative(ago(10_000), NOW)).toBe('just now');
-    expect(formatRelative(ago(12 * 60_000), NOW)).toBe('12m ago');
-    expect(formatRelative(ago(3 * 3_600_000), NOW)).toBe('3h ago');
-    expect(formatRelative(ago(2 * 86_400_000), NOW)).toBe('2d ago');
+    expect(formatRelative(ago(10_000), NOW)).toBe('baru saja');
+    expect(formatRelative(ago(12 * 60_000), NOW)).toBe('12 mnt lalu');
+    expect(formatRelative(ago(3 * 3_600_000), NOW)).toBe('3 jam lalu');
+    expect(formatRelative(ago(2 * 86_400_000), NOW)).toBe('2 hari lalu');
   });
 });
 

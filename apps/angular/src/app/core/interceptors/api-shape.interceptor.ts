@@ -103,9 +103,11 @@ function mapAuction(raw: unknown): unknown {
   if (!isObject(raw)) return raw;
   return {
     ...raw,
-    // Timing field renames.
+    // Timing field renames (bidirectional).
     startTime: raw['startTime'] ?? raw['startAt'],
     endTime: raw['endTime'] ?? raw['endAt'],
+    startAt: raw['startAt'] ?? raw['startTime'],
+    endAt: raw['endAt'] ?? raw['endTime'],
     // Decimal-as-string → number for the price columns.
     startingPrice: toNumber(raw['startingPrice']),
     currentPrice: toNumber(raw['currentPrice']),
@@ -271,12 +273,67 @@ function adaptParams(req: Parameters<HttpInterceptorFn>[0]): HttpParams | null {
   return changed ? out : null;
 }
 
+function adaptRequestBody(url: string, method: string, body: unknown): unknown {
+  if (!isObject(body)) return body;
+
+  const path = url.split('?')[0];
+
+  // 1. POST /auctions (Creating an auction - conforms strictly to CreateAuctionDto)
+  if (method === 'POST' && /\/auctions\/?$/.test(path)) {
+    const raw = body as Dict;
+    const startAt = raw['startAt'] ?? raw['startTime'];
+    const endAt = raw['endAt'] ?? raw['endTime'];
+    const startingPrice =
+      raw['startingPrice'] !== undefined ? String(raw['startingPrice']) : undefined;
+    const bidIncrement =
+      raw['bidIncrement'] !== undefined ? String(raw['bidIncrement']) : undefined;
+
+    return {
+      productId: raw['productId'],
+      startingPrice,
+      bidIncrement,
+      startAt: typeof startAt === 'string' ? new Date(startAt).toISOString() : startAt,
+      endAt: typeof endAt === 'string' ? new Date(endAt).toISOString() : endAt,
+    };
+  }
+
+  // 2. PATCH /auctions/:id (Updating auction terms - conforms strictly to UpdateAuctionDto)
+  if (method === 'PATCH' && /\/auctions\/[^/]+$/.test(path) && !path.endsWith('/status')) {
+    const raw = body as Dict;
+    const out: Dict = {};
+    if (raw['startingPrice'] !== undefined) {
+      out['startingPrice'] = String(raw['startingPrice']);
+    }
+    if (raw['bidIncrement'] !== undefined) {
+      out['bidIncrement'] = String(raw['bidIncrement']);
+    }
+    return out;
+  }
+
+  // 3. PATCH /products/:id (Updating product - conforms strictly to UpdateProductDto)
+  if (method === 'PATCH' && /\/products\/[^/]+$/.test(path)) {
+    const raw = body as Dict;
+    const { code, ...rest } = raw;
+    return rest;
+  }
+
+  return body;
+}
+
 export const apiShapeInterceptor: HttpInterceptorFn = (req, next) => {
   const mapper = mapperFor(req.url);
 
-  // Rewrite the query string for list endpoints so the API accepts it.
+  // Rewrite the query string and body for endpoints so the API accepts them.
   const params = adaptParams(req);
-  const outgoing = params ? req.clone({ params }) : req;
+  const adaptedBody = adaptRequestBody(req.url, req.method, req.body);
+
+  let outgoing = req;
+  if (params || adaptedBody !== req.body) {
+    outgoing = req.clone({
+      ...(params ? { params } : {}),
+      ...(adaptedBody !== req.body ? { body: adaptedBody } : {}),
+    });
+  }
 
   if (!mapper) return next(outgoing);
 

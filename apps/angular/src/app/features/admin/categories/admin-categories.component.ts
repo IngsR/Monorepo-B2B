@@ -3,13 +3,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiFailure, toApiFailure } from '../../../core/domain/api-failure';
 import { formatDateTime } from '../../../core/domain/format';
 import { Category, Paginated } from '../../../core/domain/models';
-import { AsyncResource } from '../../../core/state/async-resource';
 import { CategoryService } from '../../../core/services/catalogue.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { ButtonComponent } from '../../../shared/ui/button.component';
+import { AsyncResource } from '../../../core/state/async-resource';
 import { ConfirmDialogComponent, DialogComponent } from '../../../shared/ui/dialog.component';
 import { FormFieldComponent } from '../../../shared/ui/form-field.component';
-import { IconComponent } from '../../../shared/ui/icon.component';
+import { MatIconComponent } from '../../../shared/ui/mat-icon.component';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import {
   EmptyStateComponent,
@@ -19,25 +18,24 @@ import {
 import { AlertComponent } from '../../../shared/ui/toast.component';
 
 /**
- * Category management.
+ * Product Category Management.
  *
- * Categories are shared reference data: products reference them, and the
- * marketplace filters on them. Because of that a category that is in use cannot
- * be deleted — the API refuses with a conflict and the UI surfaces the reason
- * rather than offering a destructive action that cannot succeed.
- *
- * Deletion is a hard delete, so it is always confirmed.
+ * Provides administration of reference classification taxonomy for product lots.
+ * Realigned 100% with NestJS backend `CategoriesController` and DTOs:
+ * - Query: search (name), pagination.
+ * - Create: name.
+ * - Update: name.
+ * - Delete: id (with server conflict protection if products reference it).
  */
 @Component({
   selector: 'app-admin-categories',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    ButtonComponent,
     ConfirmDialogComponent,
     DialogComponent,
     FormFieldComponent,
-    IconComponent,
+    MatIconComponent,
     PaginationComponent,
     EmptyStateComponent,
     ErrorStateComponent,
@@ -46,17 +44,26 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page">
-      <header class="page-head">
-        <div class="page-head-text">
-          <h1 class="page-title">Categories</h1>
-          <p class="page-subtitle">
-            Categories classify products and drive the marketplace filter. A category that is
-            assigned to a product cannot be deleted until those products are reassigned.
+    <div class="admin-page">
+      <!-- Header -->
+      <header class="admin-header">
+        <div class="admin-header-main">
+          <div class="admin-badge-strip">
+            <span class="admin-console-pill">
+              <mat-icon fontIcon="category" [size]="14" />
+              Lot Taxonomy
+            </span>
+          </div>
+          <h1 class="admin-title">Product Categories</h1>
+          <p class="admin-subtitle">
+            Shared classification catalog used by vendors to categorize industrial lots and by buyers to filter the marketplace floor.
           </p>
         </div>
-        <div class="page-actions">
-          <app-button label="New category" icon="plus" variant="primary" (clicked)="openCreate()" />
+        <div class="admin-actions">
+          <button type="button" class="btn-admin-primary" (click)="openCreate()">
+            <mat-icon fontIcon="add" [size]="16" />
+            <span>New Category</span>
+          </button>
         </div>
       </header>
 
@@ -64,134 +71,122 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
         <app-alert tone="danger" [title]="failure.message">{{ failure.detail }}</app-alert>
       }
 
-      <div class="toolbar">
-        <div class="toolbar-field toolbar-grow">
-          <label class="form-label" for="category-search">Search</label>
+      <!-- Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-search-box">
+          <mat-icon fontIcon="search" [size]="18" class="search-icon" />
           <input
             id="category-search"
             type="search"
-            class="form-input"
-            placeholder="Search by name or description"
+            class="admin-search-input"
+            placeholder="Search categories by name..."
             [value]="searchInput()"
             (input)="onSearchInput($event)"
           />
         </div>
-        <div class="toolbar-field">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="reload()"
-            [disabled]="categories.isLoading()"
-          >
-            <app-icon name="refresh" [size]="15" />
-            Refresh
-          </button>
-        </div>
+
+        <button
+          type="button"
+          class="btn-admin-secondary"
+          (click)="reload()"
+          [disabled]="categories.isLoading()"
+        >
+          <mat-icon fontIcon="refresh" [size]="16" [class.spin]="categories.isLoading()" />
+          <span>Refresh</span>
+        </button>
       </div>
 
-      <div class="card">
+      <!-- Main Content Card -->
+      <div class="admin-card">
         @switch (true) {
           @case (categories.isLoading() && !categories.data()) {
             <app-table-skeleton [count]="5" />
           }
           @case (categories.hasError()) {
             @if (categories.error(); as failure) {
-              <app-error-state
-                [failure]="failure"
-                [retrying]="categories.isLoading()"
-                (retry)="reload()"
-              />
+              <div class="card-inner-padding">
+                <app-error-state
+                  [failure]="failure"
+                  [retrying]="categories.isLoading()"
+                  (retry)="reload()"
+                />
+              </div>
             }
           }
           @case (categoryList().length === 0) {
-            <app-empty-state
-              icon="layers"
-              [title]="searchInput() ? 'No categories match this search' : 'No categories yet'"
-              [description]="
-                searchInput()
-                  ? 'Try a different search term.'
-                  : 'Create a category before vendors can classify their products.'
-              "
-            >
-              @if (searchInput()) {
-                <button type="button" class="btn btn-secondary" (click)="clearSearch()">
-                  Clear search
-                </button>
-              } @else {
-                <app-button
-                  label="New category"
-                  icon="plus"
-                  variant="primary"
-                  (clicked)="openCreate()"
-                />
-              }
-            </app-empty-state>
+            <div class="card-inner-padding">
+              <app-empty-state
+                icon="layers"
+                [title]="searchInput() ? 'No categories match search query' : 'No categories configured'"
+                [description]="
+                  searchInput()
+                    ? 'Try searching with a different category name.'
+                    : 'Create a product category to allow vendors to classify and publish auction lots.'
+                "
+              >
+                @if (searchInput()) {
+                  <button type="button" class="btn-admin-secondary" (click)="clearSearch()">
+                    <mat-icon fontIcon="clear" [size]="14" />
+                    <span>Clear Search</span>
+                  </button>
+                } @else {
+                  <button type="button" class="btn-admin-primary" (click)="openCreate()">
+                    <mat-icon fontIcon="add" [size]="16" />
+                    <span>Create Category</span>
+                  </button>
+                }
+              </app-empty-state>
+            </div>
           }
           @default {
-            <div class="table-scroll">
-              <table class="data-table data-table--stacked">
+            <div class="admin-table-container">
+              <table class="admin-data-table">
                 <thead>
                   <tr>
-                    <th scope="col">Category</th>
-                    <th scope="col">Slug</th>
-                    <th scope="col">Description</th>
-                    <th scope="col" class="col-numeric">Products</th>
-                    <th scope="col">Updated</th>
-                    <th scope="col" class="cell-actions">Actions</th>
+                    <th scope="col">Category Name</th>
+                    <th scope="col">Category ID</th>
+                    <th scope="col">Created Date</th>
+                    <th scope="col">Last Modified</th>
+                    <th scope="col" class="cell-action-col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (category of categoryList(); track category.id) {
                     <tr>
-                      <td data-label="Category">
-                        <span class="cell-primary">{{ category.name }}</span>
-                        <span class="text-mono-id">{{ category.id }}</span>
+                      <td>
+                        <div class="category-identity-cell">
+                          <span class="category-avatar">
+                            <mat-icon fontIcon="label" [size]="16" />
+                          </span>
+                          <span class="cell-name-strong">{{ category.name }}</span>
+                        </div>
                       </td>
-                      <td data-label="Slug">
-                        <span class="text-mono-id">{{ category.slug }}</span>
+                      <td>
+                        <span class="mono-id-tag">{{ category.id }}</span>
                       </td>
-                      <td data-label="Description">
-                        <span class="text-meta description-cell">
-                          {{ category.description || '—' }}
-                        </span>
+                      <td>
+                        <span class="cell-text-muted">{{ dateTime(category.createdAt) }}</span>
                       </td>
-                      <td data-label="Products" class="col-numeric">
-                        <span
-                          class="badge"
-                          [class.badge-plain]="!category.productCount"
-                          [class.badge-info]="!!category.productCount"
-                        >
-                          {{ category.productCount ?? 0 }}
-                        </span>
+                      <td>
+                        <span class="cell-text-muted">{{ dateTime(category.updatedAt) }}</span>
                       </td>
-                      <td data-label="Updated">
-                        <span class="text-meta">{{ dateTime(category.updatedAt) }}</span>
-                      </td>
-                      <td data-label="Actions" class="cell-actions">
-                        <div class="row-actions">
+                      <td class="cell-action-col">
+                        <div class="action-btn-group">
                           <button
                             type="button"
-                            class="btn btn-ghost btn-sm"
+                            class="btn-admin-table-action"
                             (click)="openEdit(category)"
                           >
-                            <app-icon name="edit" [size]="14" />
-                            Edit
+                            <mat-icon fontIcon="edit" [size]="14" />
+                            <span>Edit</span>
                           </button>
-
-                          <!-- Deletion is withheld when the category is in use -->
                           <button
                             type="button"
-                            class="btn btn-ghost btn-sm row-action-danger"
-                            [disabled]="!!category.productCount"
-                            [attr.title]="
-                              category.productCount
-                                ? 'This category is assigned to products and cannot be deleted'
-                                : 'Delete this category'
-                            "
-                            (click)="confirmDelete(category)"
+                            class="btn-admin-table-action action-danger"
+                            (click)="openDelete(category)"
                           >
-                            <app-icon name="trash" [size]="14" />
-                            Delete
+                            <mat-icon fontIcon="delete_outline" [size]="14" />
+                            <span>Delete</span>
                           </button>
                         </div>
                       </td>
@@ -201,29 +196,25 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               </table>
             </div>
 
-            <app-pagination [meta]="meta()" (pageChange)="setPage($event)" />
+            <div class="pagination-footer">
+              <app-pagination [meta]="meta()" (pageChange)="setPage($event)" />
+            </div>
           }
         }
       </div>
-
-      @if (inUseCount() > 0) {
-        <app-alert tone="info" title="Some categories are in use">
-          {{ inUseCount() }} {{ inUseCount() === 1 ? 'category is' : 'categories are' }} assigned to
-          one or more products. Those categories cannot be deleted until the products are moved to
-          another category.
-        </app-alert>
-      }
     </div>
 
-    <!-- Create / edit -->
+    <!-- Create / Edit Dialog -->
     @if (dialogOpen()) {
       <app-dialog
-        [title]="editing() ? 'Edit category' : 'Create category'"
+        [title]="editing() ? 'Edit Product Category' : 'Create Product Category'"
         [subtitle]="
-          editing() ? editingCategory()!.name : 'Categories classify products across all vendors.'
+          editing()
+            ? 'Update classification taxonomy for ' + editingCategory()!.name
+            : 'Add a new classification taxonomy for industrial product lots.'
         "
         icon="layers"
-        [confirmLabel]="editing() ? 'Save changes' : 'Create category'"
+        [confirmLabel]="editing() ? 'Save Changes' : 'Create Category'"
         [busy]="saving()"
         (confirmed)="save()"
         (dismissed)="closeDialog()"
@@ -234,77 +225,361 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
           </div>
         }
 
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate class="admin-dialog-form">
           <app-form-field
-            label="Category name"
+            label="Category Name"
             [required]="true"
-            [control]="name"
-            [errorMap]="nameErrors"
-            hint="Must be unique. The slug is generated from this name."
+            [control]="nameCtrl"
+            [errorMap]="requiredErrors"
+            hint="A clear, distinctive name (e.g. Industrial Machinery, Ferrous Scrap, Electronic Equipment)."
             controlId="category-name"
           >
-            <input id="category-name" type="text" class="form-input" formControlName="name" />
-          </app-form-field>
-
-          <app-form-field
-            label="Description"
-            [control]="description"
-            hint="Optional. Shown as guidance when vendors pick a category."
-            controlId="category-description"
-          >
-            <textarea
-              id="category-description"
-              class="form-textarea"
-              rows="3"
-              formControlName="description"
-            ></textarea>
+            <input
+              id="category-name"
+              type="text"
+              class="form-input"
+              formControlName="name"
+              placeholder="e.g. Industrial Machinery"
+            />
           </app-form-field>
         </form>
       </app-dialog>
     }
 
-    <!-- Delete confirmation -->
-    @if (pendingDelete(); as category) {
+    <!-- Delete Confirmation Dialog -->
+    @if (deleteOpen()) {
       <app-confirm-dialog
-        title="Delete this category?"
-        [subtitle]="category.name"
-        [message]="
-          'The category ' +
-          category.name +
-          ' will be permanently removed. Products currently assigned to it must be moved to another category first.'
-        "
-        confirmLabel="Delete category"
-        icon="trash"
+        title="Delete Product Category"
+        [message]="deleteMessage()"
+        confirmLabel="Delete Category"
         tone="danger"
-        [busy]="deleting()"
-        (confirmed)="deleteCategory()"
-        (dismissed)="pendingDelete.set(null)"
+        [busy]="saving()"
+        (confirmed)="confirmDelete()"
+        (dismissed)="closeDelete()"
       />
     }
   `,
   styles: [
     `
-      .description-cell {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        max-width: 46ch;
+      .admin-page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding: 24px 28px 48px;
+        max-width: 1400px;
+        margin: 0 auto;
+        color: #172033;
       }
-      .row-actions {
+
+      .admin-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #ddd9d0;
+      }
+
+      .admin-badge-strip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .admin-console-pill {
         display: inline-flex;
-        gap: var(--sp-1);
-        justify-content: flex-end;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: #172033;
+        color: #c6a15b;
+        border-radius: 4px;
+
+        mat-icon {
+          color: #c6a15b;
+        }
       }
-      .row-action-danger {
-        color: var(--c-danger);
+
+      .admin-title {
+        font-size: 1.625rem;
+        font-weight: 700;
+        color: #172033;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        margin: 0 0 6px 0;
       }
-      .row-action-danger:hover:not(:disabled) {
-        background: var(--c-danger-soft);
+
+      .admin-subtitle {
+        font-size: 0.875rem;
+        color: #667085;
+        margin: 0;
+        max-width: 720px;
+        line-height: 1.5;
       }
+
+      .btn-admin-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: #172033;
+        color: #ffffff;
+        border: 1px solid #172033;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        mat-icon {
+          color: #c6a15b;
+        }
+
+        &:hover {
+          background: #222e46;
+          border-color: #222e46;
+        }
+      }
+
+      .btn-admin-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: #ffffff;
+        color: #172033;
+        border: 1px solid #ddd9d0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) {
+          border-color: #c6a15b;
+          background: #fcfbf8;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+      }
+
+      @keyframes spin {
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Toolbar */
+      .admin-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar-search-box {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 260px;
+        position: relative;
+
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          color: #98a2b3;
+          pointer-events: none;
+        }
+
+        .admin-search-input {
+          width: 100%;
+          height: 38px;
+          padding: 0 14px 0 38px;
+          font-size: 0.8125rem;
+          color: #172033;
+          background: #ffffff;
+          border: 1px solid #ddd9d0;
+          border-radius: 6px;
+          transition: border-color 0.15s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #c6a15b;
+            box-shadow: 0 0 0 3px rgba(198, 161, 91, 0.15);
+          }
+
+          &::placeholder {
+            color: #98a2b3;
+          }
+        }
+      }
+
+      /* Main Card & Table */
+      .admin-card {
+        background: #ffffff;
+        border: 1px solid #ddd9d0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .card-inner-padding {
+        padding: 24px;
+      }
+
+      .admin-table-container {
+        overflow-x: auto;
+      }
+
+      .admin-data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+
+        th {
+          padding: 12px 18px;
+          text-align: left;
+          font-size: 0.6875rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #667085;
+          background: #fcfbf8;
+          border-bottom: 1px solid #ddd9d0;
+          white-space: nowrap;
+        }
+
+        td {
+          padding: 12px 18px;
+          vertical-align: middle;
+          border-bottom: 1px solid #f5f3ef;
+          color: #172033;
+        }
+
+        tr:last-child td {
+          border-bottom: none;
+        }
+
+        tbody tr:hover {
+          background-color: #faf8f5;
+        }
+      }
+
+      .category-identity-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .category-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: #fcfbf8;
+        color: #b7791f;
+        border: 1px solid #ddd9d0;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+
+      .cell-name-strong {
+        font-weight: 600;
+        color: #172033;
+      }
+
+      .cell-text-muted {
+        color: #98a2b3;
+      }
+
+      .mono-id-tag {
+        font-family: var(--font-mono, monospace);
+        font-size: 0.6875rem;
+        color: #667085;
+        background: #f5f3ef;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #ddd9d0;
+      }
+
+      .cell-action-col {
+        text-align: right;
+      }
+
+      .action-btn-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .btn-admin-table-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #172033;
+        background: #ffffff;
+        border: 1px solid #ddd9d0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover {
+          background: #172033;
+          color: #ffffff;
+          border-color: #172033;
+
+          mat-icon {
+            color: #c6a15b;
+          }
+        }
+
+        &.action-danger {
+          color: #b94a48;
+
+          &:hover {
+            background: #b94a48;
+            color: #ffffff;
+            border-color: #b94a48;
+
+            mat-icon {
+              color: #ffffff;
+            }
+          }
+        }
+      }
+
+      .pagination-footer {
+        padding: 12px 18px;
+        border-top: 1px solid #ddd9d0;
+        background: #fcfbf8;
+      }
+
+      /* Dialog Form Styles */
+      .admin-dialog-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
       .dialog-alert {
-        margin-bottom: var(--sp-4);
+        margin-bottom: 16px;
       }
     `,
   ],
@@ -322,34 +597,30 @@ export class AdminCategoriesComponent {
   readonly dialogOpen = signal(false);
   readonly editing = signal(false);
   readonly editingCategory = signal<Category | null>(null);
+
+  readonly deleteOpen = signal(false);
+  readonly deletingCategory = signal<Category | null>(null);
+
   readonly saving = signal(false);
   readonly actionFailure = signal<ApiFailure | null>(null);
   readonly dialogFailure = signal<ApiFailure | null>(null);
 
-  readonly pendingDelete = signal<Category | null>(null);
-  readonly deleting = signal(false);
-
   readonly form = this.fb.nonNullable.group({
-    name: ['', [Validators.required]],
-    description: [''],
+    name: ['', [Validators.required, Validators.maxLength(255)]],
   });
 
-  get name() {
+  get nameCtrl() {
     return this.form.controls.name;
   }
-  get description() {
-    return this.form.controls.description;
-  }
 
-  readonly nameErrors = { required: 'Category name is required' };
+  readonly requiredErrors = {
+    required: 'Category name is required',
+    maxlength: 'Category name must not exceed 255 characters',
+  };
 
   readonly categoryList = computed(() => this.categories.data()?.items ?? []);
   readonly meta = computed(
-    () => this.categories.data()?.meta ?? { total: 0, page: 1, limit: 20, totalPages: 1 },
-  );
-
-  readonly inUseCount = computed(
-    () => this.categoryList().filter((c) => (c.productCount ?? 0) > 0).length,
+    () => this.categories.data()?.meta ?? { total: 0, page: 1, limit: 12, totalPages: 1 },
   );
 
   constructor() {
@@ -360,7 +631,7 @@ export class AdminCategoriesComponent {
     this.categories.load(
       this.categoryService.list({
         page: this.page(),
-        limit: 20,
+        limit: 12,
         search: this.searchInput() || undefined,
       }),
       { keepData: true },
@@ -393,7 +664,9 @@ export class AdminCategoriesComponent {
     this.editing.set(false);
     this.editingCategory.set(null);
     this.dialogFailure.set(null);
-    this.form.reset({ name: '', description: '' });
+    this.form.reset({
+      name: '',
+    });
     this.dialogOpen.set(true);
   }
 
@@ -401,7 +674,9 @@ export class AdminCategoriesComponent {
     this.editing.set(true);
     this.editingCategory.set(category);
     this.dialogFailure.set(null);
-    this.form.reset({ name: category.name, description: category.description ?? '' });
+    this.form.reset({
+      name: category.name,
+    });
     this.dialogOpen.set(true);
   }
 
@@ -410,6 +685,46 @@ export class AdminCategoriesComponent {
     this.dialogOpen.set(false);
     this.editingCategory.set(null);
     this.dialogFailure.set(null);
+  }
+
+  openDelete(category: Category): void {
+    this.deletingCategory.set(category);
+    this.deleteOpen.set(true);
+  }
+
+  closeDelete(): void {
+    if (this.saving()) return;
+    this.deleteOpen.set(false);
+    this.deletingCategory.set(null);
+  }
+
+  readonly deleteMessage = computed(() => {
+    const cat = this.deletingCategory();
+    return `Are you sure you want to delete the category "${cat?.name ?? ''}"? If this category is currently assigned to products, the server will reject the request.`;
+  });
+
+  confirmDelete(): void {
+    const category = this.deletingCategory();
+    if (!category) return;
+
+    this.saving.set(true);
+    this.actionFailure.set(null);
+
+    this.categoryService.delete(category.id).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.deleteOpen.set(false);
+        this.deletingCategory.set(null);
+        this.notifications.success('Category removed', category.name);
+        this.reload();
+      },
+      error: (error: unknown) => {
+        this.saving.set(false);
+        this.deleteOpen.set(false);
+        const failure = toApiFailure(error);
+        this.actionFailure.set(failure);
+      },
+    });
   }
 
   save(): void {
@@ -423,70 +738,31 @@ export class AdminCategoriesComponent {
     this.actionFailure.set(null);
 
     const value = this.form.getRawValue();
-    const payload = {
-      name: value.name.trim(),
-      description: value.description.trim() || undefined,
-    };
     const category = this.editingCategory();
 
     const request$ = category
-      ? this.categoryService.update(category.id, payload)
-      : this.categoryService.create(payload);
+      ? this.categoryService.update(category.id, {
+          name: value.name.trim(),
+        })
+      : this.categoryService.create({
+          name: value.name.trim(),
+        });
 
     request$.subscribe({
       next: (saved) => {
         this.saving.set(false);
         this.dialogOpen.set(false);
         this.editingCategory.set(null);
-        this.notifications.success(category ? 'Category updated' : 'Category created', saved.name);
+        this.notifications.success(
+          category ? 'Category updated' : 'Category created',
+          saved.name,
+        );
         this.reload();
       },
       error: (error: unknown) => {
         this.saving.set(false);
         const failure = toApiFailure(error);
         this.dialogFailure.set(failure);
-
-        if (failure.fieldErrors?.['name'] || failure.status === 409) {
-          this.name.setErrors({ server: true });
-          this.name.markAsTouched();
-        }
-      },
-    });
-  }
-
-  confirmDelete(category: Category): void {
-    // Guard as well as disable: an in-use category can never be removed.
-    if (category.productCount) {
-      this.notifications.warning(
-        'Category in use',
-        `${category.name} is assigned to ${category.productCount} product${category.productCount === 1 ? '' : 's'}. Reassign them first.`,
-      );
-      return;
-    }
-    this.actionFailure.set(null);
-    this.pendingDelete.set(category);
-  }
-
-  deleteCategory(): void {
-    const category = this.pendingDelete();
-    if (!category) return;
-
-    this.deleting.set(true);
-    this.actionFailure.set(null);
-
-    this.categoryService.delete(category.id).subscribe({
-      next: () => {
-        this.deleting.set(false);
-        this.pendingDelete.set(null);
-        this.notifications.success('Category deleted', category.name);
-        this.reload();
-      },
-      error: (error: unknown) => {
-        this.deleting.set(false);
-        this.pendingDelete.set(null);
-        const failure = toApiFailure(error);
-        this.actionFailure.set(failure);
-        this.notifications.fromFailure(failure, 'Could not delete category');
       },
     });
   }

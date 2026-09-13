@@ -84,7 +84,10 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                 [retrying]="auction.isLoading()"
                 (retry)="reload()"
               >
-                <a class="btn btn-secondary" routerLink="/vendor/auctions">Back to my auctions</a>
+                <a class="btn btn-secondary" routerLink="/vendor/auctions">
+                  <app-icon name="chevron-left" [size]="15" />
+                  Kembali ke Lelang Saya
+                </a>
               </app-error-state>
             }
           </div>
@@ -102,21 +105,20 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                 />
                 <span class="text-mono-id">{{ data.product?.code }}</span>
               </div>
-              <h1 class="page-title">{{ data.product?.name ?? 'Auction' }}</h1>
+              <h1 class="page-title">{{ data.product?.name ?? 'Lelang' }}</h1>
               <p class="page-subtitle">
-                Drive this auction through its lifecycle. Only transitions that are valid from the
-                current state are offered.
+                Kelola siklus lelang ini. Hanya transisi yang valid dari status saat ini yang tersedia.
               </p>
             </div>
             <div class="page-actions">
               <a class="btn btn-secondary" [routerLink]="['/marketplace', data.id]">
                 <app-icon name="external" [size]="15" />
-                View public page
+                Lihat Halaman Publik
               </a>
               @if (canEdit()) {
                 <a class="btn btn-secondary" [routerLink]="['/vendor/auctions', data.id, 'edit']">
                   <app-icon name="edit" [size]="15" />
-                  Edit terms
+                  Edit Detail
                 </a>
               }
             </div>
@@ -127,9 +129,9 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
           }
 
           @if (statusWindowMismatch()) {
-            <app-alert tone="warning" title="The end time has passed but the auction is still open">
-              Bidding has already stopped, because the published end time is authoritative. Close
-              the auction to move it to <strong>Ended</strong> and finalise the result.
+            <app-alert tone="warning" title="Waktu lelang sudah habis namun lelang masih terbuka">
+              Penawaran telah dihentikan karena waktu berakhir sudah berlalu.
+              Tutup lelang untuk memindahkannya ke status <strong>Selesai</strong> dan menyelesaikan hasilnya.
             </app-alert>
           }
 
@@ -137,21 +139,21 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
             <!-- Current state -->
             <section class="card">
               <div class="card-header">
-                <h2 class="section-heading">Current state</h2>
+                <h2 class="section-heading">Status Saat Ini</h2>
                 <span class="badge badge-brand">{{ data.status | titlecase }}</span>
               </div>
               <div class="card-body stack">
                 <app-auction-lifecycle [auction]="data" variant="full" />
 
                 @if (isTerminal()) {
-                  <app-alert tone="neutral" title="Terminal state">
-                    {{ data.status === AuctionStatus.CANCELLED ? 'Cancelled' : 'Ended' }} is a
-                    terminal state. No further lifecycle transitions are available for this auction.
+                  <app-alert tone="neutral" title="Status Final">
+                    {{ data.status === AuctionStatus.CANCELLED ? 'Dibatalkan' : 'Selesai' }} adalah
+                    status final. Tidak ada transisi siklus lebih lanjut yang tersedia untuk lelang ini.
                   </app-alert>
                 } @else {
                   <div class="lifecycle-summary">
                     <p class="price-label">
-                      Available transitions from {{ data.status | titlecase }}
+                      Transisi yang tersedia dari status {{ data.status | titlecase }}
                     </p>
                     <div class="row-wrap lifecycle-actions">
                       @for (transition of transitions(); track transition.to) {
@@ -168,12 +170,11 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                     </div>
                     <p class="text-helper">
                       @if (transitions().length === 0) {
-                        No transitions are available from this state.
+                        Tidak ada transisi yang tersedia dari status ini.
                       } @else {
                         {{ transitions().length }}
-                        {{ transitions().length === 1 ? 'transition is' : 'transitions are' }}
-                        valid right now. Other state changes are not permitted by the auction
-                        lifecycle.
+                        {{ transitions().length === 1 ? 'transisi' : 'transisi' }}
+                        valid saat ini. Perubahan status lain tidak diizinkan oleh siklus lelang.
                       }
                     </p>
                   </div>
@@ -184,39 +185,39 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
             <!-- Key facts -->
             <section class="card">
               <div class="card-header">
-                <h2 class="section-heading">Auction facts</h2>
+                <h2 class="section-heading">Informasi Lelang</h2>
               </div>
               <div class="card-body stack">
                 <app-price
                   [amount]="data.currentPrice"
-                  label="Current price"
+                  label="Harga Saat Ini"
                   size="lg"
                   [tone]="data.bidCount > 0 ? 'default' : 'muted'"
                 />
 
                 <div class="meta-list">
                   <div class="meta-item">
-                    <span class="price-label">Starting price</span>
+                    <span class="price-label">Harga Awal</span>
                     <span class="meta-value text-numeric">{{ money(data.startingPrice) }}</span>
                   </div>
                   <div class="meta-item">
-                    <span class="price-label">Bid increment</span>
+                    <span class="price-label">Kelipatan Tawaran</span>
                     <span class="meta-value text-numeric">{{ money(data.bidIncrement) }}</span>
                   </div>
                   <div class="meta-item">
-                    <span class="price-label">Minimum next bid</span>
+                    <span class="price-label">Minimum Tawaran Berikutnya</span>
                     <span class="meta-value text-numeric">{{ money(minimum()) }}</span>
                   </div>
                   <div class="meta-item">
-                    <span class="price-label">Total bids</span>
+                    <span class="price-label">Total Tawaran</span>
                     <span class="meta-value text-numeric">{{ data.bidCount }}</span>
                   </div>
                   <div class="meta-item">
-                    <span class="price-label">Start time</span>
+                    <span class="price-label">Waktu Mulai</span>
                     <span class="meta-value">{{ dateTime(data.startTime) }}</span>
                   </div>
                   <div class="meta-item">
-                    <span class="price-label">End time</span>
+                    <span class="price-label">Waktu Berakhir</span>
                     <span class="meta-value">{{ dateTime(data.endTime) }}</span>
                   </div>
                 </div>
@@ -227,7 +228,7 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
 
                 <div class="ownership-note">
                   <app-icon name="shield" [size]="14" />
-                  <span> You can manage this auction because your vendor account owns it. </span>
+                  <span> Anda dapat mengelola lelang ini karena akun penjual Anda adalah pemiliknya. </span>
                 </div>
               </div>
             </section>
@@ -236,8 +237,8 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
           <!-- Bid history -->
           <section class="card">
             <div class="card-header">
-              <h2 class="section-heading">Bid history</h2>
-              <span class="badge badge-plain">{{ data.bidCount }} bids</span>
+              <h2 class="section-heading">Riwayat Penawaran</h2>
+              <span class="badge badge-plain">{{ data.bidCount }} tawaran</span>
             </div>
             @if (bids.isLoading() && !bids.data()) {
               <div class="card-body stack-sm">
@@ -250,7 +251,7 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                 [bids]="bidList()"
                 sort="highest"
                 [auctionEnded]="data.status === AuctionStatus.ENDED"
-                emptyMessage="No bids have been placed on this auction."
+                emptyMessage="Belum ada penawaran pada lelang ini."
               />
             }
           </section>
@@ -261,8 +262,8 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
     <!-- Transition confirmation -->
     @if (pendingTransition(); as transition) {
       <app-dialog
-        [title]="transition.label + ' this auction?'"
-        [subtitle]="'From ' + statusLabel() + ' to ' + transition.to"
+        [title]="transition.label + ' lelang ini?'"
+        [subtitle]="'Dari ' + statusLabel() + ' ke ' + transition.to"
         [icon]="transition.destructive ? 'ban' : transitionIcon(transition)"
         [tone]="transition.destructive ? 'danger' : 'neutral'"
         [confirmLabel]="transition.label"
@@ -275,8 +276,8 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
 
         @if (transition.to === AuctionStatus.SCHEDULED) {
           <p class="dialog-detail">
-            The auction will run from
-            <strong>{{ dateTime(auctionData()?.startTime) }}</strong> to
+            Lelang akan berlangsung dari
+            <strong>{{ dateTime(auctionData()?.startTime) }}</strong> hingga
             <strong>{{ dateTime(auctionData()?.endTime) }}</strong
             >.
           </p>
@@ -285,18 +286,17 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
         @if (transition.to === AuctionStatus.ENDED) {
           <p class="dialog-detail">
             @if (highestBid(); as top) {
-              The highest valid bid is <strong>{{ money(top.amount) }}</strong
-              >. That bid determines the result — the platform does not store a separate winner
-              record.
+              Tawaran tertinggi yang valid adalah <strong>{{ money(top.amount) }}</strong
+              >. Tawaran tersebut menentukan hasil — platform tidak menyimpan catatan pemenang terpisah.
             } @else {
-              This auction has no bids. No result will be derived.
+              Lelang ini belum memiliki tawaran. Tidak ada hasil yang akan dihasilkan.
             }
           </p>
         }
 
         @if (transition.destructive) {
           <p class="dialog-detail dialog-detail-danger">
-            This cannot be undone. Bidders will no longer be able to place bids.
+            Tindakan ini tidak dapat dibatalkan. Penawar tidak dapat lagi menempatkan tawaran.
           </p>
         }
       </app-dialog>
@@ -436,8 +436,8 @@ export class AuctionManagementComponent {
   });
 
   readonly crumbs = computed<Crumb[]>(() => [
-    { label: 'My auctions', link: '/vendor/auctions' },
-    { label: this.auctionData()?.product?.name ?? 'Auction management' },
+    { label: 'Lelang Saya', link: '/vendor/auctions' },
+    { label: this.auctionData()?.product?.name ?? 'Detail Lelang' },
   ]);
 
   constructor() {
@@ -496,7 +496,7 @@ export class AuctionManagementComponent {
         this.pendingTransition.set(null);
         this.auction.set(auction);
         this.notifications.success(
-          `Auction ${transition.label.toLowerCase()}d`.replace('ee', 'e'),
+          `Lelang ${transition.label.toLowerCase()}`,
           transitionDescription(transition.to),
         );
         this.reload();
@@ -506,7 +506,7 @@ export class AuctionManagementComponent {
         this.pendingTransition.set(null);
         const failure = toApiFailure(error);
         this.actionFailure.set(failure);
-        this.notifications.fromFailure(failure, 'Transition failed');
+        this.notifications.fromFailure(failure, 'Transisi gagal');
         // A 409 means someone else changed the state; re-read it.
         if (failure.status === 409) this.reload();
       },
@@ -525,14 +525,14 @@ export class AuctionManagementComponent {
 function transitionDescription(status: AuctionStatus): string {
   switch (status) {
     case AuctionStatus.SCHEDULED:
-      return 'The auction is scheduled and will activate at its start time.';
+      return 'Lelang dijadwalkan dan akan aktif pada waktu mulai yang ditentukan.';
     case AuctionStatus.ACTIVE:
-      return 'The auction is open for bidding until its end time.';
+      return 'Lelang terbuka untuk penawaran hingga waktu berakhirnya.';
     case AuctionStatus.ENDED:
-      return 'The result is derived from the highest valid bid.';
+      return 'Hasil ditentukan berdasarkan tawaran tertinggi yang valid.';
     case AuctionStatus.CANCELLED:
-      return 'The auction has been withdrawn.';
+      return 'Lelang telah ditarik/dibatalkan.';
     default:
-      return 'The auction status has been updated.';
+      return 'Status lelang telah diperbarui.';
   }
 }

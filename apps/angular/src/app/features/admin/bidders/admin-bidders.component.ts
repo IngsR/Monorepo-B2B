@@ -1,19 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiFailure, toApiFailure } from '../../../core/domain/api-failure';
+import { UserRole } from '../../../core/domain/enums';
 import { formatDateTime } from '../../../core/domain/format';
-import { Bidder, Paginated } from '../../../core/domain/models';
-import { AsyncResource } from '../../../core/state/async-resource';
-import { BidderService } from '../../../core/services/directory.service';
+import { Bidder, Paginated, User } from '../../../core/domain/models';
+import { BidderService, UserService } from '../../../core/services/directory.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { AccountStatusBadgeComponent } from '../../../shared/ui/badge.component';
-import { ButtonComponent } from '../../../shared/ui/button.component';
+import { AsyncResource } from '../../../core/state/async-resource';
 import { DialogComponent } from '../../../shared/ui/dialog.component';
-import {
-  FormFieldComponent,
-  ReadonlyFieldComponent,
-} from '../../../shared/ui/form-field.component';
-import { IconComponent } from '../../../shared/ui/icon.component';
+import { FormFieldComponent } from '../../../shared/ui/form-field.component';
+import { MatIconComponent } from '../../../shared/ui/mat-icon.component';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import {
   EmptyStateComponent,
@@ -23,27 +19,22 @@ import {
 import { AlertComponent } from '../../../shared/ui/toast.component';
 
 /**
- * Bidder management.
+ * Bidder Directory Management.
  *
- * A bidder profile is what a bid is recorded against. Each profile links to one
- * user account. The bid count column is derived from the bids actually placed,
- * which is the only activity figure the backend exposes — there is no win rate,
- * spend or credit metric to show.
- *
- * A suspended or inactive bidder profile cannot place bids; the API refuses the
- * attempt and the status here is how an administrator sees that.
+ * Provides administration of registered bidder profiles participating in auctions.
+ * Realigned 100% with NestJS backend `BiddersController` and DTOs:
+ * - Query: search (phone), pagination.
+ * - Create: userId, phone, address.
+ * - Update: phone, address.
  */
 @Component({
   selector: 'app-admin-bidders',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    AccountStatusBadgeComponent,
-    ButtonComponent,
     DialogComponent,
     FormFieldComponent,
-    ReadonlyFieldComponent,
-    IconComponent,
+    MatIconComponent,
     PaginationComponent,
     EmptyStateComponent,
     ErrorStateComponent,
@@ -52,18 +43,26 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page">
-      <header class="page-head">
-        <div class="page-head-text">
-          <h1 class="page-title">Bidders</h1>
-          <p class="page-subtitle">
-            Bidder records and the user accounts behind them. Bids are recorded against a bidder
-            profile, which is resolved from the authenticated identity at the moment a bid is
-            placed.
+    <div class="admin-page">
+      <!-- Header -->
+      <header class="admin-header">
+        <div class="admin-header-main">
+          <div class="admin-badge-strip">
+            <span class="admin-console-pill">
+              <mat-icon fontIcon="badge" [size]="14" />
+              Bidder Directory
+            </span>
+          </div>
+          <h1 class="admin-title">Bidder Profiles</h1>
+          <p class="admin-subtitle">
+            Marketplace participant profiles linked to user accounts. Bids on auction lots are placed against these verified bidder identities.
           </p>
         </div>
-        <div class="page-actions">
-          <app-button label="New bidder" icon="plus" variant="primary" (clicked)="openCreate()" />
+        <div class="admin-actions">
+          <button type="button" class="btn-admin-primary" (click)="openCreate()">
+            <mat-icon fontIcon="person_add_alt" [size]="16" />
+            <span>Create Bidder Profile</span>
+          </button>
         </div>
       </header>
 
@@ -71,120 +70,115 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
         <app-alert tone="danger" [title]="failure.message">{{ failure.detail }}</app-alert>
       }
 
-      <div class="toolbar">
-        <div class="toolbar-field toolbar-grow">
-          <label class="form-label" for="bidder-search">Search</label>
+      <!-- Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-search-box">
+          <mat-icon fontIcon="search" [size]="18" class="search-icon" />
           <input
             id="bidder-search"
             type="search"
-            class="form-input"
-            placeholder="Search by company, contact person, phone or email"
+            class="admin-search-input"
+            placeholder="Search by contact phone number..."
             [value]="searchInput()"
             (input)="onSearchInput($event)"
           />
         </div>
-        <div class="toolbar-field">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="reload()"
-            [disabled]="bidders.isLoading()"
-          >
-            <app-icon name="refresh" [size]="15" />
-            Refresh
-          </button>
-        </div>
+
+        <button
+          type="button"
+          class="btn-admin-secondary"
+          (click)="reload()"
+          [disabled]="bidders.isLoading()"
+        >
+          <mat-icon fontIcon="refresh" [size]="16" [class.spin]="bidders.isLoading()" />
+          <span>Refresh</span>
+        </button>
       </div>
 
-      <div class="card">
+      <!-- Main Content Card -->
+      <div class="admin-card">
         @switch (true) {
           @case (bidders.isLoading() && !bidders.data()) {
             <app-table-skeleton [count]="5" />
           }
           @case (bidders.hasError()) {
             @if (bidders.error(); as failure) {
-              <app-error-state
-                [failure]="failure"
-                [retrying]="bidders.isLoading()"
-                (retry)="reload()"
-              />
+              <div class="card-inner-padding">
+                <app-error-state
+                  [failure]="failure"
+                  [retrying]="bidders.isLoading()"
+                  (retry)="reload()"
+                />
+              </div>
             }
           }
           @case (bidderList().length === 0) {
-            <app-empty-state
-              icon="user"
-              [title]="searchInput() ? 'No bidders match this search' : 'No bidders yet'"
-              [description]="
-                searchInput()
-                  ? 'Try a different search term.'
-                  : 'Create a bidder profile to let a user take part in auctions.'
-              "
-            >
-              @if (searchInput()) {
-                <button type="button" class="btn btn-secondary" (click)="clearSearch()">
-                  Clear search
-                </button>
-              } @else {
-                <app-button
-                  label="New bidder"
-                  icon="plus"
-                  variant="primary"
-                  (clicked)="openCreate()"
-                />
-              }
-            </app-empty-state>
+            <div class="card-inner-padding">
+              <app-empty-state
+                icon="user"
+                [title]="searchInput() ? 'No bidders match search query' : 'No bidder profiles registered'"
+                [description]="
+                  searchInput()
+                    ? 'Try searching with a different phone number.'
+                    : 'Create a bidder profile to link a user account to the auction bidding floor.'
+                "
+              >
+                @if (searchInput()) {
+                  <button type="button" class="btn-admin-secondary" (click)="clearSearch()">
+                    <mat-icon fontIcon="clear" [size]="14" />
+                    <span>Clear Search</span>
+                  </button>
+                } @else {
+                  <button type="button" class="btn-admin-primary" (click)="openCreate()">
+                    <mat-icon fontIcon="person_add_alt" [size]="16" />
+                    <span>Create Bidder</span>
+                  </button>
+                }
+              </app-empty-state>
+            </div>
           }
           @default {
-            <div class="table-scroll">
-              <table class="data-table data-table--stacked">
+            <div class="admin-table-container">
+              <table class="admin-data-table">
                 <thead>
                   <tr>
-                    <th scope="col">Bidder</th>
-                    <th scope="col">Contact</th>
-                    <th scope="col">Associated user</th>
-                    <th scope="col">Status</th>
-                    <th scope="col" class="col-numeric">Bids placed</th>
-                    <th scope="col">Created</th>
-                    <th scope="col" class="cell-actions">Actions</th>
+                    <th scope="col">Contact Phone</th>
+                    <th scope="col">Physical / Business Address</th>
+                    <th scope="col">Linked User ID</th>
+                    <th scope="col">Registered</th>
+                    <th scope="col" class="cell-action-col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (bidder of bidderList(); track bidder.id) {
                     <tr>
-                      <td data-label="Bidder">
-                        <span class="cell-primary">{{
-                          bidder.companyName ?? bidder.contactPerson
-                        }}</span>
-                        <span class="text-mono-id">{{ bidder.id }}</span>
+                      <td>
+                        <div class="bidder-identity-cell">
+                          <span class="bidder-avatar">
+                            <mat-icon fontIcon="phone" [size]="16" />
+                          </span>
+                          <span class="cell-name-strong">{{ bidder.phone || 'No phone set' }}</span>
+                        </div>
                       </td>
-                      <td data-label="Contact">
-                        <span class="cell-primary contact-name">{{ bidder.contactPerson }}</span>
-                        <p class="text-meta">{{ bidder.phone }}</p>
+                      <td>
+                        <span class="cell-address-preview" [title]="bidder.address || ''">
+                          {{ bidder.address || '—' }}
+                        </span>
                       </td>
-                      <td data-label="Associated user">
-                        @if (bidder.user; as user) {
-                          <span class="text-meta">{{ user.email }}</span>
-                        } @else {
-                          <span class="badge badge-warning">No linked user</span>
-                        }
+                      <td>
+                        <span class="mono-id-tag">{{ bidder.userId }}</span>
                       </td>
-                      <td data-label="Status">
-                        <app-account-status-badge [status]="bidder.status" />
+                      <td>
+                        <span class="cell-text-muted">{{ dateTime(bidder.createdAt) }}</span>
                       </td>
-                      <td data-label="Bids placed" class="col-numeric">
-                        <span class="text-numeric">{{ bidder.bidCount ?? 0 }}</span>
-                      </td>
-                      <td data-label="Created">
-                        <span class="text-meta">{{ dateTime(bidder.createdAt) }}</span>
-                      </td>
-                      <td data-label="Actions" class="cell-actions">
+                      <td class="cell-action-col">
                         <button
                           type="button"
-                          class="btn btn-ghost btn-sm"
+                          class="btn-admin-table-action"
                           (click)="openEdit(bidder)"
                         >
-                          <app-icon name="edit" [size]="14" />
-                          Edit
+                          <mat-icon fontIcon="edit" [size]="14" />
+                          <span>Edit</span>
                         </button>
                       </td>
                     </tr>
@@ -193,23 +187,25 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               </table>
             </div>
 
-            <app-pagination [meta]="meta()" (pageChange)="setPage($event)" />
+            <div class="pagination-footer">
+              <app-pagination [meta]="meta()" (pageChange)="setPage($event)" />
+            </div>
           }
         }
       </div>
     </div>
 
+    <!-- Create / Edit Dialog -->
     @if (dialogOpen()) {
       <app-dialog
-        [title]="editing() ? 'Edit bidder' : 'Create bidder profile'"
+        [title]="editing() ? 'Edit Bidder Profile' : 'Create Bidder Profile'"
         [subtitle]="
           editing()
-            ? (editingBidder()!.companyName ?? editingBidder()!.contactPerson)
-            : 'Links a user account to a bidder record.'
+            ? 'Update phone and address details for bidder ' + (editingBidder()!.phone ?? editingBidder()!.userId)
+            : 'Link a verified bidding profile to an authorized bidder user account.'
         "
         icon="user"
-        size="lg"
-        [confirmLabel]="editing() ? 'Save changes' : 'Create bidder'"
+        [confirmLabel]="editing() ? 'Save Changes' : 'Create Bidder'"
         [busy]="saving()"
         (confirmed)="save()"
         (dismissed)="closeDialog()"
@@ -220,146 +216,412 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
           </div>
         }
 
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate class="admin-dialog-form">
+          <!-- Associated User (Editable on create, Readonly on edit) -->
           @if (!editing()) {
-            <div class="form-section-head dialog-section-head">
-              <span class="form-section-index">1</span>
-              <div>
-                <p class="form-section-title">Login account</p>
-                <p class="form-section-desc">
-                  A new bidder account is created with this email address.
-                </p>
-              </div>
-            </div>
-
-            <div class="form-grid">
-              <app-form-field
-                label="Email address"
-                [required]="true"
-                [control]="email"
-                [errorMap]="emailErrors"
-                controlId="bidder-email"
-              >
+            <app-form-field
+              label="Linked User Account"
+              [required]="true"
+              [control]="userIdCtrl"
+              [errorMap]="requiredErrors"
+              hint="Select a user account with BIDDER role, or enter their User UUID."
+              controlId="bidder-user-id"
+            >
+              @if (bidderUsers().length > 0) {
+                <select id="bidder-user-id" class="form-select" formControlName="userId">
+                  <option value="" disabled>Select a bidder user...</option>
+                  @for (u of bidderUsers(); track u.id) {
+                    <option [value]="u.id">{{ u.name }} ({{ u.email }})</option>
+                  }
+                </select>
+              } @else {
                 <input
-                  id="bidder-email"
-                  type="email"
-                  class="form-input"
-                  formControlName="email"
-                  autocomplete="off"
-                />
-              </app-form-field>
-
-              <app-form-field
-                label="First name"
-                [control]="firstName"
-                controlId="bidder-first-name"
-              >
-                <input
-                  id="bidder-first-name"
+                  id="bidder-user-id"
                   type="text"
                   class="form-input"
-                  formControlName="firstName"
+                  formControlName="userId"
+                  placeholder="Enter User UUID (e.g. 123e4567-e89b-12d3-a456-426614174000)"
                 />
-              </app-form-field>
-
-              <app-form-field label="Last name" [control]="lastName" controlId="bidder-last-name">
-                <input
-                  id="bidder-last-name"
-                  type="text"
-                  class="form-input"
-                  formControlName="lastName"
-                />
-              </app-form-field>
+              }
+            </app-form-field>
+          } @else {
+            <div class="readonly-field-group">
+              <label class="readonly-label">Linked User ID (Immutable)</label>
+              <div class="readonly-box">{{ editingBidder()?.userId }}</div>
             </div>
-          } @else if (editingBidder()?.user?.email) {
-            <app-readonly-field
-              label="Associated user"
-              [value]="editingBidder()!.user!.email"
-              hint="The login linked to this bidder record."
-            />
           }
 
-          <div class="form-section-head dialog-section-head">
-            <span class="form-section-index">{{ editing() ? '1' : '2' }}</span>
-            <div>
-              <p class="form-section-title">Bidder details</p>
-              <p class="form-section-desc">
-                Company name is optional — an individual bidder may not have one.
-              </p>
-            </div>
-          </div>
+          <!-- Phone -->
+          <app-form-field
+            label="Phone Number"
+            [control]="phoneCtrl"
+            hint="Contact phone used for settlement notification."
+            controlId="bidder-phone"
+          >
+            <input
+              id="bidder-phone"
+              type="tel"
+              class="form-input"
+              formControlName="phone"
+              placeholder="e.g. +62 812 3456 7890"
+            />
+          </app-form-field>
 
-          <div class="form-grid">
-            <div class="form-grid-full">
-              <app-form-field
-                label="Company name"
-                [control]="companyName"
-                controlId="bidder-company"
-              >
-                <input
-                  id="bidder-company"
-                  type="text"
-                  class="form-input"
-                  formControlName="companyName"
-                />
-              </app-form-field>
-            </div>
-
-            <app-form-field
-              label="Contact person"
-              [required]="true"
-              [control]="contactPerson"
-              [errorMap]="requiredErrors"
-              controlId="bidder-contact"
-            >
-              <input
-                id="bidder-contact"
-                type="text"
-                class="form-input"
-                formControlName="contactPerson"
-              />
-            </app-form-field>
-
-            <app-form-field
-              label="Phone"
-              [required]="true"
-              [control]="phone"
-              [errorMap]="requiredErrors"
-              controlId="bidder-phone"
-            >
-              <input id="bidder-phone" type="tel" class="form-input" formControlName="phone" />
-            </app-form-field>
-
-            <div class="form-grid-full">
-              <app-form-field label="Address" [control]="address" controlId="bidder-address">
-                <textarea
-                  id="bidder-address"
-                  class="form-textarea"
-                  rows="2"
-                  formControlName="address"
-                ></textarea>
-              </app-form-field>
-            </div>
-          </div>
+          <!-- Address -->
+          <app-form-field
+            label="Delivery / Billing Address"
+            [control]="addressCtrl"
+            hint="Physical location or corporate office address."
+            controlId="bidder-address"
+          >
+            <textarea
+              id="bidder-address"
+              class="form-textarea"
+              rows="3"
+              formControlName="address"
+              placeholder="e.g. Jl. Jend. Sudirman Kav. 52-53, Jakarta Selatan"
+            ></textarea>
+          </app-form-field>
         </form>
       </app-dialog>
     }
   `,
   styles: [
     `
-      .contact-name {
+      .admin-page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding: 24px 28px 48px;
+        max-width: 1400px;
+        margin: 0 auto;
+        color: #172033;
+      }
+
+      .admin-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #ddd9d0;
+      }
+
+      .admin-badge-strip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .admin-console-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: #172033;
+        color: #c6a15b;
+        border-radius: 4px;
+
+        mat-icon {
+          color: #c6a15b;
+        }
+      }
+
+      .admin-title {
+        font-size: 1.625rem;
+        font-weight: 700;
+        color: #172033;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        margin: 0 0 6px 0;
+      }
+
+      .admin-subtitle {
+        font-size: 0.875rem;
+        color: #667085;
+        margin: 0;
+        max-width: 720px;
+        line-height: 1.5;
+      }
+
+      .btn-admin-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: #172033;
+        color: #ffffff;
+        border: 1px solid #172033;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        mat-icon {
+          color: #c6a15b;
+        }
+
+        &:hover {
+          background: #222e46;
+          border-color: #222e46;
+        }
+      }
+
+      .btn-admin-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: #ffffff;
+        color: #172033;
+        border: 1px solid #ddd9d0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) {
+          border-color: #c6a15b;
+          background: #fcfbf8;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+      }
+
+      @keyframes spin {
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Toolbar */
+      .admin-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar-search-box {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 260px;
+        position: relative;
+
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          color: #98a2b3;
+          pointer-events: none;
+        }
+
+        .admin-search-input {
+          width: 100%;
+          height: 38px;
+          padding: 0 14px 0 38px;
+          font-size: 0.8125rem;
+          color: #172033;
+          background: #ffffff;
+          border: 1px solid #ddd9d0;
+          border-radius: 6px;
+          transition: border-color 0.15s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #c6a15b;
+            box-shadow: 0 0 0 3px rgba(198, 161, 91, 0.15);
+          }
+
+          &::placeholder {
+            color: #98a2b3;
+          }
+        }
+      }
+
+      /* Main Card & Table */
+      .admin-card {
+        background: #ffffff;
+        border: 1px solid #ddd9d0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .card-inner-padding {
+        padding: 24px;
+      }
+
+      .admin-table-container {
+        overflow-x: auto;
+      }
+
+      .admin-data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+
+        th {
+          padding: 12px 18px;
+          text-align: left;
+          font-size: 0.6875rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #667085;
+          background: #fcfbf8;
+          border-bottom: 1px solid #ddd9d0;
+          white-space: nowrap;
+        }
+
+        td {
+          padding: 12px 18px;
+          vertical-align: middle;
+          border-bottom: 1px solid #f5f3ef;
+          color: #172033;
+        }
+
+        tr:last-child td {
+          border-bottom: none;
+        }
+
+        tbody tr:hover {
+          background-color: #faf8f5;
+        }
+      }
+
+      .bidder-identity-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .bidder-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: #edf3f8;
+        color: #3f668c;
+        border: 1px solid #b8d0e5;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+
+      .cell-name-strong {
+        font-weight: 600;
+        color: #172033;
+      }
+
+      .cell-text-secondary {
+        color: #667085;
+      }
+
+      .cell-text-muted {
+        color: #98a2b3;
+      }
+
+      .cell-address-preview {
         display: block;
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #667085;
       }
+
+      .mono-id-tag {
+        font-family: var(--font-mono, monospace);
+        font-size: 0.6875rem;
+        color: #667085;
+        background: #f5f3ef;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #ddd9d0;
+      }
+
+      .cell-action-col {
+        text-align: right;
+      }
+
+      .btn-admin-table-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #172033;
+        background: #ffffff;
+        border: 1px solid #ddd9d0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover {
+          background: #172033;
+          color: #ffffff;
+          border-color: #172033;
+
+          mat-icon {
+            color: #c6a15b;
+          }
+        }
+      }
+
+      .pagination-footer {
+        padding: 12px 18px;
+        border-top: 1px solid #ddd9d0;
+        background: #fcfbf8;
+      }
+
+      /* Dialog Form Styles */
+      .admin-dialog-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .readonly-field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .readonly-label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #667085;
+      }
+
+      .readonly-box {
+        padding: 8px 12px;
+        background: #f5f3ef;
+        border: 1px solid #ddd9d0;
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        color: #172033;
+        font-family: var(--font-mono, monospace);
+      }
+
       .dialog-alert {
-        margin-bottom: var(--sp-4);
-      }
-      .dialog-section-head {
-        margin-bottom: var(--sp-4);
-      }
-      .dialog-section-head:not(:first-child) {
-        margin-top: var(--sp-5);
-        padding-top: var(--sp-5);
-        border-top: 1px solid var(--c-border);
+        margin-bottom: 16px;
       }
     `,
   ],
@@ -367,9 +629,11 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
 export class AdminBiddersComponent {
   private readonly fb = inject(FormBuilder);
   private readonly bidderService = inject(BidderService);
+  private readonly userService = inject(UserService);
   private readonly notifications = inject(NotificationService);
 
   readonly bidders = new AsyncResource<Paginated<Bidder>>();
+  readonly users = new AsyncResource<Paginated<User>>();
 
   readonly searchInput = signal('');
   readonly page = signal(1);
@@ -382,41 +646,21 @@ export class AdminBiddersComponent {
   readonly dialogFailure = signal<ApiFailure | null>(null);
 
   readonly form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
-    firstName: [''],
-    lastName: [''],
-    companyName: [''],
-    contactPerson: ['', [Validators.required]],
-    phone: ['', [Validators.required]],
+    userId: ['', [Validators.required]],
+    phone: [''],
     address: [''],
   });
 
-  get email() {
-    return this.form.controls.email;
+  get userIdCtrl() {
+    return this.form.controls.userId;
   }
-  get firstName() {
-    return this.form.controls.firstName;
-  }
-  get lastName() {
-    return this.form.controls.lastName;
-  }
-  get companyName() {
-    return this.form.controls.companyName;
-  }
-  get contactPerson() {
-    return this.form.controls.contactPerson;
-  }
-  get phone() {
+  get phoneCtrl() {
     return this.form.controls.phone;
   }
-  get address() {
+  get addressCtrl() {
     return this.form.controls.address;
   }
 
-  readonly emailErrors = {
-    required: 'Email address is required',
-    email: 'Enter a valid email address',
-  };
   readonly requiredErrors = { required: 'This field is required' };
 
   readonly bidderList = computed(() => this.bidders.data()?.items ?? []);
@@ -424,8 +668,13 @@ export class AdminBiddersComponent {
     () => this.bidders.data()?.meta ?? { total: 0, page: 1, limit: 12, totalPages: 1 },
   );
 
+  readonly bidderUsers = computed(
+    () => this.users.data()?.items.filter((u) => u.role === UserRole.BIDDER) ?? [],
+  );
+
   constructor() {
     this.reload();
+    this.loadBidderUsers();
   }
 
   reload(): void {
@@ -437,6 +686,10 @@ export class AdminBiddersComponent {
       }),
       { keepData: true },
     );
+  }
+
+  loadBidderUsers(): void {
+    this.users.load(this.userService.list({ role: UserRole.BIDDER, limit: 100 }));
   }
 
   private searchTimer?: ReturnType<typeof setTimeout>;
@@ -465,12 +718,10 @@ export class AdminBiddersComponent {
     this.editing.set(false);
     this.editingBidder.set(null);
     this.dialogFailure.set(null);
+    this.userIdCtrl.setValidators([Validators.required]);
+    this.userIdCtrl.updateValueAndValidity();
     this.form.reset({
-      email: '',
-      firstName: '',
-      lastName: '',
-      companyName: '',
-      contactPerson: '',
+      userId: this.bidderUsers()[0]?.id ?? '',
       phone: '',
       address: '',
     });
@@ -481,13 +732,11 @@ export class AdminBiddersComponent {
     this.editing.set(true);
     this.editingBidder.set(bidder);
     this.dialogFailure.set(null);
+    this.userIdCtrl.clearValidators();
+    this.userIdCtrl.updateValueAndValidity();
     this.form.reset({
-      email: bidder.user?.email ?? '',
-      firstName: bidder.user?.firstName ?? '',
-      lastName: bidder.user?.lastName ?? '',
-      companyName: bidder.companyName ?? '',
-      contactPerson: bidder.contactPerson,
-      phone: bidder.phone,
+      userId: bidder.userId,
+      phone: bidder.phone ?? '',
       address: bidder.address ?? '',
     });
     this.dialogOpen.set(true);
@@ -501,14 +750,7 @@ export class AdminBiddersComponent {
   }
 
   save(): void {
-    const bidder = this.editingBidder();
-
-    if (!bidder) {
-      if (this.form.invalid) {
-        this.form.markAllAsTouched();
-        return;
-      }
-    } else if (this.contactPerson.invalid || this.phone.invalid) {
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
@@ -518,22 +760,17 @@ export class AdminBiddersComponent {
     this.actionFailure.set(null);
 
     const value = this.form.getRawValue();
+    const bidder = this.editingBidder();
 
     const request$ = bidder
       ? this.bidderService.update(bidder.id, {
-          companyName: value.companyName.trim(),
-          contactPerson: value.contactPerson.trim(),
-          phone: value.phone.trim(),
-          address: value.address.trim(),
+          phone: value.phone?.trim() || null,
+          address: value.address?.trim() || null,
         })
       : this.bidderService.create({
-          email: value.email.trim(),
-          firstName: value.firstName.trim() || undefined,
-          lastName: value.lastName.trim() || undefined,
-          companyName: value.companyName.trim() || undefined,
-          contactPerson: value.contactPerson.trim(),
-          phone: value.phone.trim(),
-          address: value.address.trim(),
+          userId: value.userId.trim(),
+          phone: value.phone?.trim() || undefined,
+          address: value.address?.trim() || undefined,
         });
 
     request$.subscribe({
@@ -542,8 +779,8 @@ export class AdminBiddersComponent {
         this.dialogOpen.set(false);
         this.editingBidder.set(null);
         this.notifications.success(
-          bidder ? 'Bidder updated' : 'Bidder created',
-          saved.companyName ?? saved.contactPerson,
+          bidder ? 'Bidder profile updated' : 'Bidder profile created',
+          saved.phone ?? saved.id,
         );
         this.reload();
       },
@@ -551,11 +788,6 @@ export class AdminBiddersComponent {
         this.saving.set(false);
         const failure = toApiFailure(error);
         this.dialogFailure.set(failure);
-
-        if (failure.fieldErrors?.['email']) {
-          this.email.setErrors({ server: true });
-          this.email.markAsTouched();
-        }
       },
     });
   }

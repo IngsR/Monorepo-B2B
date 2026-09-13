@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 /**
  * Icon set.
@@ -66,24 +67,38 @@ export type IconName =
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <svg
-      [attr.width]="size()"
-      [attr.height]="size()"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      [attr.stroke-width]="strokeWidth()"
-      stroke-linecap="round"
-      stroke-linejoin="round"
+    <span
+      class="app-icon-inner"
       [attr.aria-hidden]="decorative() ? 'true' : null"
       [attr.aria-label]="decorative() ? null : label()"
       [attr.role]="decorative() ? null : 'img'"
-      [innerHTML]="path()"
-    ></svg>
+      [innerHTML]="trustedSvg()"
+    ></span>
   `,
-  styles: [':host { display: inline-flex; flex-shrink: 0; }'],
+  styles: [
+    `
+      :host {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        vertical-align: middle;
+        line-height: 1;
+      }
+      .app-icon-inner {
+        display: contents;
+      }
+      :host svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    `,
+  ],
 })
 export class IconComponent {
+  private readonly sanitizer = inject(DomSanitizer);
+
   readonly name = input.required<IconName>();
   readonly size = input(16);
   readonly strokeWidth = input(1.75);
@@ -91,7 +106,13 @@ export class IconComponent {
   readonly decorative = input(true);
   readonly label = input<string>();
 
-  readonly path = computed(() => PATHS[this.name()] ?? '');
+  readonly trustedSvg = computed<SafeHtml>(() => {
+    const glyph = PATHS[this.name()] ?? '';
+    const s = this.size();
+    const sw = this.strokeWidth();
+    const rawSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" style="width:${s}px;height:${s}px;">${glyph}</svg>`;
+    return this.sanitizer.bypassSecurityTrustHtml(rawSvg);
+  });
 }
 
 const PATHS: Record<IconName, string> = {

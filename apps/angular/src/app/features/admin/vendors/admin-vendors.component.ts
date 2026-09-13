@@ -1,20 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiFailure, toApiFailure } from '../../../core/domain/api-failure';
-import { AccountStatus } from '../../../core/domain/enums';
+import { UserRole } from '../../../core/domain/enums';
 import { formatDateTime } from '../../../core/domain/format';
-import { Paginated, Vendor } from '../../../core/domain/models';
-import { VendorService } from '../../../core/services/directory.service';
+import { Paginated, User, Vendor } from '../../../core/domain/models';
+import { UserService, VendorService } from '../../../core/services/directory.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { AsyncResource } from '../../../core/state/async-resource';
-import { AccountStatusBadgeComponent } from '../../../shared/ui/badge.component';
-import { ButtonComponent } from '../../../shared/ui/button.component';
 import { DialogComponent } from '../../../shared/ui/dialog.component';
-import {
-  FormFieldComponent,
-  ReadonlyFieldComponent,
-} from '../../../shared/ui/form-field.component';
-import { IconComponent } from '../../../shared/ui/icon.component';
+import { FormFieldComponent } from '../../../shared/ui/form-field.component';
+import { MatIconComponent } from '../../../shared/ui/mat-icon.component';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import {
   EmptyStateComponent,
@@ -24,27 +19,22 @@ import {
 import { AlertComponent } from '../../../shared/ui/toast.component';
 
 /**
- * Vendor management.
+ * Vendor Directory Management.
  *
- * A vendor profile is the record that owns products. Each profile belongs to
- * exactly one user account, and the associated user is shown explicitly so an
- * administrator can see the link between login and company.
- *
- * Only the fields the backend models are shown — company, contact, phone,
- * address, description and status. There is no billing, contract or commission
- * concept in this system.
+ * Provides administration of enterprise vendor entities that own product catalogs.
+ * Realigned 100% with NestJS backend `VendorsController` and DTOs:
+ * - Query: search (companyName), pagination.
+ * - Create: userId, companyName, companyAddress, phone.
+ * - Update: companyName, companyAddress, phone.
  */
 @Component({
   selector: 'app-admin-vendors',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    AccountStatusBadgeComponent,
-    ButtonComponent,
     DialogComponent,
     FormFieldComponent,
-    ReadonlyFieldComponent,
-    IconComponent,
+    MatIconComponent,
     PaginationComponent,
     EmptyStateComponent,
     ErrorStateComponent,
@@ -53,17 +43,26 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page">
-      <header class="page-head">
-        <div class="page-head-text">
-          <h1 class="page-title">Vendors</h1>
-          <p class="page-subtitle">
-            Vendor records and the user accounts they belong to. A vendor owns the products that
-            auctions are created from.
+    <div class="admin-page">
+      <!-- Header -->
+      <header class="admin-header">
+        <div class="admin-header-main">
+          <div class="admin-badge-strip">
+            <span class="admin-console-pill">
+              <mat-icon fontIcon="storefront" [size]="14" />
+              Vendor Directory
+            </span>
+          </div>
+          <h1 class="admin-title">Vendor Profiles</h1>
+          <p class="admin-subtitle">
+            Enterprise supplier profiles attached to platform user accounts. Vendors own product catalogs and can schedule auction events.
           </p>
         </div>
-        <div class="page-actions">
-          <app-button label="New vendor" icon="plus" variant="primary" (clicked)="openCreate()" />
+        <div class="admin-actions">
+          <button type="button" class="btn-admin-primary" (click)="openCreate()">
+            <mat-icon fontIcon="add_business" [size]="16" />
+            <span>Create Vendor Profile</span>
+          </button>
         </div>
       </header>
 
@@ -71,125 +70,119 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
         <app-alert tone="danger" [title]="failure.message">{{ failure.detail }}</app-alert>
       }
 
-      <div class="toolbar">
-        <div class="toolbar-field toolbar-grow">
-          <label class="form-label" for="vendor-search">Search</label>
+      <!-- Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-search-box">
+          <mat-icon fontIcon="search" [size]="18" class="search-icon" />
           <input
             id="vendor-search"
             type="search"
-            class="form-input"
-            placeholder="Search by company, contact person, phone or email"
+            class="admin-search-input"
+            placeholder="Search by company name..."
             [value]="searchInput()"
             (input)="onSearchInput($event)"
           />
         </div>
-        <div class="toolbar-field">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="reload()"
-            [disabled]="vendors.isLoading()"
-          >
-            <app-icon name="refresh" [size]="15" />
-            Refresh
-          </button>
-        </div>
+
+        <button
+          type="button"
+          class="btn-admin-secondary"
+          (click)="reload()"
+          [disabled]="vendors.isLoading()"
+        >
+          <mat-icon fontIcon="refresh" [size]="16" [class.spin]="vendors.isLoading()" />
+          <span>Refresh</span>
+        </button>
       </div>
 
-      <div class="card">
+      <!-- Main Content Card -->
+      <div class="admin-card">
         @switch (true) {
           @case (vendors.isLoading() && !vendors.data()) {
             <app-table-skeleton [count]="5" />
           }
           @case (vendors.hasError()) {
             @if (vendors.error(); as failure) {
-              <app-error-state
-                [failure]="failure"
-                [retrying]="vendors.isLoading()"
-                (retry)="reload()"
-              />
+              <div class="card-inner-padding">
+                <app-error-state
+                  [failure]="failure"
+                  [retrying]="vendors.isLoading()"
+                  (retry)="reload()"
+                />
+              </div>
             }
           }
           @case (vendorList().length === 0) {
-            <app-empty-state
-              icon="building"
-              [title]="searchInput() ? 'No vendors match this search' : 'No vendors yet'"
-              [description]="
-                searchInput()
-                  ? 'Try a different search term.'
-                  : 'Create a vendor profile to let a user publish products and run auctions.'
-              "
-            >
-              @if (searchInput()) {
-                <button type="button" class="btn btn-secondary" (click)="clearSearch()">
-                  Clear search
-                </button>
-              } @else {
-                <app-button
-                  label="New vendor"
-                  icon="plus"
-                  variant="primary"
-                  (clicked)="openCreate()"
-                />
-              }
-            </app-empty-state>
+            <div class="card-inner-padding">
+              <app-empty-state
+                icon="building"
+                [title]="searchInput() ? 'No vendors match search query' : 'No vendor profiles registered'"
+                [description]="
+                  searchInput()
+                    ? 'Try searching with a different company name.'
+                    : 'Create a vendor profile and link it to a user account with the VENDOR role.'
+                "
+              >
+                @if (searchInput()) {
+                  <button type="button" class="btn-admin-secondary" (click)="clearSearch()">
+                    <mat-icon fontIcon="clear" [size]="14" />
+                    <span>Clear Search</span>
+                  </button>
+                } @else {
+                  <button type="button" class="btn-admin-primary" (click)="openCreate()">
+                    <mat-icon fontIcon="add_business" [size]="16" />
+                    <span>Create Vendor</span>
+                  </button>
+                }
+              </app-empty-state>
+            </div>
           }
           @default {
-            <div class="table-scroll">
-              <table class="data-table data-table--stacked">
+            <div class="admin-table-container">
+              <table class="admin-data-table">
                 <thead>
                   <tr>
-                    <th scope="col">Company</th>
-                    <th scope="col">Contact</th>
-                    <th scope="col">Associated user</th>
-                    <th scope="col">Status</th>
-                    <th scope="col" class="col-numeric">Products</th>
-                    <th scope="col">Created</th>
-                    <th scope="col" class="cell-actions">Actions</th>
+                    <th scope="col">Company Name</th>
+                    <th scope="col">Phone Contact</th>
+                    <th scope="col">Company Address</th>
+                    <th scope="col">Linked User ID</th>
+                    <th scope="col">Registered</th>
+                    <th scope="col" class="cell-action-col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (vendor of vendorList(); track vendor.id) {
                     <tr>
-                      <td data-label="Company">
-                        <div class="vendor-cell">
-                          <span class="avatar avatar-sm avatar-neutral">{{
-                            initials(vendor)
-                          }}</span>
-                          <div>
-                            <span class="cell-primary">{{ vendor.companyName }}</span>
-                            <span class="text-mono-id">{{ vendor.id }}</span>
-                          </div>
+                      <td>
+                        <div class="vendor-identity-cell">
+                          <span class="vendor-avatar">
+                            <mat-icon fontIcon="business" [size]="16" />
+                          </span>
+                          <span class="cell-name-strong">{{ vendor.companyName }}</span>
                         </div>
                       </td>
-                      <td data-label="Contact">
-                        <span class="cell-primary contact-name">{{ vendor.contactPerson }}</span>
-                        <p class="text-meta">{{ vendor.phone }}</p>
+                      <td>
+                        <span class="cell-text-secondary">{{ vendor.phone || '—' }}</span>
                       </td>
-                      <td data-label="Associated user">
-                        @if (vendor.user; as user) {
-                          <span class="text-meta">{{ user.email }}</span>
-                        } @else {
-                          <span class="badge badge-warning">No linked user</span>
-                        }
+                      <td>
+                        <span class="cell-address-preview" [title]="vendor.companyAddress || ''">
+                          {{ vendor.companyAddress || '—' }}
+                        </span>
                       </td>
-                      <td data-label="Status">
-                        <app-account-status-badge [status]="vendor.status" />
+                      <td>
+                        <span class="mono-id-tag">{{ vendor.userId }}</span>
                       </td>
-                      <td data-label="Products" class="col-numeric">
-                        <span class="text-numeric">{{ vendor.productCount ?? 0 }}</span>
+                      <td>
+                        <span class="cell-text-muted">{{ dateTime(vendor.createdAt) }}</span>
                       </td>
-                      <td data-label="Created">
-                        <span class="text-meta">{{ dateTime(vendor.createdAt) }}</span>
-                      </td>
-                      <td data-label="Actions" class="cell-actions">
+                      <td class="cell-action-col">
                         <button
                           type="button"
-                          class="btn btn-ghost btn-sm"
+                          class="btn-admin-table-action"
                           (click)="openEdit(vendor)"
                         >
-                          <app-icon name="edit" [size]="14" />
-                          Edit
+                          <mat-icon fontIcon="edit" [size]="14" />
+                          <span>Edit</span>
                         </button>
                       </td>
                     </tr>
@@ -198,21 +191,25 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               </table>
             </div>
 
-            <app-pagination [meta]="meta()" (pageChange)="setPage($event)" />
+            <div class="pagination-footer">
+              <app-pagination [meta]="meta()" (pageChange)="setPage($event)" />
+            </div>
           }
         }
       </div>
     </div>
 
+    <!-- Create / Edit Dialog -->
     @if (dialogOpen()) {
       <app-dialog
-        [title]="editing() ? 'Edit vendor' : 'Create vendor profile'"
+        [title]="editing() ? 'Edit Vendor Profile' : 'Create Vendor Profile'"
         [subtitle]="
-          editing() ? editingVendor()!.companyName : 'Links a user account to a vendor record.'
+          editing()
+            ? 'Update company information for ' + editingVendor()!.companyName
+            : 'Link a company profile to an authorized vendor user account.'
         "
         icon="building"
-        size="lg"
-        [confirmLabel]="editing() ? 'Save changes' : 'Create vendor'"
+        [confirmLabel]="editing() ? 'Save Changes' : 'Create Vendor'"
         [busy]="saving()"
         (confirmed)="save()"
         (dismissed)="closeDialog()"
@@ -223,78 +220,48 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
           </div>
         }
 
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate class="admin-dialog-form">
+          <!-- Associated User (Editable on create, Readonly on edit) -->
           @if (!editing()) {
-            <div class="form-section-head dialog-section-head">
-              <span class="form-section-index">1</span>
-              <div>
-                <p class="form-section-title">Login account</p>
-                <p class="form-section-desc">
-                  The user who will sign in. A new vendor account is created with this email.
-                </p>
-              </div>
-            </div>
-
-            <div class="form-grid">
-              <app-form-field
-                label="Email address"
-                [required]="true"
-                [control]="email"
-                [errorMap]="emailErrors"
-                controlId="vendor-email"
-              >
+            <app-form-field
+              label="Linked User Account"
+              [required]="true"
+              [control]="userIdCtrl"
+              [errorMap]="requiredErrors"
+              hint="Select a user account with VENDOR role, or enter their User UUID."
+              controlId="vendor-user-id"
+            >
+              @if (vendorUsers().length > 0) {
+                <select id="vendor-user-id" class="form-select" formControlName="userId">
+                  <option value="" disabled>Select a vendor user...</option>
+                  @for (u of vendorUsers(); track u.id) {
+                    <option [value]="u.id">{{ u.name }} ({{ u.email }})</option>
+                  }
+                </select>
+              } @else {
                 <input
-                  id="vendor-email"
-                  type="email"
-                  class="form-input"
-                  formControlName="email"
-                  autocomplete="off"
-                />
-              </app-form-field>
-
-              <app-form-field
-                label="First name"
-                [control]="firstName"
-                controlId="vendor-first-name"
-              >
-                <input
-                  id="vendor-first-name"
+                  id="vendor-user-id"
                   type="text"
                   class="form-input"
-                  formControlName="firstName"
+                  formControlName="userId"
+                  placeholder="Enter User UUID (e.g. 123e4567-e89b-12d3-a456-426614174000)"
                 />
-              </app-form-field>
-
-              <app-form-field label="Last name" [control]="lastName" controlId="vendor-last-name">
-                <input
-                  id="vendor-last-name"
-                  type="text"
-                  class="form-input"
-                  formControlName="lastName"
-                />
-              </app-form-field>
+              }
+            </app-form-field>
+          } @else {
+            <div class="readonly-field-group">
+              <label class="readonly-label">Linked User ID (Immutable)</label>
+              <div class="readonly-box">{{ editingVendor()?.userId }}</div>
             </div>
-          } @else if (editingVendor()?.user?.email) {
-            <app-readonly-field
-              label="Associated user"
-              [value]="editingVendor()!.user!.email"
-              hint="The login linked to this vendor record."
-            />
           }
 
-          <div class="form-section-head dialog-section-head">
-            <span class="form-section-index">{{ editing() ? '1' : '2' }}</span>
-            <div>
-              <p class="form-section-title">Vendor details</p>
-              <p class="form-section-desc">Company identity and contact information.</p>
-            </div>
-          </div>
-
+          <!-- Company Name -->
           <app-form-field
-            label="Company name"
+            label="Company Name"
             [required]="true"
-            [control]="companyName"
+            [control]="companyNameCtrl"
             [errorMap]="requiredErrors"
+            hint="The registered business name of the supplier."
             controlId="vendor-company"
           >
             <input
@@ -302,85 +269,381 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               type="text"
               class="form-input"
               formControlName="companyName"
+              placeholder="e.g. PT Industri Prima Sukses"
             />
           </app-form-field>
 
-          <div class="form-grid">
-            <app-form-field
-              label="Contact person"
-              [required]="true"
-              [control]="contactPerson"
-              [errorMap]="requiredErrors"
-              controlId="vendor-contact"
-            >
-              <input
-                id="vendor-contact"
-                type="text"
-                class="form-input"
-                formControlName="contactPerson"
-              />
-            </app-form-field>
+          <!-- Phone -->
+          <app-form-field
+            label="Business Phone Number"
+            [control]="phoneCtrl"
+            hint="Direct contact line for auction settlement and logistics."
+            controlId="vendor-phone"
+          >
+            <input
+              id="vendor-phone"
+              type="tel"
+              class="form-input"
+              formControlName="phone"
+              placeholder="e.g. +62 21 555 1234"
+            />
+          </app-form-field>
 
-            <app-form-field
-              label="Phone"
-              [required]="true"
-              [control]="phone"
-              [errorMap]="requiredErrors"
-              controlId="vendor-phone"
-            >
-              <input id="vendor-phone" type="tel" class="form-input" formControlName="phone" />
-            </app-form-field>
-
-            <div class="form-grid-full">
-              <app-form-field label="Address" [control]="address" controlId="vendor-address">
-                <textarea
-                  id="vendor-address"
-                  class="form-textarea"
-                  rows="2"
-                  formControlName="address"
-                ></textarea>
-              </app-form-field>
-            </div>
-
-            <div class="form-grid-full">
-              <app-form-field
-                label="Description"
-                [control]="description"
-                controlId="vendor-description"
-              >
-                <textarea
-                  id="vendor-description"
-                  class="form-textarea"
-                  rows="2"
-                  formControlName="description"
-                ></textarea>
-              </app-form-field>
-            </div>
-          </div>
+          <!-- Company Address -->
+          <app-form-field
+            label="Company Address"
+            [control]="companyAddressCtrl"
+            hint="Headquarters or principal industrial facility address."
+            controlId="vendor-address"
+          >
+            <textarea
+              id="vendor-address"
+              class="form-textarea"
+              rows="3"
+              formControlName="companyAddress"
+              placeholder="e.g. Kawasan Industri MM2100, Blok C-12, Cikarang Barat, Bekasi"
+            ></textarea>
+          </app-form-field>
         </form>
       </app-dialog>
     }
   `,
   styles: [
     `
-      .vendor-cell {
+      .admin-page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding: 24px 28px 48px;
+        max-width: 1400px;
+        margin: 0 auto;
+        color: #172033;
+      }
+
+      .admin-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #ddd9d0;
+      }
+
+      .admin-badge-strip {
         display: flex;
         align-items: center;
-        gap: var(--sp-3);
+        gap: 10px;
+        margin-bottom: 8px;
       }
-      .contact-name {
+
+      .admin-console-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: #172033;
+        color: #c6a15b;
+        border-radius: 4px;
+
+        mat-icon {
+          color: #c6a15b;
+        }
+      }
+
+      .admin-title {
+        font-size: 1.625rem;
+        font-weight: 700;
+        color: #172033;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        margin: 0 0 6px 0;
+      }
+
+      .admin-subtitle {
+        font-size: 0.875rem;
+        color: #667085;
+        margin: 0;
+        max-width: 720px;
+        line-height: 1.5;
+      }
+
+      .btn-admin-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: #172033;
+        color: #ffffff;
+        border: 1px solid #172033;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        mat-icon {
+          color: #c6a15b;
+        }
+
+        &:hover {
+          background: #222e46;
+          border-color: #222e46;
+        }
+      }
+
+      .btn-admin-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: #ffffff;
+        color: #172033;
+        border: 1px solid #ddd9d0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) {
+          border-color: #c6a15b;
+          background: #fcfbf8;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+      }
+
+      @keyframes spin {
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Toolbar */
+      .admin-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar-search-box {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 260px;
+        position: relative;
+
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          color: #98a2b3;
+          pointer-events: none;
+        }
+
+        .admin-search-input {
+          width: 100%;
+          height: 38px;
+          padding: 0 14px 0 38px;
+          font-size: 0.8125rem;
+          color: #172033;
+          background: #ffffff;
+          border: 1px solid #ddd9d0;
+          border-radius: 6px;
+          transition: border-color 0.15s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #c6a15b;
+            box-shadow: 0 0 0 3px rgba(198, 161, 91, 0.15);
+          }
+
+          &::placeholder {
+            color: #98a2b3;
+          }
+        }
+      }
+
+      /* Main Card & Table */
+      .admin-card {
+        background: #ffffff;
+        border: 1px solid #ddd9d0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .card-inner-padding {
+        padding: 24px;
+      }
+
+      .admin-table-container {
+        overflow-x: auto;
+      }
+
+      .admin-data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+
+        th {
+          padding: 12px 18px;
+          text-align: left;
+          font-size: 0.6875rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #667085;
+          background: #fcfbf8;
+          border-bottom: 1px solid #ddd9d0;
+          white-space: nowrap;
+        }
+
+        td {
+          padding: 12px 18px;
+          vertical-align: middle;
+          border-bottom: 1px solid #f5f3ef;
+          color: #172033;
+        }
+
+        tr:last-child td {
+          border-bottom: none;
+        }
+
+        tbody tr:hover {
+          background-color: #faf8f5;
+        }
+      }
+
+      .vendor-identity-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .vendor-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: #edf5f1;
+        color: #2f6b57;
+        border: 1px solid #b4d8ca;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+
+      .cell-name-strong {
+        font-weight: 600;
+        color: #172033;
+      }
+
+      .cell-text-secondary {
+        color: #667085;
+      }
+
+      .cell-text-muted {
+        color: #98a2b3;
+      }
+
+      .cell-address-preview {
         display: block;
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #667085;
       }
+
+      .mono-id-tag {
+        font-family: var(--font-mono, monospace);
+        font-size: 0.6875rem;
+        color: #667085;
+        background: #f5f3ef;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #ddd9d0;
+      }
+
+      .cell-action-col {
+        text-align: right;
+      }
+
+      .btn-admin-table-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #172033;
+        background: #ffffff;
+        border: 1px solid #ddd9d0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover {
+          background: #172033;
+          color: #ffffff;
+          border-color: #172033;
+
+          mat-icon {
+            color: #c6a15b;
+          }
+        }
+      }
+
+      .pagination-footer {
+        padding: 12px 18px;
+        border-top: 1px solid #ddd9d0;
+        background: #fcfbf8;
+      }
+
+      /* Dialog Form Styles */
+      .admin-dialog-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .readonly-field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .readonly-label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #667085;
+      }
+
+      .readonly-box {
+        padding: 8px 12px;
+        background: #f5f3ef;
+        border: 1px solid #ddd9d0;
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        color: #172033;
+        font-family: var(--font-mono, monospace);
+      }
+
       .dialog-alert {
-        margin-bottom: var(--sp-4);
-      }
-      .dialog-section-head {
-        margin-bottom: var(--sp-4);
-      }
-      .dialog-section-head:not(:first-child) {
-        margin-top: var(--sp-5);
-        padding-top: var(--sp-5);
-        border-top: 1px solid var(--c-border);
+        margin-bottom: 16px;
       }
     `,
   ],
@@ -388,9 +651,11 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
 export class AdminVendorsComponent {
   private readonly fb = inject(FormBuilder);
   private readonly vendorService = inject(VendorService);
+  private readonly userService = inject(UserService);
   private readonly notifications = inject(NotificationService);
 
   readonly vendors = new AsyncResource<Paginated<Vendor>>();
+  readonly users = new AsyncResource<Paginated<User>>();
 
   readonly searchInput = signal('');
   readonly page = signal(1);
@@ -403,45 +668,25 @@ export class AdminVendorsComponent {
   readonly dialogFailure = signal<ApiFailure | null>(null);
 
   readonly form = this.fb.nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
-    firstName: [''],
-    lastName: [''],
+    userId: ['', [Validators.required]],
     companyName: ['', [Validators.required]],
-    contactPerson: ['', [Validators.required]],
-    phone: ['', [Validators.required]],
-    address: [''],
-    description: [''],
+    companyAddress: [''],
+    phone: [''],
   });
 
-  get email() {
-    return this.form.controls.email;
+  get userIdCtrl() {
+    return this.form.controls.userId;
   }
-  get firstName() {
-    return this.form.controls.firstName;
-  }
-  get lastName() {
-    return this.form.controls.lastName;
-  }
-  get companyName() {
+  get companyNameCtrl() {
     return this.form.controls.companyName;
   }
-  get contactPerson() {
-    return this.form.controls.contactPerson;
+  get companyAddressCtrl() {
+    return this.form.controls.companyAddress;
   }
-  get phone() {
+  get phoneCtrl() {
     return this.form.controls.phone;
   }
-  get address() {
-    return this.form.controls.address;
-  }
-  get description() {
-    return this.form.controls.description;
-  }
 
-  readonly emailErrors = {
-    required: 'Email address is required',
-    email: 'Enter a valid email address',
-  };
   readonly requiredErrors = { required: 'This field is required' };
 
   readonly vendorList = computed(() => this.vendors.data()?.items ?? []);
@@ -449,8 +694,13 @@ export class AdminVendorsComponent {
     () => this.vendors.data()?.meta ?? { total: 0, page: 1, limit: 12, totalPages: 1 },
   );
 
+  readonly vendorUsers = computed(
+    () => this.users.data()?.items.filter((u) => u.role === UserRole.VENDOR) ?? [],
+  );
+
   constructor() {
     this.reload();
+    this.loadVendorUsers();
   }
 
   reload(): void {
@@ -462,6 +712,10 @@ export class AdminVendorsComponent {
       }),
       { keepData: true },
     );
+  }
+
+  loadVendorUsers(): void {
+    this.users.load(this.userService.list({ role: UserRole.VENDOR, limit: 100 }));
   }
 
   private searchTimer?: ReturnType<typeof setTimeout>;
@@ -490,15 +744,13 @@ export class AdminVendorsComponent {
     this.editing.set(false);
     this.editingVendor.set(null);
     this.dialogFailure.set(null);
+    this.userIdCtrl.setValidators([Validators.required]);
+    this.userIdCtrl.updateValueAndValidity();
     this.form.reset({
-      email: '',
-      firstName: '',
-      lastName: '',
+      userId: this.vendorUsers()[0]?.id ?? '',
       companyName: '',
-      contactPerson: '',
+      companyAddress: '',
       phone: '',
-      address: '',
-      description: '',
     });
     this.dialogOpen.set(true);
   }
@@ -507,15 +759,13 @@ export class AdminVendorsComponent {
     this.editing.set(true);
     this.editingVendor.set(vendor);
     this.dialogFailure.set(null);
+    this.userIdCtrl.clearValidators();
+    this.userIdCtrl.updateValueAndValidity();
     this.form.reset({
-      email: vendor.user?.email ?? '',
-      firstName: vendor.user?.firstName ?? '',
-      lastName: vendor.user?.lastName ?? '',
+      userId: vendor.userId,
       companyName: vendor.companyName,
-      contactPerson: vendor.contactPerson,
-      phone: vendor.phone,
-      address: vendor.address ?? '',
-      description: vendor.description ?? '',
+      companyAddress: vendor.companyAddress ?? '',
+      phone: vendor.phone ?? '',
     });
     this.dialogOpen.set(true);
   }
@@ -528,39 +778,29 @@ export class AdminVendorsComponent {
   }
 
   save(): void {
-    const vendor = this.editingVendor();
-
-    // Email is only required when creating the login alongside the profile.
-    if (!vendor && this.email.invalid) this.email.markAsTouched();
-    if (this.companyName.invalid || this.contactPerson.invalid || this.phone.invalid) {
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
+      return;
     }
-    if (this.companyName.invalid || this.contactPerson.invalid || this.phone.invalid) return;
-    if (!vendor && this.email.invalid) return;
 
     this.saving.set(true);
     this.dialogFailure.set(null);
     this.actionFailure.set(null);
 
     const value = this.form.getRawValue();
+    const vendor = this.editingVendor();
 
     const request$ = vendor
       ? this.vendorService.update(vendor.id, {
           companyName: value.companyName.trim(),
-          contactPerson: value.contactPerson.trim(),
-          phone: value.phone.trim(),
-          address: value.address.trim(),
-          description: value.description.trim(),
+          companyAddress: value.companyAddress?.trim() || null,
+          phone: value.phone?.trim() || null,
         })
       : this.vendorService.create({
-          email: value.email.trim(),
-          firstName: value.firstName.trim() || undefined,
-          lastName: value.lastName.trim() || undefined,
+          userId: value.userId.trim(),
           companyName: value.companyName.trim(),
-          contactPerson: value.contactPerson.trim(),
-          phone: value.phone.trim(),
-          address: value.address.trim(),
-          description: value.description.trim(),
+          companyAddress: value.companyAddress?.trim() || undefined,
+          phone: value.phone?.trim() || undefined,
         });
 
     request$.subscribe({
@@ -568,38 +808,21 @@ export class AdminVendorsComponent {
         this.saving.set(false);
         this.dialogOpen.set(false);
         this.editingVendor.set(null);
-        this.notifications.success(vendor ? 'Vendor updated' : 'Vendor created', saved.companyName);
+        this.notifications.success(
+          vendor ? 'Vendor profile updated' : 'Vendor profile created',
+          saved.companyName,
+        );
         this.reload();
       },
       error: (error: unknown) => {
         this.saving.set(false);
         const failure = toApiFailure(error);
         this.dialogFailure.set(failure);
-
-        if (failure.fieldErrors?.['email']) {
-          this.email.setErrors({ server: true });
-          this.email.markAsTouched();
-        }
-        if (failure.fieldErrors?.['companyName']) {
-          this.companyName.setErrors({ server: true });
-          this.companyName.markAsTouched();
-        }
       },
     });
-  }
-
-  initials(vendor: Vendor): string {
-    return vendor.companyName
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((word) => word[0])
-      .join('')
-      .toUpperCase();
   }
 
   dateTime(iso: string | null | undefined): string {
     return formatDateTime(iso);
   }
-
-  protected readonly AccountStatus = AccountStatus;
 }

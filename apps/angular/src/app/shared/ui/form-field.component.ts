@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  input,
+  signal,
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { IconComponent } from './icon.component';
 
@@ -8,19 +15,24 @@ import { IconComponent } from './icon.component';
  * Owns the label, required marker, hint and error presentation so every form in
  * the application renders validation identically. Errors are only shown once the
  * control has been touched, so a pristine form never greets the user with red.
+ * Automatically triggers a subtle shake animation when validation fails.
  */
 @Component({
   selector: 'app-form-field',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="form-group" [class.has-error]="showError()">
+    <div
+      class="form-group"
+      [class.has-error]="showError()"
+      [class.animate-shake]="shaking()"
+    >
       @if (label()) {
         <label class="form-label" [attr.for]="controlId()">
           <span>{{ label() }}</span>
           @if (required()) {
             <span class="required-marker" aria-hidden="true">*</span>
-            <span class="sr-only">required</span>
+            <span class="sr-only">wajib diisi</span>
           }
         </label>
       }
@@ -29,7 +41,7 @@ import { IconComponent } from './icon.component';
 
       @if (showError()) {
         <p class="form-error" [attr.id]="controlId() + '-error'" role="alert">
-          <app-icon name="alert" [size]="13" />
+          <app-icon name="alert" [size]="14" />
           <span>{{ errorMessage() }}</span>
         </p>
       } @else if (hint()) {
@@ -55,6 +67,18 @@ export class FormFieldComponent {
     return !!control && control.invalid && (control.touched || control.dirty);
   });
 
+  readonly shaking = signal(false);
+
+  constructor() {
+    effect((onCleanup) => {
+      if (this.showError()) {
+        this.shaking.set(true);
+        const timer = setTimeout(() => this.shaking.set(false), 500);
+        onCleanup(() => clearTimeout(timer));
+      }
+    });
+  }
+
   readonly errorMessage = computed(() => {
     const control = this.control();
     if (!control?.errors) return this.errorText();
@@ -63,7 +87,7 @@ export class FormFieldComponent {
     for (const key of Object.keys(control.errors)) {
       if (map[key]) return map[key];
     }
-    return this.errorText() || 'This value is not valid';
+    return this.errorText() || 'Nilai ini tidak valid';
   });
 }
 
