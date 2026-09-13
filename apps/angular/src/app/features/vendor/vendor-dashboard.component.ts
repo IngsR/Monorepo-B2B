@@ -8,16 +8,16 @@ import { ProductService } from '../../core/services/catalogue.service';
 import { AuthService } from '../../core/services/session.service';
 import { AsyncResource } from '../../core/state/async-resource';
 import { AuctionStatusBadgeComponent } from '../../shared/ui/badge.component';
-import { IconComponent } from '../../shared/ui/icon.component';
+import { MatIconComponent } from '../../shared/ui/mat-icon.component';
 import { EmptyStateComponent, ErrorStateComponent } from '../../shared/ui/state-block.component';
 import { AlertComponent } from '../../shared/ui/toast.component';
 
 /**
- * Vendor Dashboard — B2B Auction Workspace.
+ * Vendor Overview — Auction Operations Cockpit.
  *
- * Operational cockpit for managing auctions, monitoring active bids,
- * and reviewing product lots. Designed with formal B2B hierarchy,
- * clean surface compositions, and restrained aesthetics.
+ * Operational workspace for managing auction lots, monitoring real-time active bids,
+ * and reviewing product lots. Designed with 60/30/10 institutional palette,
+ * Manrope & IBM Plex Mono typography, and mobile-first stacked layouts.
  */
 @Component({
   selector: 'app-vendor-dashboard',
@@ -25,122 +25,134 @@ import { AlertComponent } from '../../shared/ui/toast.component';
   imports: [
     RouterLink,
     AuctionStatusBadgeComponent,
-    IconComponent,
+    MatIconComponent,
     EmptyStateComponent,
     ErrorStateComponent,
     AlertComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page vendor-workspace">
+    <div class="page vendor-overview-page">
       <!-- 1. Workspace Header -->
       <header class="workspace-header">
         <div class="workspace-header-main">
           <div class="workspace-eyebrow">
-            <span class="workspace-chip">PORTAL LELANG B2B</span>
+            <span class="workspace-chip">AUCTION OPERATIONS DESK</span>
             @if (vendor()) {
               <span class="workspace-verified-badge">
-                <app-icon name="shield" [size]="12" />
+                <mat-icon fontIcon="verified" [size]="14" />
                 <span>Vendor Terverifikasi</span>
               </span>
             }
           </div>
           <h1 class="workspace-title">{{ companyName() }}</h1>
           <p class="workspace-subtitle">
-            Pusat operasional lelang. Pantau lot yang sedang aktif, kelola inventaris produk, dan jadwalkan penawaran baru.
+            Ruang kerja operasional penjual. Kelola inventaris barang industri, pantau lot yang sedang aktif, dan tindak lanjuti status lelang.
           </p>
         </div>
         <div class="workspace-actions">
           <a class="btn btn-secondary" routerLink="/vendor/products/new">
-            <app-icon name="plus" [size]="14" />
-            <span>Tambah Lot Produk</span>
+            <mat-icon fontIcon="add" [size]="16" />
+            <span>Daftarkan Barang</span>
           </a>
           <a class="btn btn-seller" routerLink="/vendor/auctions/new">
-            <app-icon name="hammer" [size]="14" />
+            <mat-icon fontIcon="gavel" [size]="16" />
             <span>Buat Lelang Baru</span>
           </a>
         </div>
       </header>
 
-      <!-- Vendor Profile Alert if missing -->
+      <!-- Vendor Profile Incomplete Alert if applicable -->
       @if (profileResolved() && !vendor()) {
         <div class="workspace-alert-slot">
           <app-alert tone="warning" title="Profil penjual belum lengkap">
             Akun Anda belum memiliki data profil perusahaan resmi.
-            Lengkapi data bisnis Anda melalui <a routerLink="/profile">Profil & Akun</a> untuk memulai lelang.
+            Lengkapi data bisnis Anda melalui <a routerLink="/profile">Profil & Akun</a> untuk memulai proses lelang.
           </app-alert>
         </div>
       }
 
       @if (!auctions.hasError()) {
-        <!-- 2. Auction Overview: Single Unified Metrics Strip -->
-        <section class="metrics-strip-container" aria-label="Ringkasan Status Lelang">
+        <!-- 2. Operational Metrics Strip (Accurately computed from backend items) -->
+        <section class="metrics-strip-container" aria-label="Ringkasan Operasional Lot Lelang">
           <div class="metrics-strip">
+            <div class="metric-cell">
+              <div class="metric-cell-header">
+                <span class="metric-dot dot-inventory"></span>
+                <span class="metric-label">Total Barang Katalog</span>
+              </div>
+              <div class="metric-value-row">
+                <span class="metric-value">{{ totalProducts() }}</span>
+                <span class="metric-context">Barang siap lelang</span>
+              </div>
+            </div>
+
             <div class="metric-cell metric-cell--active">
               <div class="metric-cell-header">
                 <span class="metric-dot dot-active"></span>
-                <span class="metric-label">Sedang Berlangsung</span>
+                <span class="metric-label">Lelang Sedang Berlangsung</span>
               </div>
               <div class="metric-value-row">
                 <span class="metric-value">{{ countBy(AuctionStatus.ACTIVE) }}</span>
-                <span class="metric-context">Lot aktif</span>
+                <span class="metric-context">Lot aktif terbuka</span>
               </div>
             </div>
 
             <div class="metric-cell metric-cell--scheduled">
               <div class="metric-cell-header">
                 <span class="metric-dot dot-scheduled"></span>
-                <span class="metric-label">Akan Datang</span>
+                <span class="metric-label">Lelang Terjadwal</span>
               </div>
               <div class="metric-value-row">
                 <span class="metric-value">{{ countBy(AuctionStatus.SCHEDULED) }}</span>
-                <span class="metric-context">Terjadwal</span>
+                <span class="metric-context">Menunggu waktu buka</span>
               </div>
             </div>
 
             <div class="metric-cell metric-cell--draft">
               <div class="metric-cell-header">
                 <span class="metric-dot dot-draft"></span>
-                <span class="metric-label">Draft / Persiapan</span>
+                <span class="metric-label">Draf Persiapan</span>
               </div>
               <div class="metric-value-row">
                 <span class="metric-value">{{ countBy(AuctionStatus.DRAFT) }}</span>
-                <span class="metric-context">Perlu jadwal</span>
+                <span class="metric-context">Perlu dijadwalkan</span>
               </div>
             </div>
 
             <div class="metric-cell metric-cell--ended">
               <div class="metric-cell-header">
                 <span class="metric-dot dot-ended"></span>
-                <span class="metric-label">Tuntas / Selesai</span>
+                <span class="metric-label">Lelang Selesai</span>
               </div>
               <div class="metric-value-row">
                 <span class="metric-value">{{ countBy(AuctionStatus.ENDED) }}</span>
-                <span class="metric-context">Selesai</span>
+                <span class="metric-context">Penetapan tuntas</span>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- 3. Immediate Action Callout (Only if items need attention) -->
+        <!-- 3. Immediate Action Callout (Only when items need attention) -->
         @if (needsAttention().length > 0) {
-          <section class="action-needed-panel" aria-label="Lot Memerlukan Tindakan">
+          <section class="action-needed-panel" aria-label="Lot Memerlukan Tindakan Operasional">
             <div class="panel-header">
               <div class="panel-header-title">
-                <app-icon name="alert" [size]="16" />
+                <mat-icon fontIcon="warning" [size]="18" class="warning-icon" />
                 <h2 class="panel-heading">Perlu Tindakan Operasional</h2>
-                <span class="panel-badge">{{ needsAttention().length }}</span>
+                <span class="panel-badge">{{ needsAttention().length }} Lot</span>
               </div>
-              <p class="panel-hint">Lot berikut membutuhkan penetapan jadwal atau penutupan resmi.</p>
+              <p class="panel-hint">Lot berikut membutuhkan penentuan jadwal atau konfirmasi penutupan resmi.</p>
             </div>
 
-            <div class="table-scroll">
+            <!-- Desktop Table View -->
+            <div class="table-scroll hide-mobile">
               <table class="data-table">
                 <thead>
                   <tr>
                     <th scope="col">Lot Produk</th>
                     <th scope="col">Status</th>
-                    <th scope="col">Kondisi</th>
+                    <th scope="col">Catatan Operasional</th>
                     <th scope="col" class="col-numeric">Harga Saat Ini</th>
                     <th scope="col" class="cell-actions">Aksi Cepat</th>
                   </tr>
@@ -148,28 +160,28 @@ import { AlertComponent } from '../../shared/ui/toast.component';
                 <tbody>
                   @for (auction of needsAttention(); track auction.id) {
                     <tr>
-                      <td data-label="Lot Produk">
+                      <td>
                         <div class="lot-cell">
-                          <span class="lot-name">{{ auction.product?.name }}</span>
+                          <span class="lot-name">{{ auction.product?.name ?? 'Tanpa nama' }}</span>
                           <span class="text-mono-id">{{ auction.product?.code }}</span>
                         </div>
                       </td>
-                      <td data-label="Status">
+                      <td>
                         <app-auction-status-badge [status]="auction.status" size="sm" />
                       </td>
-                      <td data-label="Kondisi">
+                      <td>
                         <span class="attention-note">{{ attentionReason(auction) }}</span>
                       </td>
-                      <td data-label="Harga Saat Ini" class="col-numeric">
+                      <td class="col-numeric">
                         <span class="text-numeric">{{ price(auction.currentPrice) }}</span>
                       </td>
-                      <td data-label="Aksi Cepat" class="cell-actions">
+                      <td class="cell-actions">
                         <a
                           class="btn btn-seller btn-sm"
                           [routerLink]="['/vendor/auctions', auction.id]"
                         >
-                          <app-icon name="hammer" [size]="13" />
-                          <span>Kelola</span>
+                          <mat-icon fontIcon="gavel" [size]="14" />
+                          <span>Kelola Lot</span>
                         </a>
                       </td>
                     </tr>
@@ -177,181 +189,199 @@ import { AlertComponent } from '../../shared/ui/toast.component';
                 </tbody>
               </table>
             </div>
+
+            <!-- Mobile Stacked Card View -->
+            <div class="mobile-attention-stack hide-desktop">
+              @for (auction of needsAttention(); track auction.id) {
+                <div class="mobile-attention-card">
+                  <div class="mobile-attention-card-head">
+                    <div class="lot-cell">
+                      <span class="lot-name">{{ auction.product?.name ?? 'Tanpa nama' }}</span>
+                      <span class="text-mono-id">{{ auction.product?.code }}</span>
+                    </div>
+                    <app-auction-status-badge [status]="auction.status" size="sm" />
+                  </div>
+                  <div class="mobile-attention-body">
+                    <div class="attention-note-block">
+                      <mat-icon fontIcon="info" [size]="14" />
+                      <span>{{ attentionReason(auction) }}</span>
+                    </div>
+                    <div class="attention-price-row">
+                      <span class="text-meta">Harga Saat Ini:</span>
+                      <span class="text-numeric">{{ price(auction.currentPrice) }}</span>
+                    </div>
+                  </div>
+                  <div class="mobile-attention-footer">
+                    <a
+                      class="btn btn-seller btn-sm btn-block"
+                      [routerLink]="['/vendor/auctions', auction.id]"
+                    >
+                      <mat-icon fontIcon="gavel" [size]="14" />
+                      <span>Kelola Lot Lelang</span>
+                    </a>
+                  </div>
+                </div>
+              }
+            </div>
           </section>
         }
 
-        <!-- 4. Operational Tables Layout (Two-Column / Stacked Composition) -->
-        <div class="workspace-grid">
-          <!-- Main: Active & Recent Auctions -->
-          <section class="workspace-section">
-            <div class="section-title-row">
-              <div class="section-title-wrap">
-                <h2 class="section-title">Aktivitas Lelang Utama</h2>
-                <span class="section-count-tag">{{ auctionList().length }} Total</span>
-              </div>
-              <a class="section-action-link" routerLink="/vendor/auctions">
-                <span>Buka Semua Lelang</span>
-                <app-icon name="arrow-right" [size]="13" />
-              </a>
+        <!-- 4. Main Operational Lot List -->
+        <section class="workspace-section">
+          <div class="section-title-row">
+            <div class="section-title-wrap">
+              <h2 class="section-title">Aktivitas Lot Lelang Terkini</h2>
+              <span class="section-count-tag">{{ auctionList().length }} Terdaftar</span>
             </div>
+            <a class="section-action-link" routerLink="/vendor/auctions">
+              <span>Buka Seluruh Lelang</span>
+              <mat-icon fontIcon="arrow_forward" [size]="14" />
+            </a>
+          </div>
 
-            @if (auctions.isLoading() && !auctions.data()) {
-              <div class="surface-panel">
-                <div class="table-skeleton-rows">
-                  @for (i of skeletonItems; track i) {
-                    <div class="skeleton-row">
-                      <div class="skeleton" style="width: 40%; height: 14px;"></div>
-                      <div class="skeleton" style="width: 20%; height: 14px;"></div>
-                      <div class="skeleton" style="width: 20%; height: 14px;"></div>
-                    </div>
-                  }
-                </div>
+          @if (auctions.isLoading() && !auctions.data()) {
+            <div class="surface-panel">
+              <div class="table-skeleton-rows">
+                @for (i of skeletonItems; track i) {
+                  <div class="skeleton-row">
+                    <div class="skeleton" style="width: 40%; height: 16px;"></div>
+                    <div class="skeleton" style="width: 20%; height: 16px;"></div>
+                    <div class="skeleton" style="width: 20%; height: 16px;"></div>
+                  </div>
+                }
               </div>
-            } @else if (recentAuctions().length === 0) {
-              <div class="surface-panel">
-                <app-empty-state
-                  icon="hammer"
-                  title="Belum ada lelang dibuat"
-                  description="Daftarkan produk Anda terlebih dahulu, lalu buat lelang lot baru untuk mulai menerima penawaran."
-                >
+            </div>
+          } @else if (recentAuctions().length === 0) {
+            <div class="surface-panel">
+              <app-empty-state
+                icon="hammer"
+                title="Belum ada lot lelang dibuat"
+                description="Daftarkan barang Anda ke katalog terlebih dahulu, kemudian jadwalkan lelang lot baru."
+              >
+                <div class="empty-actions">
+                  <a class="btn btn-secondary" routerLink="/vendor/products/new">
+                    <mat-icon fontIcon="add" [size]="16" />
+                    <span>Daftarkan Barang Baru</span>
+                  </a>
                   <a class="btn btn-seller" routerLink="/vendor/auctions/new">
-                    <app-icon name="plus" [size]="14" />
+                    <mat-icon fontIcon="gavel" [size]="16" />
                     <span>Buat Lelang Pertama</span>
                   </a>
-                </app-empty-state>
-              </div>
-            } @else {
-              <div class="surface-panel">
-                <div class="table-scroll">
-                  <table class="data-table">
-                    <thead>
+                </div>
+              </app-empty-state>
+            </div>
+          } @else {
+            <!-- Desktop Scannable Table -->
+            <div class="surface-panel hide-mobile">
+              <div class="table-scroll">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">Lot Produk</th>
+                      <th scope="col">Status</th>
+                      <th scope="col" class="col-numeric">Harga Saat Ini</th>
+                      <th scope="col" class="col-numeric">Total Penawaran</th>
+                      <th scope="col" class="cell-actions">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (auction of recentAuctions(); track auction.id) {
                       <tr>
-                        <th scope="col">Lot Produk</th>
-                        <th scope="col">Status</th>
-                        <th scope="col" class="col-numeric">Harga Saat Ini</th>
-                        <th scope="col" class="col-numeric">Tawaran</th>
-                        <th scope="col" class="cell-actions">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (auction of recentAuctions(); track auction.id) {
-                        <tr>
-                          <td data-label="Lot Produk">
-                            <div class="lot-cell">
-                              <a
-                                [routerLink]="['/vendor/auctions', auction.id]"
-                                class="lot-name-link"
-                              >
-                                {{ auction.product?.name ?? 'Tanpa nama' }}
-                              </a>
-                              <span class="text-mono-id">{{ auction.product?.code }}</span>
-                            </div>
-                          </td>
-                          <td data-label="Status">
-                            <app-auction-status-badge [status]="auction.status" size="sm" />
-                          </td>
-                          <td data-label="Harga Saat Ini" class="col-numeric">
-                            <span class="text-numeric">{{ price(auction.currentPrice) }}</span>
-                          </td>
-                          <td data-label="Tawaran" class="col-numeric">
-                            <span class="bid-count-pill">{{ auction.bidCount }}</span>
-                          </td>
-                          <td data-label="Aksi" class="cell-actions">
+                        <td>
+                          <div class="lot-cell">
                             <a
-                              class="btn btn-secondary btn-sm"
+                              [routerLink]="['/vendor/auctions', auction.id]"
+                              class="lot-name-link"
+                            >
+                              {{ auction.product?.name ?? 'Tanpa nama' }}
+                            </a>
+                            <span class="text-mono-id">{{ auction.product?.code }}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <app-auction-status-badge [status]="auction.status" size="sm" />
+                        </td>
+                        <td class="col-numeric">
+                          <span class="text-numeric">{{ price(auction.currentPrice) }}</span>
+                        </td>
+                        <td class="col-numeric">
+                          <span class="bid-count-pill">{{ auction.bidCount }} tawaran</span>
+                        </td>
+                        <td class="cell-actions">
+                          <div class="actions-group">
+                            <a
+                              class="btn btn-seller btn-sm"
                               [routerLink]="['/vendor/auctions', auction.id]"
                             >
-                              <app-icon name="hammer" [size]="12" />
+                              <mat-icon fontIcon="gavel" [size]="14" />
                               <span>Kelola</span>
                             </a>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            }
-          </section>
-
-          <!-- Side: Ready Lots Inventory -->
-          <section class="workspace-section">
-            <div class="section-title-row">
-              <div class="section-title-wrap">
-                <h2 class="section-title">Inventaris Produk / Lot</h2>
-                <span class="section-count-tag">{{ productList().length }} Terdaftar</span>
-              </div>
-              <a class="section-action-link" routerLink="/vendor/products">
-                <span>Kelola Inventaris</span>
-                <app-icon name="arrow-right" [size]="13" />
-              </a>
-            </div>
-
-            @if (products.isLoading() && !products.data()) {
-              <div class="surface-panel">
-                <div class="table-skeleton-rows">
-                  @for (i of skeletonItems; track i) {
-                    <div class="skeleton-row">
-                      <div class="skeleton" style="width: 50%; height: 14px;"></div>
-                      <div class="skeleton" style="width: 30%; height: 14px;"></div>
-                    </div>
-                  }
-                </div>
-              </div>
-            } @else if (productList().length === 0) {
-              <div class="surface-panel">
-                <app-empty-state
-                  icon="package"
-                  title="Inventaris produk masih kosong"
-                  description="Produk adalah dasar untuk lot lelang. Daftarkan produk katalog Anda sebelum membuat lelang."
-                >
-                  <a class="btn btn-secondary" routerLink="/vendor/products/new">
-                    <app-icon name="plus" [size]="14" />
-                    <span>Daftarkan Produk</span>
-                  </a>
-                </app-empty-state>
-              </div>
-            } @else {
-              <div class="surface-panel">
-                <div class="table-scroll">
-                  <table class="data-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Kode & Nama</th>
-                        <th scope="col">Kategori</th>
-                        <th scope="col" class="cell-actions">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (product of productList().slice(0, 5); track product.id) {
-                        <tr>
-                          <td data-label="Kode & Nama">
-                            <div class="lot-cell">
-                              <span class="lot-name">{{ product.name }}</span>
-                              <span class="text-mono-id">{{ product.code }}</span>
-                            </div>
-                          </td>
-                          <td data-label="Kategori">
-                            <span class="category-chip">{{ product.category?.name ?? '—' }}</span>
-                          </td>
-                          <td data-label="Aksi" class="cell-actions">
                             <a
                               class="btn btn-ghost btn-sm"
-                              [routerLink]="['/vendor/products', product.id, 'edit']"
-                              title="Edit Lot"
+                              [routerLink]="['/marketplace', auction.id]"
+                              title="Tinjau tampilan publik"
                             >
-                              <app-icon name="edit" [size]="13" />
+                              <mat-icon fontIcon="open_in_new" [size]="14" />
                             </a>
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
               </div>
-            }
-          </section>
-        </div>
+            </div>
+
+            <!-- Mobile Stacked Card View -->
+            <div class="mobile-lot-stack hide-desktop">
+              @for (auction of recentAuctions(); track auction.id) {
+                <article class="mobile-lot-card">
+                  <div class="mobile-lot-card-head">
+                    <div class="lot-cell">
+                      <a
+                        [routerLink]="['/vendor/auctions', auction.id]"
+                        class="lot-name-link"
+                      >
+                        {{ auction.product?.name ?? 'Tanpa nama' }}
+                      </a>
+                      <span class="text-mono-id">{{ auction.product?.code }}</span>
+                    </div>
+                    <app-auction-status-badge [status]="auction.status" size="sm" />
+                  </div>
+
+                  <div class="mobile-lot-card-data">
+                    <div class="data-col">
+                      <span class="text-meta">Harga Saat Ini</span>
+                      <span class="text-numeric font-bold">{{ price(auction.currentPrice) }}</span>
+                    </div>
+                    <div class="data-col text-right">
+                      <span class="text-meta">Aktivitas</span>
+                      <span class="bid-count-pill">{{ auction.bidCount }} tawaran</span>
+                    </div>
+                  </div>
+
+                  <div class="mobile-lot-card-footer">
+                    <a
+                      class="btn btn-seller btn-sm btn-grow"
+                      [routerLink]="['/vendor/auctions', auction.id]"
+                    >
+                      <mat-icon fontIcon="gavel" [size]="14" />
+                      <span>Kelola Lot</span>
+                    </a>
+                    <a
+                      class="btn btn-secondary btn-sm"
+                      [routerLink]="['/marketplace', auction.id]"
+                      title="Lihat halaman publik"
+                    >
+                      <mat-icon fontIcon="open_in_new" [size]="14" />
+                      <span>Publik</span>
+                    </a>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
       } @else {
         <div class="surface-panel">
           @if (auctions.error(); as failure) {
@@ -367,10 +397,11 @@ import { AlertComponent } from '../../shared/ui/toast.component';
   `,
   styles: [
     `
-      .vendor-workspace {
+      .vendor-overview-page {
         display: flex;
         flex-direction: column;
         gap: var(--sp-6);
+        font-family: var(--font-sans);
       }
 
       /* 1. Workspace Header */
@@ -380,19 +411,19 @@ import { AlertComponent } from '../../shared/ui/toast.component';
         justify-content: space-between;
         gap: var(--sp-5);
         padding-bottom: var(--sp-5);
-        border-bottom: 1px solid var(--c-border);
+        border-bottom: 1px solid #d9ddd8;
       }
 
       .workspace-header-main {
         display: flex;
         flex-direction: column;
-        gap: var(--sp-1-5, 6px);
+        gap: 6px;
       }
 
       .workspace-eyebrow {
         display: flex;
         align-items: center;
-        gap: var(--sp-2-5, 10px);
+        gap: 10px;
       }
 
       .workspace-chip {
@@ -400,9 +431,9 @@ import { AlertComponent } from '../../shared/ui/toast.component';
         font-weight: var(--fw-bold);
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: var(--c-seller);
-        background: var(--c-seller-soft);
-        border: 1px solid var(--c-seller-border);
+        color: #a86445;
+        background: #f6efea;
+        border: 1px solid #e5c4b4;
         padding: 2px 7px;
         border-radius: var(--r-xs);
       }
@@ -420,14 +451,14 @@ import { AlertComponent } from '../../shared/ui/toast.component';
         font-size: var(--fs-2xl);
         font-weight: var(--fw-bold);
         letter-spacing: var(--tracking-tight);
-        color: var(--c-text);
+        color: #17201e;
         margin: 0;
         line-height: var(--lh-tight);
       }
 
       .workspace-subtitle {
         font-size: var(--fs-sm);
-        color: var(--c-text-muted);
+        color: #64706b;
         margin: 0;
         max-width: 680px;
         line-height: var(--lh-normal);
@@ -436,7 +467,7 @@ import { AlertComponent } from '../../shared/ui/toast.component';
       .workspace-actions {
         display: flex;
         align-items: center;
-        gap: var(--sp-2-5, 10px);
+        gap: 10px;
         flex-shrink: 0;
       }
 
@@ -444,146 +475,137 @@ import { AlertComponent } from '../../shared/ui/toast.component';
         margin-bottom: var(--sp-2);
       }
 
-      /* 2. Single Unified Metrics Strip */
+      /* 2. Operational Metrics Strip */
       .metrics-strip-container {
         width: 100%;
       }
 
       .metrics-strip {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        background: var(--c-surface);
-        border: 1px solid var(--c-border);
+        grid-template-columns: repeat(5, 1fr);
+        background: #ffffff;
+        border: 1px solid #d9ddd8;
         border-radius: var(--r-md);
-        box-shadow: var(--sh-xs);
+        box-shadow: 0 1px 2px rgba(23, 32, 30, 0.04);
         overflow: hidden;
       }
 
       .metric-cell {
-        padding: var(--sp-4) var(--sp-5);
+        padding: var(--sp-4);
         display: flex;
         flex-direction: column;
         gap: var(--sp-2);
-        border-right: 1px solid var(--c-border);
-        background: var(--c-surface);
-        transition: background-color var(--dur-fast);
+        border-right: 1px solid #d9ddd8;
+        background: #ffffff;
 
         &:last-child {
           border-right: none;
-        }
-
-        &:hover {
-          background-color: var(--c-surface-sunken);
         }
       }
 
       .metric-cell-header {
         display: flex;
         align-items: center;
-        gap: var(--sp-2);
+        gap: 6px;
       }
 
       .metric-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: var(--r-full);
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        flex-shrink: 0;
       }
 
-      .dot-active { background: var(--c-success); box-shadow: 0 0 0 2px var(--c-success-soft); }
-      .dot-scheduled { background: var(--c-info); box-shadow: 0 0 0 2px var(--c-info-soft); }
-      .dot-draft { background: var(--c-warning); box-shadow: 0 0 0 2px var(--c-warning-soft); }
-      .dot-ended { background: var(--c-neutral); box-shadow: 0 0 0 2px var(--c-neutral-soft); }
+      .dot-inventory { background: #3e4a45; }
+      .dot-active { background: #1b6348; }
+      .dot-scheduled { background: #0369a1; }
+      .dot-draft { background: #b45309; }
+      .dot-ended { background: #64706b; }
 
       .metric-label {
-        font-size: var(--fs-xs);
+        font-size: 0.6875rem;
         font-weight: var(--fw-semibold);
-        color: var(--c-text-secondary);
+        color: #64706b;
         text-transform: uppercase;
         letter-spacing: 0.04em;
       }
 
       .metric-value-row {
         display: flex;
-        align-items: baseline;
-        gap: var(--sp-2);
+        flex-direction: column;
+        gap: 2px;
       }
 
       .metric-value {
         font-family: var(--font-mono);
-        font-size: 1.875rem;
+        font-size: var(--fs-2xl);
         font-weight: var(--fw-bold);
-        color: var(--c-text);
+        color: #17201e;
         line-height: 1;
       }
 
       .metric-context {
-        font-size: var(--fs-xs);
-        color: var(--c-text-muted);
+        font-size: 0.7rem;
+        color: #64706b;
       }
 
       /* 3. Action Needed Panel */
       .action-needed-panel {
-        background: var(--c-surface);
-        border: 1px solid var(--c-warning-border);
-        border-left: 4px solid var(--c-warning);
+        background: #ffffff;
+        border: 1px solid #d9ddd8;
+        border-left: 4px solid #a86445;
         border-radius: var(--r-md);
-        box-shadow: var(--sh-xs);
-        overflow: hidden;
+        padding: var(--sp-4);
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-3);
       }
 
       .panel-header {
-        padding: var(--sp-3-5, 14px) var(--sp-4);
-        border-bottom: 1px solid var(--c-border);
-        background: var(--c-warning-soft);
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: var(--sp-3);
+        flex-direction: column;
+        gap: 2px;
       }
 
       .panel-header-title {
         display: flex;
         align-items: center;
-        gap: var(--sp-2);
-        color: var(--c-warning);
+        gap: 8px;
+      }
+
+      .warning-icon {
+        color: #a86445;
       }
 
       .panel-heading {
-        font-size: var(--fs-sm);
+        font-size: var(--fs-base);
         font-weight: var(--fw-bold);
-        color: var(--c-text);
+        color: #17201e;
         margin: 0;
       }
 
       .panel-badge {
-        font-size: var(--fs-2xs);
+        font-size: 0.65rem;
         font-weight: var(--fw-bold);
-        background: var(--c-warning);
-        color: #ffffff;
-        padding: 1px 6px;
+        color: #a86445;
+        background: #f6efea;
+        padding: 2px 8px;
         border-radius: var(--r-full);
       }
 
       .panel-hint {
         font-size: var(--fs-xs);
-        color: var(--c-text-muted);
+        color: #64706b;
         margin: 0;
       }
 
       .attention-note {
         font-size: var(--fs-xs);
-        color: var(--c-warning);
+        color: #a86445;
         font-weight: var(--fw-medium);
       }
 
-      /* 4. Main Grid & Section Panels */
-      .workspace-grid {
-        display: grid;
-        grid-template-columns: 1.5fr 1fr;
-        gap: var(--sp-6);
-        align-items: start;
-      }
-
+      /* 4. Main Section */
       .workspace-section {
         display: flex;
         flex-direction: column;
@@ -604,19 +626,17 @@ import { AlertComponent } from '../../shared/ui/toast.component';
 
       .section-title {
         font-size: var(--fs-base);
-        font-weight: var(--fw-semibold);
-        color: var(--c-text);
+        font-weight: var(--fw-bold);
+        color: #17201e;
         margin: 0;
       }
 
       .section-count-tag {
-        font-size: var(--fs-2xs);
-        font-weight: var(--fw-medium);
-        color: var(--c-text-muted);
-        background: var(--c-surface-sunken);
-        padding: 2px 6px;
-        border-radius: var(--r-sm);
-        border: 1px solid var(--c-border);
+        font-size: var(--fs-xs);
+        color: #64706b;
+        background: #f0ede6;
+        padding: 2px 7px;
+        border-radius: var(--r-xs);
       }
 
       .section-action-link {
@@ -624,22 +644,73 @@ import { AlertComponent } from '../../shared/ui/toast.component';
         align-items: center;
         gap: 4px;
         font-size: var(--fs-xs);
-        font-weight: var(--fw-medium);
-        color: var(--c-seller);
+        font-weight: var(--fw-semibold);
+        color: #a86445;
         text-decoration: none;
 
         &:hover {
-          text-decoration: underline;
+          color: #8f5138;
         }
       }
 
-      /* Surface Panel (Restrained, no card-in-card) */
       .surface-panel {
-        background: var(--c-surface);
-        border: 1px solid var(--c-border);
+        background: #ffffff;
+        border: 1px solid #d9ddd8;
         border-radius: var(--r-md);
-        box-shadow: var(--sh-xs);
+        box-shadow: 0 1px 2px rgba(23, 32, 30, 0.04);
         overflow: hidden;
+      }
+
+      /* Table layout */
+      .table-scroll {
+        overflow-x: auto;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--fs-sm);
+
+        th {
+          background: #faf9f6;
+          padding: 10px var(--sp-4);
+          font-weight: var(--fw-semibold);
+          color: #64706b;
+          text-align: left;
+          border-bottom: 1px solid #d9ddd8;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        td {
+          padding: 12px var(--sp-4);
+          border-bottom: 1px solid #f0ede6;
+          vertical-align: middle;
+        }
+
+        tr:last-child td {
+          border-bottom: none;
+        }
+
+        tr:hover td {
+          background: #faf9f6;
+        }
+      }
+
+      .col-numeric {
+        text-align: right;
+      }
+
+      .cell-actions {
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      .actions-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
       }
 
       .lot-cell {
@@ -649,37 +720,152 @@ import { AlertComponent } from '../../shared/ui/toast.component';
       }
 
       .lot-name {
-        font-weight: var(--fw-medium);
-        color: var(--c-text);
+        font-weight: var(--fw-semibold);
+        color: #17201e;
       }
 
       .lot-name-link {
-        font-weight: var(--fw-medium);
-        color: var(--c-text);
+        font-weight: var(--fw-semibold);
+        color: #17201e;
         text-decoration: none;
 
         &:hover {
-          color: var(--c-seller);
-          text-decoration: underline;
+          color: #a86445;
         }
+      }
+
+      .text-mono-id {
+        font-family: var(--font-mono);
+        font-size: 0.725rem;
+        color: #64706b;
+      }
+
+      .text-numeric {
+        font-family: var(--font-mono);
+        font-variant-numeric: tabular-nums;
+        font-size: var(--fs-sm);
+        color: #17201e;
+      }
+
+      .font-bold {
+        font-weight: var(--fw-bold);
       }
 
       .bid-count-pill {
         font-family: var(--font-mono);
-        font-size: var(--fs-xs);
+        font-size: 0.75rem;
         font-weight: var(--fw-semibold);
-        color: var(--c-text-secondary);
-        background: var(--c-surface-sunken);
-        padding: 2px 7px;
+        background: #f0ede6;
+        color: #26332f;
+        padding: 3px 8px;
+        border-radius: var(--r-xs);
+      }
+
+      /* Mobile Stacked Items */
+      .mobile-attention-stack,
+      .mobile-lot-stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-3);
+      }
+
+      .mobile-attention-card,
+      .mobile-lot-card {
+        background: #ffffff;
+        border: 1px solid #d9ddd8;
         border-radius: var(--r-sm);
+        padding: var(--sp-3);
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-3);
       }
 
-      .category-chip {
+      .mobile-attention-card {
+        border-left: 3px solid #a86445;
+      }
+
+      .mobile-attention-card-head,
+      .mobile-lot-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--sp-2);
+      }
+
+      .mobile-attention-body {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        background: #faf9f6;
+        padding: var(--sp-2);
+        border-radius: var(--r-xs);
+      }
+
+      .attention-note-block {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         font-size: var(--fs-xs);
-        color: var(--c-text-secondary);
+        color: #a86445;
+        font-weight: var(--fw-medium);
       }
 
-      /* Skeleton styles */
+      .attention-price-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: var(--fs-xs);
+      }
+
+      .mobile-lot-card-data {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        border-top: 1px solid #f0ede6;
+        border-bottom: 1px solid #f0ede6;
+      }
+
+      .data-col {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .text-right {
+        text-align: right;
+      }
+
+      .text-meta {
+        font-size: 0.7rem;
+        color: #64706b;
+      }
+
+      .mobile-attention-footer,
+      .mobile-lot-card-footer {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+      }
+
+      .btn-block {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .btn-grow {
+        flex: 1;
+        justify-content: center;
+      }
+
+      .empty-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-2);
+        margin-top: var(--sp-3);
+      }
+
+      /* Skeletons */
       .table-skeleton-rows {
         padding: var(--sp-4);
         display: flex;
@@ -693,11 +879,26 @@ import { AlertComponent } from '../../shared/ui/toast.component';
         gap: var(--sp-4);
       }
 
-      @media (max-width: 1024px) {
-        .workspace-grid {
-          grid-template-columns: 1fr;
+      /* Responsive Display Controls */
+      .hide-desktop {
+        display: none !important;
+      }
+
+      @media (max-width: 1100px) {
+        .metrics-strip {
+          grid-template-columns: repeat(3, 1fr);
         }
 
+        .metric-cell:nth-child(3) {
+          border-right: none;
+        }
+
+        .metric-cell:nth-child(-n + 3) {
+          border-bottom: 1px solid #d9ddd8;
+        }
+      }
+
+      @media (max-width: 768px) {
         .metrics-strip {
           grid-template-columns: repeat(2, 1fr);
         }
@@ -706,19 +907,32 @@ import { AlertComponent } from '../../shared/ui/toast.component';
           border-right: none;
         }
 
-        .metric-cell:nth-child(-n + 2) {
-          border-bottom: 1px solid var(--c-border);
+        .metric-cell:nth-child(-n + 4) {
+          border-bottom: 1px solid #d9ddd8;
+        }
+
+        .hide-mobile {
+          display: none !important;
+        }
+
+        .hide-desktop {
+          display: flex !important;
         }
       }
 
-      @media (max-width: 640px) {
+      @media (max-width: 540px) {
         .workspace-header {
           flex-direction: column;
         }
 
         .workspace-actions {
           width: 100%;
-          justify-content: flex-start;
+          flex-direction: column;
+
+          .btn {
+            width: 100%;
+            justify-content: center;
+          }
         }
 
         .metrics-strip {
@@ -727,7 +941,7 @@ import { AlertComponent } from '../../shared/ui/toast.component';
 
         .metric-cell {
           border-right: none !important;
-          border-bottom: 1px solid var(--c-border);
+          border-bottom: 1px solid #d9ddd8;
 
           &:last-child {
             border-bottom: none;
@@ -757,8 +971,9 @@ export class VendorDashboardComponent {
 
   readonly auctionList = computed(() => this.auctions.data()?.items ?? []);
   readonly productList = computed(() => this.products.data()?.items ?? []);
+  readonly totalProducts = computed(() => this.products.data()?.meta?.total ?? this.productList().length);
 
-  readonly recentAuctions = computed(() => this.auctionList().slice(0, 6));
+  readonly recentAuctions = computed(() => this.auctionList().slice(0, 8));
 
   readonly needsAttention = computed(() =>
     this.auctionList()
@@ -781,7 +996,7 @@ export class VendorDashboardComponent {
 
   reload(): void {
     this.auctions.load(this.auctionService.listMine({ limit: 50, orderBy: 'newest' }));
-    this.products.load(this.productService.listMine({ limit: 10 }));
+    this.products.load(this.productService.listMine({ limit: 50 }));
   }
 
   countBy(status: AuctionStatus): number {
@@ -790,9 +1005,9 @@ export class VendorDashboardComponent {
 
   attentionReason(auction: Auction): string {
     if (auction.status === AuctionStatus.DRAFT) {
-      return 'Draft lelang — tetapkan jadwal untuk publikasi';
+      return 'Draf lelang — tetapkan jadwal lelang untuk publikasi';
     }
-    return 'Waktu lelang berakhir — lakukan penutupan resmi';
+    return 'Batas waktu berakhir — lakukan konfirmasi penutupan resmi';
   }
 
   price(value: number): string {

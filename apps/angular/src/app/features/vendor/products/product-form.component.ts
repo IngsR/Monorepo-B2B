@@ -13,7 +13,7 @@ import {
   FormFieldComponent,
   ReadonlyFieldComponent,
 } from '../../../shared/ui/form-field.component';
-import { IconComponent } from '../../../shared/ui/icon.component';
+import { MatIconComponent } from '../../../shared/ui/mat-icon.component';
 import { BreadcrumbsComponent, Crumb } from '../../../shared/ui/pagination.component';
 import { ErrorStateComponent } from '../../../shared/ui/state-block.component';
 import { AlertComponent } from '../../../shared/ui/toast.component';
@@ -40,7 +40,7 @@ import { focusAndShakeFirstInvalid } from '../../../shared/ui/form-utils';
     ButtonComponent,
     FormFieldComponent,
     ReadonlyFieldComponent,
-    IconComponent,
+    MatIconComponent,
     ErrorStateComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -50,15 +50,15 @@ import { focusAndShakeFirstInvalid } from '../../../shared/ui/form-utils';
 
       <header class="page-head">
         <div class="page-head-text">
-          <h1 class="page-title">{{ isEdit() ? 'Edit Produk' : 'Tambah Produk Baru' }}</h1>
+          <h1 class="page-title">{{ isEdit() ? 'Edit Barang' : 'Daftarkan Barang Baru' }}</h1>
           <p class="page-subtitle">
-            Produk adalah data katalog yang menjadi dasar pembuatan lelang. Harga dan jadwal ditentukan saat membuat lelang.
+            Barang adalah data katalog dasar pembuatan lot lelang. Harga buka dan jadwal penawaran ditentukan saat lelang dibuat.
           </p>
         </div>
         <div class="page-actions">
           <a class="btn btn-secondary" routerLink="/vendor/products">
-            <app-icon name="chevron-left" [size]="15" />
-            Kembali ke Produk
+            <mat-icon fontIcon="chevron_left" [size]="16" />
+            <span>Kembali ke Katalog</span>
           </a>
         </div>
       </header>
@@ -202,12 +202,12 @@ import { focusAndShakeFirstInvalid } from '../../../shared/ui/form-utils';
 
           <div class="card-footer">
             <a class="btn btn-secondary" routerLink="/vendor/products">
-              <app-icon name="close" [size]="15" />
-              Batal
+              <mat-icon fontIcon="close" [size]="16" />
+              <span>Batal</span>
             </a>
             <app-button
               type="submit"
-              [label]="isEdit() ? 'Simpan Perubahan' : 'Buat Produk'"
+              [label]="isEdit() ? 'Simpan Perubahan' : 'Daftarkan Barang'"
               variant="primary"
               [loading]="saving()"
             />

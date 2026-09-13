@@ -8,46 +8,46 @@ import {
 } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/session.service';
-import { IconComponent } from '../ui/icon.component';
+import { MatIconComponent } from '../ui/mat-icon.component';
 
 /**
- * Seller / Vendor Top Navigation Bar.
+ * Seller / Vendor Top Navigation Bar — Auction Operations Desk.
  *
  * Dedicated horizontal navigation for the B2B Auction Seller Portal.
- * Permanently replaces the traditional dashboard sidebar with a streamlined,
- * modern business application header.
+ * Designed with a 60/30/10 palette (warm light canvas, charcoal structure,
+ * and muted copper accents) and fully responsive mobile navigation.
  */
 @Component({
   selector: 'app-seller-header',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, IconComponent],
+  imports: [RouterLink, RouterLinkActive, MatIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="seller-header">
       <div class="seller-header-inner">
-        <!-- Brand & Context -->
+        <!-- Brand & Operations Desk Identity -->
         <div class="seller-header-brand-wrap">
-          <a routerLink="/vendor" class="seller-brand" aria-label="BidForge Portal Penjual">
+          <a routerLink="/vendor" class="seller-brand" aria-label="BidForge Auction Operations Desk">
             <span class="brand-badge-icon">
-              <app-icon name="hammer" [size]="17" />
+              <mat-icon fontIcon="gavel" [size]="18" />
             </span>
             <div class="brand-text-block">
               <span class="brand-name">BidForge</span>
-              <span class="brand-portal-label">Portal Penjual</span>
+              <span class="brand-portal-label">Auction Operations Desk</span>
             </div>
           </a>
         </div>
 
-        <!-- Desktop Navigation Items -->
-        <nav class="seller-nav" aria-label="Navigasi Utama Penjual">
+        <!-- Desktop Operational Navigation -->
+        <nav class="seller-nav" aria-label="Navigasi Operasional Penjual">
           <a
             routerLink="/vendor"
             routerLinkActive="is-active"
             [routerLinkActiveOptions]="{ exact: true }"
             class="seller-nav-link"
           >
-            <app-icon name="dashboard" [size]="16" />
-            <span>Dashboard</span>
+            <mat-icon fontIcon="dashboard" [size]="16" />
+            <span>Ringkasan</span>
           </a>
 
           <a
@@ -55,8 +55,8 @@ import { IconComponent } from '../ui/icon.component';
             routerLinkActive="is-active"
             class="seller-nav-link"
           >
-            <app-icon name="package" [size]="16" />
-            <span>Produk / Lot</span>
+            <mat-icon fontIcon="inventory_2" [size]="16" />
+            <span>Barang Saya</span>
           </a>
 
           <a
@@ -64,8 +64,17 @@ import { IconComponent } from '../ui/icon.component';
             routerLinkActive="is-active"
             class="seller-nav-link"
           >
-            <app-icon name="hammer" [size]="16" />
+            <mat-icon fontIcon="gavel" [size]="16" />
             <span>Lelang Saya</span>
+          </a>
+
+          <a
+            routerLink="/vendor/guide"
+            routerLinkActive="is-active"
+            class="seller-nav-link"
+          >
+            <mat-icon fontIcon="menu_book" [size]="16" />
+            <span>Panduan Penjualan</span>
           </a>
 
           <a
@@ -73,19 +82,19 @@ import { IconComponent } from '../ui/icon.component';
             class="seller-nav-link seller-nav-link--subtle"
             title="Lihat Pasar Lelang Publik"
           >
-            <app-icon name="external" [size]="15" />
+            <mat-icon fontIcon="open_in_new" [size]="15" />
             <span>Pasar Lelang</span>
           </a>
         </nav>
 
-        <!-- Right Side: Actions & Single Profile Experience -->
+        <!-- Right Side: Operational Actions & User Profile -->
         <div class="seller-header-actions">
           <a routerLink="/vendor/auctions/new" class="seller-cta-btn">
-            <app-icon name="plus" [size]="14" />
+            <mat-icon fontIcon="add" [size]="16" />
             <span>Buat Lelang</span>
           </a>
 
-          <!-- Single Unified Profile & Account Menu -->
+          <!-- User Account Menu -->
           <div class="seller-user-dropdown-container">
             <button
               type="button"
@@ -94,13 +103,14 @@ import { IconComponent } from '../ui/icon.component';
               (click)="toggleMenu()"
               aria-haspopup="menu"
               [attr.aria-expanded]="menuOpen()"
+              aria-label="Menu Akun Penjual"
             >
               <span class="seller-user-avatar">{{ initials() }}</span>
               <span class="seller-user-meta hide-sm">
                 <span class="seller-user-company">{{ companyName() }}</span>
                 <span class="seller-user-role">Penjual Terverifikasi</span>
               </span>
-              <app-icon name="chevron-down" [size]="14" />
+              <mat-icon fontIcon="expand_more" [size]="16" />
             </button>
 
             @if (menuOpen()) {
@@ -112,17 +122,16 @@ import { IconComponent } from '../ui/icon.component';
 
                 <div class="dropdown-divider"></div>
 
-                <!-- Single entry point for both business details & user account -->
                 <a
                   routerLink="/profile"
                   class="dropdown-item"
                   role="menuitem"
                   (click)="closeMenu()"
                 >
-                  <app-icon name="building" [size]="15" />
+                  <mat-icon fontIcon="account_circle" [size]="16" />
                   <div>
                     <span class="dropdown-item-title">Profil & Akun</span>
-                    <span class="dropdown-item-desc">Data perusahaan, kontak, dan keamanan</span>
+                    <span class="dropdown-item-desc">Data perusahaan dan akun</span>
                   </div>
                 </a>
 
@@ -132,10 +141,23 @@ import { IconComponent } from '../ui/icon.component';
                   role="menuitem"
                   (click)="closeMenu()"
                 >
-                  <app-icon name="plus" [size]="15" />
+                  <mat-icon fontIcon="add_box" [size]="16" />
                   <div>
-                    <span class="dropdown-item-title">Tambah Produk / Lot</span>
-                    <span class="dropdown-item-desc">Daftarkan inventaris baru</span>
+                    <span class="dropdown-item-title">Daftarkan Barang Baru</span>
+                    <span class="dropdown-item-desc">Inventaris lot katalog</span>
+                  </div>
+                </a>
+
+                <a
+                  routerLink="/vendor/guide"
+                  class="dropdown-item"
+                  role="menuitem"
+                  (click)="closeMenu()"
+                >
+                  <mat-icon fontIcon="menu_book" [size]="16" />
+                  <div>
+                    <span class="dropdown-item-title">Panduan Penjualan</span>
+                    <span class="dropdown-item-desc">SOP dan tata cara lelang</span>
                   </div>
                 </a>
 
@@ -147,7 +169,7 @@ import { IconComponent } from '../ui/icon.component';
                   role="menuitem"
                   (click)="logout()"
                 >
-                  <app-icon name="log-out" [size]="15" />
+                  <mat-icon fontIcon="logout" [size]="16" />
                   <span>Keluar dari Akun</span>
                 </button>
               </div>
@@ -159,17 +181,27 @@ import { IconComponent } from '../ui/icon.component';
             type="button"
             class="seller-mobile-toggle"
             [attr.aria-expanded]="mobileNavOpen()"
-            aria-label="Toggle navigation menu"
+            aria-label="Toggle navigasi penjual"
             (click)="toggleMobileNav()"
           >
-            <app-icon [name]="mobileNavOpen() ? 'close' : 'menu'" [size]="20" />
+            <mat-icon [fontIcon]="mobileNavOpen() ? 'close' : 'menu'" [size]="20" />
           </button>
         </div>
       </div>
 
-      <!-- Mobile Dropdown Navigation -->
+      <!-- Mobile Dedicated Operational Navigation Drawer -->
       @if (mobileNavOpen()) {
-        <nav class="seller-mobile-nav" aria-label="Mobile Navigation">
+        <nav class="seller-mobile-nav" aria-label="Mobile Navigasi Penjual">
+          <div class="mobile-nav-user-header">
+            <span class="seller-user-avatar">{{ initials() }}</span>
+            <div class="mobile-nav-user-meta">
+              <span class="mobile-user-name">{{ companyName() }}</span>
+              <span class="mobile-user-email">{{ email() }}</span>
+            </div>
+          </div>
+
+          <div class="mobile-nav-divider"></div>
+
           <a
             routerLink="/vendor"
             routerLinkActive="is-active"
@@ -177,8 +209,8 @@ import { IconComponent } from '../ui/icon.component';
             class="mobile-nav-link"
             (click)="closeMobileNav()"
           >
-            <app-icon name="dashboard" [size]="18" />
-            <span>Dashboard</span>
+            <mat-icon fontIcon="dashboard" [size]="18" />
+            <span>Ringkasan Operasional</span>
           </a>
 
           <a
@@ -187,8 +219,8 @@ import { IconComponent } from '../ui/icon.component';
             class="mobile-nav-link"
             (click)="closeMobileNav()"
           >
-            <app-icon name="package" [size]="18" />
-            <span>Produk / Lot</span>
+            <mat-icon fontIcon="inventory_2" [size]="18" />
+            <span>Barang Saya (Katalog)</span>
           </a>
 
           <a
@@ -197,8 +229,18 @@ import { IconComponent } from '../ui/icon.component';
             class="mobile-nav-link"
             (click)="closeMobileNav()"
           >
-            <app-icon name="hammer" [size]="18" />
-            <span>Lelang Saya</span>
+            <mat-icon fontIcon="gavel" [size]="18" />
+            <span>Lelang Saya (Lot)</span>
+          </a>
+
+          <a
+            routerLink="/vendor/guide"
+            routerLinkActive="is-active"
+            class="mobile-nav-link"
+            (click)="closeMobileNav()"
+          >
+            <mat-icon fontIcon="menu_book" [size]="18" />
+            <span>Panduan Penjualan</span>
           </a>
 
           <a
@@ -207,7 +249,7 @@ import { IconComponent } from '../ui/icon.component';
             class="mobile-nav-link"
             (click)="closeMobileNav()"
           >
-            <app-icon name="building" [size]="18" />
+            <mat-icon fontIcon="account_circle" [size]="18" />
             <span>Profil & Akun Penjual</span>
           </a>
 
@@ -216,20 +258,31 @@ import { IconComponent } from '../ui/icon.component';
             class="mobile-nav-link mobile-nav-link--muted"
             (click)="closeMobileNav()"
           >
-            <app-icon name="external" [size]="18" />
+            <mat-icon fontIcon="open_in_new" [size]="18" />
             <span>Pasar Lelang Publik</span>
           </a>
 
           <div class="mobile-nav-divider"></div>
 
-          <button
-            type="button"
-            class="mobile-nav-link mobile-nav-link--danger"
-            (click)="logout()"
-          >
-            <app-icon name="log-out" [size]="18" />
-            <span>Keluar dari Akun</span>
-          </button>
+          <div class="mobile-nav-actions">
+            <a
+              routerLink="/vendor/auctions/new"
+              class="mobile-cta-btn"
+              (click)="closeMobileNav()"
+            >
+              <mat-icon fontIcon="add" [size]="18" />
+              <span>Buat Lelang Baru</span>
+            </a>
+
+            <button
+              type="button"
+              class="mobile-nav-link mobile-nav-link--danger"
+              (click)="logout()"
+            >
+              <mat-icon fontIcon="logout" [size]="18" />
+              <span>Keluar dari Akun</span>
+            </button>
+          </div>
         </nav>
       }
     </header>
@@ -242,19 +295,21 @@ import { IconComponent } from '../ui/icon.component';
         top: 0;
         z-index: 100;
         width: 100%;
+        background-color: #ffffff;
       }
 
       .seller-header {
-        background-color: var(--c-surface);
-        border-bottom: 1px solid var(--c-border);
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        background-color: #ffffff;
+        border-bottom: 1px solid #d9ddd8;
+        box-shadow: 0 1px 3px rgba(23, 32, 30, 0.04);
+        font-family: var(--font-sans);
       }
 
       .seller-header-inner {
         max-width: 1360px;
         margin: 0 auto;
         padding: 0 var(--sp-4);
-        height: 58px;
+        height: 60px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -273,19 +328,18 @@ import { IconComponent } from '../ui/icon.component';
         align-items: center;
         gap: 10px;
         text-decoration: none;
-        color: var(--c-text);
+        color: #17201e;
       }
 
       .brand-badge-icon {
         width: 32px;
         height: 32px;
         border-radius: var(--r-sm);
-        background: var(--c-seller);
+        background: #a86445;
         color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 1px 2px rgba(55, 48, 163, 0.2);
       }
 
       .brand-text-block {
@@ -298,15 +352,15 @@ import { IconComponent } from '../ui/icon.component';
         font-size: var(--fs-md);
         font-weight: var(--fw-bold);
         letter-spacing: var(--tracking-tight);
-        color: var(--c-text);
+        color: #17201e;
       }
 
       .brand-portal-label {
-        font-size: 0.65rem;
-        font-weight: var(--fw-semibold);
+        font-size: 0.625rem;
+        font-weight: var(--fw-bold);
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: var(--c-seller-muted);
+        color: #a86445;
       }
 
       /* Horizontal Nav */
@@ -320,32 +374,33 @@ import { IconComponent } from '../ui/icon.component';
       .seller-nav-link {
         display: inline-flex;
         align-items: center;
-        gap: var(--sp-2);
+        gap: 6px;
         padding: var(--sp-2) var(--sp-3);
         height: 38px;
         font-size: var(--fs-sm);
         font-weight: var(--fw-medium);
-        color: var(--c-text-secondary);
+        color: #3e4a45;
         text-decoration: none;
         border-radius: var(--r-sm);
         transition: color var(--dur-fast), background-color var(--dur-fast);
 
         &:hover {
-          color: var(--c-text);
-          background-color: var(--c-surface-sunken);
+          color: #17201e;
+          background-color: #f5f3ee;
         }
 
         &.is-active {
-          color: var(--c-seller);
+          color: #a86445;
           font-weight: var(--fw-semibold);
-          background-color: var(--c-seller-soft);
+          background-color: #f6efea;
         }
       }
 
       .seller-nav-link--subtle {
-        color: var(--c-text-muted);
+        color: #64706b;
+        font-size: var(--fs-xs);
         &:hover {
-          color: var(--c-text-secondary);
+          color: #26332f;
         }
       }
 
@@ -363,17 +418,18 @@ import { IconComponent } from '../ui/icon.component';
         gap: 6px;
         padding: 7px 14px;
         font-size: var(--fs-sm);
-        font-weight: var(--fw-medium);
+        font-weight: var(--fw-semibold);
         color: #ffffff;
-        background-color: var(--c-seller);
+        background-color: #a86445;
         border: 1px solid transparent;
         border-radius: var(--r-sm);
         text-decoration: none;
-        transition: background-color var(--dur-fast), box-shadow var(--dur-fast);
+        transition: background-color var(--dur-fast);
         white-space: nowrap;
 
         &:hover {
-          background-color: var(--c-seller-hover);
+          background-color: #8f5138;
+          color: #ffffff;
         }
       }
 
@@ -388,17 +444,17 @@ import { IconComponent } from '../ui/icon.component';
         gap: var(--sp-2);
         padding: 4px 8px 4px 4px;
         background: transparent;
-        border: 1px solid var(--c-border);
+        border: 1px solid #d9ddd8;
         border-radius: var(--r-md);
         cursor: pointer;
-        color: var(--c-text);
+        color: #17201e;
         font-family: inherit;
         transition: border-color var(--dur-fast), background-color var(--dur-fast);
 
         &:hover,
         &.is-open {
-          background-color: var(--c-surface-sunken);
-          border-color: var(--c-border-strong);
+          background-color: #f5f3ee;
+          border-color: #a86445;
         }
       }
 
@@ -406,8 +462,8 @@ import { IconComponent } from '../ui/icon.component';
         width: 28px;
         height: 28px;
         border-radius: var(--r-sm);
-        background: var(--c-seller-soft);
-        color: var(--c-seller);
+        background: #f6efea;
+        color: #a86445;
         font-size: var(--fs-xs);
         font-weight: var(--fw-bold);
         display: flex;
@@ -425,16 +481,16 @@ import { IconComponent } from '../ui/icon.component';
       .seller-user-company {
         font-size: var(--fs-xs);
         font-weight: var(--fw-semibold);
-        color: var(--c-text);
-        max-width: 130px;
+        color: #17201e;
+        max-width: 140px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
       .seller-user-role {
-        font-size: 0.65rem;
-        color: var(--c-text-muted);
+        font-size: 0.625rem;
+        color: #64706b;
       }
 
       .seller-dropdown-menu {
@@ -442,13 +498,12 @@ import { IconComponent } from '../ui/icon.component';
         top: calc(100% + 6px);
         right: 0;
         width: 280px;
-        background: var(--c-surface);
-        border: 1px solid var(--c-border);
+        background: #ffffff;
+        border: 1px solid #d9ddd8;
         border-radius: var(--r-md);
-        box-shadow: var(--sh-md);
+        box-shadow: 0 4px 16px rgba(23, 32, 30, 0.1);
         padding: var(--sp-2);
         z-index: 200;
-        animation: fadeIn 120ms ease-out;
       }
 
       .dropdown-header {
@@ -461,12 +516,12 @@ import { IconComponent } from '../ui/icon.component';
       .dropdown-company {
         font-size: var(--fs-sm);
         font-weight: var(--fw-semibold);
-        color: var(--c-text);
+        color: #17201e;
       }
 
       .dropdown-email {
         font-size: var(--fs-xs);
-        color: var(--c-text-muted);
+        color: #64706b;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -474,7 +529,7 @@ import { IconComponent } from '../ui/icon.component';
 
       .dropdown-divider {
         height: 1px;
-        background: var(--c-border);
+        background: #d9ddd8;
         margin: var(--sp-1) 0;
       }
 
@@ -487,7 +542,7 @@ import { IconComponent } from '../ui/icon.component';
         border-radius: var(--r-sm);
         border: none;
         background: transparent;
-        color: var(--c-text);
+        color: #17201e;
         text-decoration: none;
         font-family: inherit;
         font-size: var(--fs-sm);
@@ -496,32 +551,32 @@ import { IconComponent } from '../ui/icon.component';
         transition: background-color var(--dur-fast);
 
         &:hover {
-          background-color: var(--c-surface-sunken);
+          background-color: #f5f3ee;
         }
 
-        app-icon {
+        mat-icon {
           margin-top: 2px;
-          color: var(--c-text-secondary);
+          color: #64706b;
         }
       }
 
       .dropdown-item-title {
         display: block;
         font-weight: var(--fw-medium);
-        color: var(--c-text);
+        color: #17201e;
       }
 
       .dropdown-item-desc {
         display: block;
         font-size: var(--fs-xs);
-        color: var(--c-text-muted);
+        color: #64706b;
       }
 
       .dropdown-item--danger {
         color: var(--c-danger);
         align-items: center;
 
-        app-icon {
+        mat-icon {
           margin-top: 0;
           color: var(--c-danger);
         }
@@ -535,20 +590,43 @@ import { IconComponent } from '../ui/icon.component';
       .seller-mobile-toggle {
         display: none;
         background: transparent;
-        border: 1px solid var(--c-border);
+        border: 1px solid #d9ddd8;
         border-radius: var(--r-sm);
         padding: 6px;
-        color: var(--c-text);
+        color: #17201e;
         cursor: pointer;
       }
 
       .seller-mobile-nav {
         display: none;
-        background: var(--c-surface);
-        border-top: 1px solid var(--c-border);
+        background: #ffffff;
+        border-top: 1px solid #d9ddd8;
         padding: var(--sp-3) var(--sp-4);
         flex-direction: column;
         gap: var(--sp-1);
+      }
+
+      .mobile-nav-user-header {
+        display: flex;
+        align-items: center;
+        gap: var(--sp-3);
+        padding: var(--sp-2) 0;
+      }
+
+      .mobile-nav-user-meta {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .mobile-user-name {
+        font-size: var(--fs-sm);
+        font-weight: var(--fw-bold);
+        color: #17201e;
+      }
+
+      .mobile-user-email {
+        font-size: var(--fs-xs);
+        color: #64706b;
       }
 
       .mobile-nav-link {
@@ -558,7 +636,7 @@ import { IconComponent } from '../ui/icon.component';
         padding: 10px var(--sp-3);
         font-size: var(--fs-sm);
         font-weight: var(--fw-medium);
-        color: var(--c-text);
+        color: #17201e;
         text-decoration: none;
         border-radius: var(--r-sm);
         border: none;
@@ -568,18 +646,18 @@ import { IconComponent } from '../ui/icon.component';
         font-family: inherit;
 
         &.is-active {
-          color: var(--c-seller);
+          color: #a86445;
           font-weight: var(--fw-semibold);
-          background-color: var(--c-seller-soft);
+          background-color: #f6efea;
         }
 
         &:hover {
-          background-color: var(--c-surface-sunken);
+          background-color: #f5f3ee;
         }
       }
 
       .mobile-nav-link--muted {
-        color: var(--c-text-muted);
+        color: #64706b;
       }
 
       .mobile-nav-link--danger {
@@ -591,18 +669,32 @@ import { IconComponent } from '../ui/icon.component';
 
       .mobile-nav-divider {
         height: 1px;
-        background: var(--c-border);
+        background: #d9ddd8;
         margin: var(--sp-2) 0;
       }
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-          transform: translateY(-4px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
+      .mobile-nav-actions {
+        display: flex;
+        flex-direction: column;
+        gap: var(--sp-2);
+        margin-top: var(--sp-2);
+      }
+
+      .mobile-cta-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--sp-2);
+        padding: 10px;
+        font-size: var(--fs-sm);
+        font-weight: var(--fw-semibold);
+        color: #ffffff;
+        background-color: #a86445;
+        border-radius: var(--r-sm);
+        text-decoration: none;
+
+        &:hover {
+          background-color: #8f5138;
         }
       }
 

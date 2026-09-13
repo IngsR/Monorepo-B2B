@@ -21,7 +21,7 @@ import {
   FormFieldComponent,
   ReadonlyFieldComponent,
 } from '../../../shared/ui/form-field.component';
-import { IconComponent } from '../../../shared/ui/icon.component';
+import { MatIconComponent } from '../../../shared/ui/mat-icon.component';
 import { BreadcrumbsComponent, Crumb } from '../../../shared/ui/pagination.component';
 import { ErrorStateComponent } from '../../../shared/ui/state-block.component';
 import { AlertComponent } from '../../../shared/ui/toast.component';
@@ -53,7 +53,7 @@ import { focusAndShakeFirstInvalid } from '../../../shared/ui/form-utils';
     ButtonComponent,
     FormFieldComponent,
     ReadonlyFieldComponent,
-    IconComponent,
+    MatIconComponent,
     ErrorStateComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -63,19 +63,19 @@ import { focusAndShakeFirstInvalid } from '../../../shared/ui/form-utils';
 
       <header class="page-head">
         <div class="page-head-text">
-          <h1 class="page-title">{{ isEdit() ? 'Edit Lelang' : 'Buat Lelang Baru' }}</h1>
+          <h1 class="page-title">{{ isEdit() ? 'Edit Lelang' : 'Buat Lot Lelang Baru' }}</h1>
           <p class="page-subtitle">
             {{
               isEdit()
-                ? 'Ketentuan lelang dapat diubah selama statusnya Draft atau Terjadwal. Setelah lelang Aktif, ketentuan terkunci untuk melindungi integritas penawaran.'
-                : 'Lelang baru dibuat dengan status Draft. Jadwalkan lelang setelah ketentuan siap dan tentukan periode waktu penawaran.'
+                ? 'Ketentuan lelang dapat diubah selama statusnya DRAFT. Setelah lelang Aktif atau Selesai, ketentuan terkunci.'
+                : 'Lelang baru dibuat dengan status DRAFT. Jadwalkan lelang setelah ketentuan siap dan tentukan periode waktu penawaran.'
             }}
           </p>
         </div>
         <div class="page-actions">
           <a class="btn btn-secondary" routerLink="/vendor/auctions">
-            <app-icon name="chevron-left" [size]="15" />
-            Kembali ke Lelang
+            <mat-icon fontIcon="chevron_left" [size]="16" />
+            <span>Kembali ke Lelang</span>
           </a>
         </div>
       </header>
@@ -265,7 +265,7 @@ import { focusAndShakeFirstInvalid } from '../../../shared/ui/form-utils';
 
             @if (durationLabel(); as duration) {
               <p class="duration-note">
-                <app-icon name="clock" [size]="14" />
+                <mat-icon fontIcon="schedule" [size]="16" />
                 <span
                   >Periode penawaran dibuka selama <strong>{{ duration }}</strong
                   >.</span
@@ -312,12 +312,12 @@ import { focusAndShakeFirstInvalid } from '../../../shared/ui/form-utils';
 
           <div class="card-footer">
             <a class="btn btn-secondary" routerLink="/vendor/auctions">
-              <app-icon name="close" [size]="15" />
-              Batal
+              <mat-icon fontIcon="close" [size]="16" />
+              <span>Batal</span>
             </a>
             <app-button
               type="submit"
-              [label]="isEdit() ? 'Simpan Perubahan' : 'Buat Draft Lelang'"
+              [label]="isEdit() ? 'Simpan Perubahan' : 'Buat Lot Lelang (Draf)'"
               variant="primary"
               [loading]="saving()"
               [disabled]="editingLocked() || productList().length === 0"

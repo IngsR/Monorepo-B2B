@@ -209,6 +209,14 @@ export const routes: Routes = [
             (m) => m.AuctionManagementComponent,
           ),
       },
+      {
+        path: 'vendor/guide',
+        canMatch: [roleMatchGuard(UserRole.VENDOR, UserRole.ADMIN)],
+        canActivate: [roleGuard(UserRole.VENDOR, UserRole.ADMIN)],
+        title: 'Panduan Penjualan · BidForge',
+        loadComponent: () =>
+          import('./features/vendor/vendor-guide.component').then((m) => m.VendorGuideComponent),
+      },
 
       /* ------------------------------- admin: platform administration */
       {
