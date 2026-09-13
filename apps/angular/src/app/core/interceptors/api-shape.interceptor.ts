@@ -179,6 +179,7 @@ function adaptBody(body: unknown, mapper: (value: unknown) => unknown): unknown 
  */
 const AUCTION_SORT: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
   endingSoon: { sortBy: 'endAt', sortOrder: 'asc' },
+  closingSoonest: { sortBy: 'endAt', sortOrder: 'asc' },
   newest: { sortBy: 'createdAt', sortOrder: 'desc' },
   priceAsc: { sortBy: 'currentPrice', sortOrder: 'asc' },
   priceDesc: { sortBy: 'currentPrice', sortOrder: 'desc' },

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { IconComponent } from '../../shared/ui/icon.component';
+import { MatIconComponent } from '../../shared/ui/mat-icon.component';
 
 interface FaqItem {
   question: string;
@@ -11,124 +11,124 @@ interface FaqItem {
 /**
  * Halaman Panduan Lelang Khusus Pengguna Bidder.
  * Menyajikan instruksi komprehensif, alur penawaran, aturan bid increment,
- * dan tips menang lelang dalam Bahasa Indonesia.
+ * dan tips menang lelang dalam Bahasa Indonesia dengan format institusional B2B.
  */
 @Component({
   selector: 'app-auction-guide',
   standalone: true,
-  imports: [RouterLink, IconComponent],
+  imports: [RouterLink, MatIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page guide-page">
-      <!-- Hero Header -->
+      <!-- 1. Hero Header -->
       <section class="guide-hero">
         <div class="guide-hero-content">
           <div class="guide-hero-badge">
-            <app-icon name="shield" [size]="14" />
-            <span>Pusat Bantuan & Edukasi Bidder</span>
+            <mat-icon fontIcon="verified_user" [size]="14" />
+            <span>Pusat Informasi & Tata Tertib Penawar B2B</span>
           </div>
-          <h1 class="guide-hero-title">Panduan Lengkap Mengikuti Lelang B2B</h1>
+          <h1 class="guide-hero-title">Panduan Resmi Mengikuti Lelang Pengadaan</h1>
           <p class="guide-hero-desc">
-            Pelajari tata cara, mekanisme penawaran harga, ketentuan kenaikan tawaran (bid increment),
-            hingga proses serah terima aset lelang resmi di BidForge.
+            Pelajari tata cara partisipasi, formulasi penawaran sah (bid increment), validasi waktu
+            server-authoritative, hingga prosedur serah terima aset resmi di platform BidForge.
           </p>
           <div class="guide-hero-actions">
-            <a routerLink="/marketplace" class="btn btn-hero">
-              <app-icon name="gavel" [size]="16" />
-              <span>Mulai Jelajahi Lelang</span>
+            <a routerLink="/marketplace" class="btn btn-primary">
+              <mat-icon fontIcon="storefront" [size]="16" />
+              <span>Jelajahi Lantai Lelang</span>
             </a>
-            <a routerLink="/my-bids" class="btn btn-hero-ghost">
-              <app-icon name="trending-up" [size]="16" />
-              <span>Lihat Tawaran Saya</span>
+            <a routerLink="/my-bids" class="btn btn-secondary">
+              <mat-icon fontIcon="history" [size]="16" />
+              <span>Lihat Penawaran Saya</span>
             </a>
           </div>
         </div>
       </section>
 
-      <!-- 5 Langkah Mudah Alur Lelang -->
+      <!-- 2. 5 Langkah Alur Partisipasi -->
       <section class="guide-section">
         <div class="section-title-wrap">
-          <span class="section-tag">Alur Partisipasi</span>
-          <h2 class="section-heading">5 Langkah Mudah Mengikuti Lelang</h2>
+          <span class="section-tag">Alur Pengadaan</span>
+          <h2 class="section-heading">5 Tahapan Mengikuti Lelang B2B</h2>
           <p class="section-subheading">
-            Proses lelang di BidForge dirancang transparan, aman, dan langsung tercatat secara real-time.
+            Setiap tahapan penawaran dirancang transparan, aman, dan tercatat otomatis pada buku besar server.
           </p>
         </div>
 
         <div class="guide-steps-grid">
           <div class="step-card">
-            <div class="step-num-badge">1</div>
+            <div class="step-num-badge">01</div>
             <div class="step-icon-box">
-              <app-icon name="search" [size]="24" />
+              <mat-icon fontIcon="search" [size]="22" />
             </div>
             <h3 class="step-title">Pilih Lot Lelang</h3>
             <p class="step-desc">
-              Jelajahi marketplace berdasarkan kategori, lokasi gudang, atau kode lot. Periksa spesifikasi
-              teknis, kondisi fisik, dan informasi vendor terverifikasi.
+              Jelajahi katalog lelang berdasarkan kategori atau kode lot. Periksa spesifikasi
+              teknis aset dan legalitas vendor penyedia.
             </p>
           </div>
 
           <div class="step-card">
-            <div class="step-num-badge">2</div>
+            <div class="step-num-badge">02</div>
             <div class="step-icon-box">
-              <app-icon name="tag" [size]="24" />
+              <mat-icon fontIcon="sell" [size]="22" />
             </div>
-            <h3 class="step-title">Cek Ketentuan & Harga</h3>
+            <h3 class="step-title">Periksa Syarat & Harga</h3>
             <p class="step-desc">
-              Perhatikan harga awal, kelipatan kenaikan penawaran (bid increment), dan sisa waktu lelang
-              pada countdown timer real-time.
+              Ketahui harga awal, kelipatan kenaikan tawaran minimal (bid increment), serta jadwal
+              penutupan lelang resmi.
             </p>
           </div>
 
           <div class="step-card">
-            <div class="step-num-badge">3</div>
+            <div class="step-num-badge">03</div>
             <div class="step-icon-box">
-              <app-icon name="gavel" [size]="24" />
+              <mat-icon fontIcon="gavel" [size]="22" />
             </div>
-            <h3 class="step-title">Pasang Penawaran (Bid)</h3>
+            <h3 class="step-title">Kirim Penawaran (Bid)</h3>
             <p class="step-desc">
-              Gunakan tombol shortcut nominal cepat atau masukkan nominal Anda. Tawaran minimal adalah
-              harga tertinggi saat ini ditambah satu kelipatan kenaikan.
+              Kirim tawaran sah melalui formulir bidding panel. Sistem server memvalidasi kelayakan
+              nominal secara instan.
             </p>
           </div>
 
           <div class="step-card">
-            <div class="step-num-badge">4</div>
+            <div class="step-num-badge">04</div>
             <div class="step-icon-box">
-              <app-icon name="trending-up" [size]="24" />
+              <mat-icon fontIcon="trending_up" [size]="22" />
             </div>
-            <h3 class="step-title">Pantau Status Bidding</h3>
+            <h3 class="step-title">Pantau Peringkat Tawaran</h3>
             <p class="step-desc">
-              Jika tawaran Anda terlampaui peserta lain (status <strong>Outbid</strong>), Anda dapat
-              memasang penawaran baru sebelum batas waktu penutupan berakhir.
+              Pantau status penawaran Anda. Jika posisi terlampaui (Outbid), pasang penawaran baru
+              sebelum waktu lelang ditutup.
             </p>
           </div>
 
           <div class="step-card">
-            <div class="step-num-badge">5</div>
+            <div class="step-num-badge">05</div>
             <div class="step-icon-box">
-              <app-icon name="check" [size]="24" />
+              <mat-icon fontIcon="task_alt" [size]="22" />
             </div>
-            <h3 class="step-title">Menang & Pelunasan</h3>
+            <h3 class="step-title">Penetapan Pemenang</h3>
             <p class="step-desc">
-              Peserta dengan tawaran sah tertinggi saat waktu lelang berakhir dinyatakan sebagai pemenang
-              resmi dan akan dihubungi untuk konfirmasi faktur serah terima.
+              Penawar sah tertinggi pada detik penutupan ditetapkan sebagai pemenang untuk proses
+              faktur dan serah terima fisik aset.
             </p>
           </div>
         </div>
       </section>
 
-      <!-- Aturan Kunci Sistem Lelang -->
+      <!-- 3. Aturan Kunci Sistem Lelang -->
       <section class="guide-section">
-        <div class="rules-container card">
+        <div class="rules-container">
           <div class="rules-header">
             <div class="rules-icon-wrap">
-              <app-icon name="info" [size]="22" />
+              <mat-icon fontIcon="balance" [size]="22" />
             </div>
             <div>
-              <h2 class="rules-title">Ketentuan Mutlak & Sistem Penawaran</h2>
+              <h2 class="rules-title">Prinsip & Ketentuan Sistem Lelang</h2>
               <p class="rules-subtitle">
-                Prinsip kerja sistem lelang server-authoritative di platform BidForge
+                Aturan baku sistem lelang server-authoritative yang berlaku mengikat bagi seluruh peserta
               </p>
             </div>
           </div>
@@ -136,105 +136,105 @@ interface FaqItem {
           <div class="rules-grid">
             <div class="rule-box">
               <div class="rule-box-header">
-                <app-icon name="clock" [size]="18" />
-                <h4>Server-Authoritative Timing</h4>
+                <mat-icon fontIcon="schedule" [size]="18" />
+                <h4>Waktu Server-Authoritative</h4>
               </div>
               <p>
-                Waktu lelang dihitung berdasarkan jam server terpusat. Penawaran dinyatakan sah hanya jika
-                paket data berhasil diterima server sebelum hitungan mundur mencapai 00:00:00.
+                Waktu lelang mengacu pada jam server terpusat. Penawaran dinyatakan sah apabila paket data
+                berhasil divalidasi server sebelum waktu penutupan berakhir.
               </p>
             </div>
 
             <div class="rule-box">
               <div class="rule-box-header">
-                <app-icon name="layers" [size]="18" />
-                <h4>Kelipatan Tawaran (Bid Increment)</h4>
+                <mat-icon fontIcon="calculate" [size]="18" />
+                <h4>Kelipatan Kenaikan (Bid Increment)</h4>
               </div>
               <p>
                 Setiap penawaran baru wajib memenuhi formula:
-                <code>Tawaran Minimal = Tawaran Tertinggi Saat Ini + Kelipatan Kenaikan</code>. Sistem akan
-                menolak penawaran yang di bawah ambang batas ini.
+                <code>Tawaran Minimal = Tawaran Tertinggi + Kelipatan Kenaikan</code>. Sistem server
+                menolak penawaran yang tidak memenuhi ambang batas ini.
               </p>
             </div>
 
             <div class="rule-box">
               <div class="rule-box-header">
-                <app-icon name="shield" [size]="18" />
+                <mat-icon fontIcon="gavel" [size]="18" />
                 <h4>Penawaran Bersifat Mengikat</h4>
               </div>
               <p>
-                Setiap penawaran yang telah dipasang tidak dapat dibatalkan atau ditarik kembali oleh peserta.
-                Pastikan Anda telah memeriksa spesifikasi aset secara menyeluruh sebelum menawar.
+                Penawaran yang telah diverifikasi dan masuk ke database tidak dapat ditarik kembali atau
+                dibatalkan. Pastikan Anda telah meninjau spesifikasi lot secara teliti.
               </p>
             </div>
 
             <div class="rule-box">
               <div class="rule-box-header">
-                <app-icon name="building" [size]="18" />
-                <h4>Verifikasi Identitas Vendor & Aset</h4>
+                <mat-icon fontIcon="verified" [size]="18" />
+                <h4>Legalitas Vendor & Aset</h4>
               </div>
               <p>
-                Seluruh lot lelang diunggah oleh vendor institusi resmi yang telah melewati verifikasi legalitas
-                perusahaan dan kelayakan aset oleh tim kurator BidForge.
+                Semua vendor penyedia aset di platform telah melewati verifikasi dokumen legalitas resmi
+                sebelum diizinkan menerbitkan lot lelang.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- Tips Sukses Menang Lelang -->
+      <!-- 4. Tips Sukses Bidding -->
       <section class="guide-section">
         <div class="section-title-wrap">
-          <span class="section-tag">Strategi Bidding</span>
-          <h2 class="section-heading">Tips Sukses Memenangkan Lot Lelang</h2>
+          <span class="section-tag">Strategi Pengadaan</span>
+          <h2 class="section-heading">Rekomendasi Bidding untuk Penawar</h2>
         </div>
 
         <div class="tips-grid">
           <div class="tip-card">
-            <span class="tip-icon"><app-icon name="sparkles" [size]="20" /></span>
+            <span class="tip-icon"><mat-icon fontIcon="bolt" [size]="20" /></span>
             <div class="tip-body">
-              <h4>Gunakan Tombol Shortcut Kenaikan Cepat</h4>
+              <h4>Gunakan Tombol Shortcut Nominal Cepat</h4>
               <p>
-                Saat lelang mendekati menit-menit akhir, gunakan tombol preset (+Rp 50rb, +Rp 100rb, dll.)
-                agar dapat merespons penawaran kompetitor dalam hitungan detik.
+                Manfaatkan tombol nominal cepat (+1 kelipatan, +2 kelipatan, dll.) pada panel penawaran
+                untuk merespons kompetitor dalam hitungan detik saat lelang mendekati penutupan.
               </p>
             </div>
           </div>
 
           <div class="tip-card">
-            <span class="tip-icon"><app-icon name="bell" [size]="20" /></span>
+            <span class="tip-icon"><mat-icon fontIcon="notifications_active" [size]="20" /></span>
             <div class="tip-body">
-              <h4>Pantau Halaman "Tawaran Saya"</h4>
+              <h4>Pantau Tab "Terlampaui (Outbid)"</h4>
               <p>
-                Filter tab <strong>Terlampaui (Outbid)</strong> secara rutin untuk langsung mengetahui jika ada
-                peserta lain yang menaikkan tawaran di lot yang sedang Anda incar.
+                Periksa halaman <strong>Penawaran Saya</strong> secara berkala untuk memonitor apakah
+                ada peserta lain yang memasang tawaran lebih tinggi pada lot yang Anda incar.
               </p>
             </div>
           </div>
 
           <div class="tip-card">
-            <span class="tip-icon"><app-icon name="tag" [size]="20" /></span>
+            <span class="tip-icon"><mat-icon fontIcon="account_balance_wallet" [size]="20" /></span>
             <div class="tip-body">
-              <h4>Tentukan Batas Maksimum Anggaran (Max Cap)</h4>
+              <h4>Tentukan Batas Plafon Anggaran (Max Cap)</h4>
               <p>
-                Tentukan nilai estimasi wajar aset sebelum lelang dimulai, sehingga Anda dapat menawar dengan
-                percaya diri dan tetap berada dalam koridor anggaran perusahaan.
+                Tentukan nilai batas wajar aset sebelum penawaran dimulai agar pengadaan tetap berada
+                dalam efisiensi anggaran perusahaan Anda.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- FAQ Section -->
+      <!-- 5. FAQ Accordion -->
       <section class="guide-section">
         <div class="section-title-wrap">
           <span class="section-tag">Tanya Jawab</span>
-          <h2 class="section-heading">Pertanyaan yang Sering Diajukan (FAQ)</h2>
+          <h2 class="section-heading">Pertanyaan Umum (FAQ)</h2>
         </div>
 
         <div class="faq-list">
           @for (faq of faqs(); track faq.question; let i = $index) {
-            <div class="faq-item card" [class.is-open]="faq.open">
+            <div class="faq-item" [class.is-open]="faq.open">
               <button
                 type="button"
                 class="faq-question-btn"
@@ -242,7 +242,7 @@ interface FaqItem {
                 [attr.aria-expanded]="faq.open"
               >
                 <span class="faq-q-text">{{ faq.question }}</span>
-                <app-icon [name]="faq.open ? 'chevron-up' : 'chevron-down'" [size]="18" />
+                <mat-icon [fontIcon]="faq.open ? 'expand_less' : 'expand_more'" [size]="20" />
               </button>
               @if (faq.open) {
                 <div class="faq-answer-panel">
@@ -254,22 +254,22 @@ interface FaqItem {
         </div>
       </section>
 
-      <!-- Bottom Call To Action -->
-      <section class="guide-cta-card card">
+      <!-- 6. Bottom CTA Card -->
+      <section class="guide-cta-card">
         <div class="guide-cta-content">
-          <h2 class="guide-cta-title">Siap Memulai Penawaran Perdana Anda?</h2>
+          <h2 class="guide-cta-title">Siap Berpartisipasi di Lantai Lelang?</h2>
           <p class="guide-cta-desc">
-            Ratusan lot mesin pabrik, peralatan industri, dan kendaraan operasional siap untuk Anda tawar
-            dengan harga kompetitif.
+            Ratusan lot mesin industri, peralatan pabrik, dan surplus komersial siap ditawar dengan
+            transparansi penawaran penuh.
           </p>
           <div class="guide-cta-buttons">
             <a routerLink="/marketplace" class="btn btn-primary btn-lg">
-              <app-icon name="gavel" [size]="18" />
-              <span>Jelajahi Katalog Lelang Sekarang</span>
+              <mat-icon fontIcon="storefront" [size]="18" />
+              <span>Jelajahi Lantai Lelang Sekarang</span>
             </a>
             <a routerLink="/profile/bidder" class="btn btn-secondary btn-lg">
-              <app-icon name="user" [size]="18" />
-              <span>Periksa Profil Bidder</span>
+              <mat-icon fontIcon="business" [size]="18" />
+              <span>Periksa Profil Perusahaan Penawar</span>
             </a>
           </div>
         </div>
@@ -286,76 +286,54 @@ interface FaqItem {
 
       /* Hero */
       .guide-hero {
-        position: relative;
-        background: linear-gradient(135deg, #00aa5b 0%, #00733d 100%);
-        border-radius: var(--r-lg);
-        padding: var(--sp-9) var(--sp-8);
-        color: #ffffff;
-        box-shadow: 0 4px 20px rgba(0, 170, 91, 0.25);
-        overflow: hidden;
-
-        &::after {
-          content: '';
-          position: absolute;
-          bottom: -40px;
-          right: -40px;
-          width: 280px;
-          height: 280px;
-          border-radius: var(--r-full);
-          background: rgba(255, 255, 255, 0.08);
-          pointer-events: none;
-        }
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        padding: var(--sp-7) var(--sp-8);
+        box-shadow: var(--sh-xs);
       }
 
       .guide-hero-content {
-        position: relative;
-        z-index: 1;
-        max-width: 720px;
+        max-width: 780px;
         display: flex;
         flex-direction: column;
-        gap: var(--sp-4);
+        gap: var(--sp-3);
       }
 
       .guide-hero-badge {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: rgba(255, 255, 255, 0.18);
-        padding: 4px 12px;
-        border-radius: var(--r-full);
         font-size: var(--fs-xs);
         font-weight: var(--fw-semibold);
-        color: #ffffff;
-        width: fit-content;
+        letter-spacing: var(--tracking-caps);
+        text-transform: uppercase;
+        color: var(--c-brand);
       }
 
       .guide-hero-title {
         font-size: var(--fs-3xl);
         font-weight: var(--fw-bold);
-        color: #ffffff;
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-
-        @media (max-width: 640px) {
-          font-size: var(--fs-2xl);
-        }
+        color: var(--c-text);
+        letter-spacing: -0.025em;
+        line-height: var(--lh-tight);
       }
 
       .guide-hero-desc {
-        font-size: var(--fs-md);
-        color: #e6f9ef;
-        line-height: 1.6;
+        font-size: var(--fs-base);
+        color: var(--c-text-secondary);
+        line-height: var(--lh-normal);
       }
 
       .guide-hero-actions {
         display: flex;
         align-items: center;
-        gap: var(--sp-4);
-        margin-top: var(--sp-2);
+        gap: var(--sp-3);
+        margin-top: var(--sp-3);
         flex-wrap: wrap;
       }
 
-      /* Section Common */
+      /* Sections */
       .guide-section {
         display: flex;
         flex-direction: column;
@@ -369,7 +347,7 @@ interface FaqItem {
       }
 
       .section-tag {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-2xs);
         font-weight: var(--fw-bold);
         text-transform: uppercase;
         letter-spacing: 0.08em;
@@ -380,98 +358,99 @@ interface FaqItem {
         font-size: var(--fs-xl);
         font-weight: var(--fw-bold);
         color: var(--c-text);
+        letter-spacing: -0.015em;
       }
 
       .section-subheading {
         font-size: var(--fs-sm);
-        color: var(--c-text-secondary);
-        max-width: 60ch;
+        color: var(--c-text-muted);
+        max-width: 70ch;
       }
 
       /* 5 Steps Grid */
       .guide-steps-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
         gap: var(--sp-4);
       }
 
       .step-card {
-        position: relative;
         background: var(--c-surface);
         border: 1px solid var(--c-border);
-        border-radius: var(--r-lg);
-        padding: var(--sp-6) var(--sp-5);
+        border-radius: var(--r-md);
+        padding: var(--sp-5);
         display: flex;
         flex-direction: column;
         gap: var(--sp-3);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-        transition: transform var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+        position: relative;
+        transition: border-color var(--dur-fast) var(--ease);
 
         &:hover {
-          transform: translateY(-4px);
-          border-color: var(--c-brand-border);
+          border-color: var(--c-border-strong);
         }
       }
 
       .step-num-badge {
-        position: absolute;
-        top: var(--sp-3);
-        right: var(--sp-3);
-        font-size: var(--fs-2xl);
-        font-weight: var(--fw-bold);
-        color: var(--c-surface-sunken);
         font-family: var(--font-mono);
-        line-height: 1;
+        font-size: var(--fs-xs);
+        font-weight: var(--fw-bold);
+        color: var(--c-brand);
+        background: var(--c-brand-soft);
+        border: 1px solid var(--c-brand-border);
+        padding: 2px 6px;
+        border-radius: var(--r-xs);
+        width: fit-content;
       }
 
       .step-icon-box {
-        width: 48px;
-        height: 48px;
-        border-radius: var(--r-md);
-        background: var(--c-brand-soft);
-        color: var(--c-brand);
+        width: 40px;
+        height: 40px;
+        border-radius: var(--r-sm);
+        background: var(--c-canvas);
+        color: var(--c-text);
         display: flex;
         align-items: center;
         justify-content: center;
+        border: 1px solid var(--c-border);
       }
 
       .step-title {
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         font-weight: var(--fw-bold);
         color: var(--c-text);
+        margin: 0;
       }
 
       .step-desc {
-        font-size: var(--fs-sm);
-        color: var(--c-text-secondary);
-        line-height: 1.55;
+        font-size: var(--fs-xs);
+        color: var(--c-text-muted);
+        line-height: 1.5;
+        margin: 0;
       }
 
-      /* Rules Card */
+      /* Rules Box */
       .rules-container {
-        padding: var(--sp-6);
         background: var(--c-surface);
         border: 1px solid var(--c-border);
-        border-radius: var(--r-lg);
+        border-radius: var(--r-md);
+        padding: var(--sp-6);
         display: flex;
         flex-direction: column;
-        gap: var(--sp-6);
+        gap: var(--sp-5);
       }
 
       .rules-header {
         display: flex;
         align-items: center;
         gap: var(--sp-4);
-        padding-bottom: var(--sp-4);
-        border-bottom: 1px solid var(--c-border);
       }
 
       .rules-icon-wrap {
         width: 44px;
         height: 44px;
-        border-radius: var(--r-full);
-        background: var(--c-info-soft);
-        color: var(--c-info);
+        border-radius: var(--r-sm);
+        background: var(--c-brand-soft);
+        color: var(--c-brand);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -485,41 +464,38 @@ interface FaqItem {
       }
 
       .rules-subtitle {
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         color: var(--c-text-muted);
       }
 
       .rules-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: var(--sp-5);
+        gap: var(--sp-4);
       }
 
       .rule-box {
+        background: var(--c-canvas);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-sm);
+        padding: var(--sp-4);
         display: flex;
         flex-direction: column;
         gap: var(--sp-2);
-        padding: var(--sp-4);
-        border-radius: var(--r-md);
-        background: var(--c-canvas);
-        border: 1px solid var(--c-border);
 
         p {
-          font-size: var(--fs-sm);
+          font-size: var(--fs-xs);
           color: var(--c-text-secondary);
-          line-height: 1.5;
+          line-height: 1.55;
+          margin: 0;
         }
 
         code {
-          display: block;
-          margin-top: 6px;
-          padding: 4px 8px;
-          border-radius: var(--r-sm);
-          background: var(--c-surface);
-          border: 1px solid var(--c-border-strong);
           font-family: var(--font-mono);
-          font-size: 0.75rem;
-          color: var(--c-brand);
+          font-size: 0.72rem;
+          background: var(--c-surface-sunken);
+          padding: 2px 4px;
+          border-radius: var(--r-xs);
         }
       }
 
@@ -530,13 +506,14 @@ interface FaqItem {
         color: var(--c-brand);
 
         h4 {
-          font-size: var(--fs-sm);
+          font-size: var(--fs-xs);
           font-weight: var(--fw-bold);
           color: var(--c-text);
+          margin: 0;
         }
       }
 
-      /* Tips Grid */
+      /* Tips */
       .tips-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -544,20 +521,18 @@ interface FaqItem {
       }
 
       .tip-card {
-        display: flex;
-        align-items: flex-start;
-        gap: var(--sp-4);
-        padding: var(--sp-5);
         background: var(--c-surface);
         border: 1px solid var(--c-border);
-        border-radius: var(--r-lg);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        border-radius: var(--r-md);
+        padding: var(--sp-5);
+        display: flex;
+        gap: var(--sp-4);
       }
 
       .tip-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: var(--r-md);
+        width: 36px;
+        height: 36px;
+        border-radius: var(--r-sm);
         background: var(--c-brand-soft);
         color: var(--c-brand);
         display: flex;
@@ -569,18 +544,20 @@ interface FaqItem {
       .tip-body {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: var(--sp-1);
 
         h4 {
-          font-size: var(--fs-base);
+          font-size: var(--fs-sm);
           font-weight: var(--fw-bold);
           color: var(--c-text);
+          margin: 0;
         }
 
         p {
-          font-size: var(--fs-sm);
-          color: var(--c-text-secondary);
+          font-size: var(--fs-xs);
+          color: var(--c-text-muted);
           line-height: 1.5;
+          margin: 0;
         }
       }
 
@@ -592,13 +569,14 @@ interface FaqItem {
       }
 
       .faq-item {
+        background: var(--c-surface);
         border: 1px solid var(--c-border);
         border-radius: var(--r-md);
         overflow: hidden;
         transition: border-color var(--dur-fast) var(--ease);
 
         &.is-open {
-          border-color: var(--c-brand-border);
+          border-color: var(--c-border-strong);
         }
       }
 
@@ -608,69 +586,68 @@ interface FaqItem {
         align-items: center;
         justify-content: space-between;
         padding: var(--sp-4) var(--sp-5);
-        background: var(--c-surface);
+        background: transparent;
         border: none;
         cursor: pointer;
         text-align: left;
         color: var(--c-text);
-        font-family: inherit;
+        font-size: var(--fs-sm);
+        font-weight: var(--fw-semibold);
 
         &:hover {
-          background: var(--c-surface-hover);
+          background: var(--c-canvas);
         }
       }
 
-      .faq-q-text {
-        font-size: var(--fs-base);
-        font-weight: var(--fw-semibold);
-      }
-
       .faq-answer-panel {
-        padding: var(--sp-4) var(--sp-5) var(--sp-5);
-        background: var(--c-canvas);
+        padding: 0 var(--sp-5) var(--sp-4);
+        font-size: var(--fs-xs);
+        color: var(--c-text-secondary);
+        line-height: 1.6;
         border-top: 1px solid var(--c-border);
+        background: var(--c-canvas);
+        padding-top: var(--sp-3);
 
         p {
-          font-size: var(--fs-sm);
-          color: var(--c-text-secondary);
-          line-height: 1.6;
+          margin: 0;
         }
       }
 
       /* Bottom CTA Card */
       .guide-cta-card {
-        padding: var(--sp-8);
-        background: linear-gradient(180deg, var(--c-surface) 0%, var(--c-brand-soft) 100%);
-        border: 1px solid var(--c-brand-border);
-        border-radius: var(--r-lg);
+        background: var(--c-surface);
+        border: 1px solid var(--c-border);
+        border-radius: var(--r-md);
+        padding: var(--sp-7);
         text-align: center;
       }
 
       .guide-cta-content {
-        max-width: 600px;
+        max-width: 620px;
         margin: 0 auto;
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: var(--sp-4);
+        gap: var(--sp-3);
       }
 
       .guide-cta-title {
         font-size: var(--fs-2xl);
         font-weight: var(--fw-bold);
         color: var(--c-text);
+        letter-spacing: -0.02em;
       }
 
       .guide-cta-desc {
-        font-size: var(--fs-base);
-        color: var(--c-text-secondary);
-        line-height: 1.5;
+        font-size: var(--fs-sm);
+        color: var(--c-text-muted);
+        line-height: 1.55;
       }
 
       .guide-cta-buttons {
         display: flex;
-        gap: var(--sp-4);
-        margin-top: var(--sp-2);
+        gap: var(--sp-3);
+        margin-top: var(--sp-3);
         flex-wrap: wrap;
         justify-content: center;
       }
@@ -688,25 +665,25 @@ export class AuctionGuideComponent {
     {
       question: 'Bagaimana jika penawaran saya terlampaui (Outbid)?',
       answer:
-        'Anda akan melihat status "Tawaran Terlampaui" di halaman Tawaran Saya. Anda dapat langsung memasang tawaran baru dengan nominal di atas tawaran tertinggi saat ini selama waktu lelang masih berjalan.',
+        'Status lot lelang Anda akan otomatis beralih ke "Tawaran Terlampaui" di halaman Penawaran Saya. Anda dapat langsung memasang tawaran baru dengan nominal di atas tawaran tertinggi saat ini selama waktu lelang masih berjalan.',
       open: false,
     },
     {
       question: 'Kapan pemenang lelang resmi ditentukan?',
       answer:
-        'Pemenang ditentukan secara otomatis oleh sistem pada detik penutupan lelang berakhir. Peserta dengan penawaran tertinggi yang sah di database server akan dinyatakan sebagai pemenang.',
+        'Pemenang ditentukan secara otomatis oleh sistem server pada detik penutupan lelang. Peserta dengan penawaran tertinggi yang sah di database server akan ditetapkan sebagai pemenang.',
       open: false,
     },
     {
       question: 'Bagaimana proses pembayaran dan serah terima barang setelah menang?',
       answer:
-        'Setelah lelang selesai, tim vendor dan platform akan menerbitkan Berita Acara Pemenang dan Faktur Tagihan. Pelunasan dilakukan via transfer bank resmi, dilanjutkan penjadwalan pengambilan barang fisik di gudang vendor.',
+        'Setelah lelang selesai, pihak vendor dan platform akan menerbitkan Berita Acara Pemenang serta Faktur Tagihan resmi. Pelunasan dilakukan via transfer perbankan terverifikasi, dilanjutkan penjadwalan serah terima fisik aset di gudang vendor.',
       open: false,
     },
     {
       question: 'Dapatkah saya membatalkan tawaran yang tidak sengaja terpasang?',
       answer:
-        'Tidak bisa. Setiap penawaran yang diterima oleh server bersifat mengikat secara hukum. Mohon teliti memeriksa nominal tawaran sebelum menekan tombol konfirmasi.',
+        'Tidak bisa. Setiap penawaran yang diterima oleh server bersifat mengikat secara hukum dalam platform lelang B2B. Mohon teliti memeriksa nominal tawaran sebelum menekan tombol konfirmasi.',
       open: false,
     },
   ]);

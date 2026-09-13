@@ -29,7 +29,7 @@ import { AuctionLifecycleComponent } from '../../shared/ui/auction-lifecycle.com
 import { AuctionStatusBadgeComponent } from '../../shared/ui/badge.component';
 import { BidHistoryComponent } from '../../shared/ui/bid-history.component';
 import { CountdownComponent } from '../../shared/ui/countdown.component';
-import { IconComponent } from '../../shared/ui/icon.component';
+import { MatIconComponent } from '../../shared/ui/mat-icon.component';
 import { BreadcrumbsComponent, Crumb } from '../../shared/ui/pagination.component';
 import { PriceComponent } from '../../shared/ui/price.component';
 import {
@@ -64,7 +64,7 @@ import { BidPanelComponent } from './bid-panel.component';
     BidHistoryComponent,
     BreadcrumbsComponent,
     CountdownComponent,
-    IconComponent,
+    MatIconComponent,
     PriceComponent,
     DetailSkeletonComponent,
     ErrorStateComponent,
@@ -90,7 +90,7 @@ import { BidPanelComponent } from './bid-panel.component';
                 (retry)="reload()"
               >
                 <a class="btn btn-secondary" routerLink="/marketplace">
-                  <app-icon name="chevron-left" [size]="15" />
+                  <mat-icon fontIcon="arrow_back" [size]="15" />
                   <span>Kembali ke Marketplace</span>
                 </a>
               </app-error-state>
@@ -115,7 +115,7 @@ import { BidPanelComponent } from './bid-panel.component';
               </div>
               <h1 class="detail-title">{{ productName() }}</h1>
               <p class="detail-vendor">
-                <app-icon name="building" [size]="14" />
+                <mat-icon fontIcon="storefront" [size]="15" />
                 <span>Disediakan oleh {{ vendorName() }}</span>
               </p>
             </div>
@@ -124,12 +124,12 @@ import { BidPanelComponent } from './bid-panel.component';
               <!-- Management entry point appears only for the owning vendor or an admin -->
               @if (canManage()) {
                 <a class="btn btn-secondary" [routerLink]="['/vendor/auctions', auctionData.id]">
-                  <app-icon name="edit" [size]="15" />
+                  <mat-icon fontIcon="edit" [size]="15" />
                   <span>Kelola Lelang</span>
                 </a>
               }
               <a class="btn btn-secondary" routerLink="/marketplace">
-                <app-icon name="chevron-left" [size]="15" />
+                <mat-icon fontIcon="arrow_back" [size]="15" />
                 <span>Marketplace</span>
               </a>
             </div>
@@ -157,7 +157,7 @@ import { BidPanelComponent } from './bid-panel.component';
                   </span>
                   <div class="auction-card-media-fallback">
                     <div class="media-placeholder">
-                      <app-icon name="image" [size]="34" />
+                      <mat-icon fontIcon="precision_manufacturing" [size]="34" />
                       <p class="state-description">
                         Foto produk belum diunggah untuk lot ini. Rincian teknis dan
                         informasi vendor tertera di bawah.
@@ -171,7 +171,7 @@ import { BidPanelComponent } from './bid-panel.component';
                   @for (i of gallerySlots; track i) {
                     <span class="auction-thumb" [class.is-active]="i === 0">
                       <span class="auction-card-media-fallback">
-                        <app-icon name="image" [size]="16" />
+                        <mat-icon fontIcon="precision_manufacturing" [size]="16" />
                       </span>
                     </span>
                   }
@@ -181,28 +181,28 @@ import { BidPanelComponent } from './bid-panel.component';
               <!-- Key facts strip -->
               <div class="card fact-strip">
                 <div class="fact">
-                  <span class="fact-icon"><app-icon name="gavel" [size]="16" /></span>
+                  <span class="fact-icon"><mat-icon fontIcon="gavel" [size]="16" /></span>
                   <div class="fact-body">
                     <span class="fact-label">Harga saat ini</span>
                     <span class="fact-value text-numeric">{{ amountLabel(auctionData.currentPrice) }}</span>
                   </div>
                 </div>
                 <div class="fact">
-                  <span class="fact-icon"><app-icon name="trending-up" [size]="16" /></span>
+                  <span class="fact-icon"><mat-icon fontIcon="trending_up" [size]="16" /></span>
                   <div class="fact-body">
                     <span class="fact-label">Tawaran minimal berikutnya</span>
                     <span class="fact-value text-numeric">{{ minimumLabel() }}</span>
                   </div>
                 </div>
                 <div class="fact">
-                  <span class="fact-icon"><app-icon name="users" [size]="16" /></span>
+                  <span class="fact-icon"><mat-icon fontIcon="groups" [size]="16" /></span>
                   <div class="fact-body">
                     <span class="fact-label">Total tawaran</span>
                     <span class="fact-value text-numeric">{{ auctionData.bidCount }}</span>
                   </div>
                 </div>
                 <div class="fact">
-                  <span class="fact-icon"><app-icon name="clock" [size]="16" /></span>
+                  <span class="fact-icon"><mat-icon fontIcon="schedule" [size]="16" /></span>
                   <div class="fact-body">
                     <span class="fact-label">
                       {{ auctionData.status === AuctionStatus.ACTIVE ? 'Ditutup' : 'Berakhir' }}

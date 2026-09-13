@@ -26,7 +26,7 @@ import { BadgeComponent } from '../../shared/ui/badge.component';
 import { ButtonComponent } from '../../shared/ui/button.component';
 import { CountdownComponent } from '../../shared/ui/countdown.component';
 import { FormFieldComponent } from '../../shared/ui/form-field.component';
-import { IconComponent } from '../../shared/ui/icon.component';
+import { MatIconComponent } from '../../shared/ui/mat-icon.component';
 import { PriceComponent, PriceTileComponent } from '../../shared/ui/price.component';
 import { AlertComponent } from '../../shared/ui/toast.component';
 
@@ -74,7 +74,7 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
     ButtonComponent,
     CountdownComponent,
     FormFieldComponent,
-    IconComponent,
+    MatIconComponent,
     PriceComponent,
     PriceTileComponent,
     AlertComponent,
@@ -93,7 +93,7 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
           />
           @if (auction().bidCount === 0) {
             <p class="text-helper no-bids-note">
-              Belum ada tawaran — harga yang tampil adalah harga awal vendor.
+              Belum ada penawaran — harga yang tampil adalah harga awal vendor.
             </p>
           }
         </div>
@@ -108,22 +108,22 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
             <app-countdown [target]="auction().startTime" prefix="starts" size="lg" tone="muted" />
           } @else if (isActive()) {
             <span class="countdown is-muted">
-              <app-icon name="ban" [size]="17" />
+              <mat-icon fontIcon="block" [size]="17" />
               <span class="countdown-label">Penawaran ditutup</span>
             </span>
           } @else if (isEnded()) {
             <span class="countdown is-muted">
-              <app-icon name="check" [size]="17" />
+              <mat-icon fontIcon="done" [size]="17" />
               <span class="countdown-label">Lelang berakhir</span>
             </span>
           } @else if (isCancelled()) {
             <span class="countdown is-muted">
-              <app-icon name="close" [size]="17" />
+              <mat-icon fontIcon="close" [size]="17" />
               <span class="countdown-label">Lelang dibatalkan</span>
             </span>
           } @else {
             <span class="countdown is-muted">
-              <app-icon name="file-text" [size]="17" />
+              <mat-icon fontIcon="description" [size]="17" />
               <span class="countdown-label">Belum dijadwalkan</span>
             </span>
           }
@@ -160,7 +160,7 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
               Penawaran membutuhkan akun bidder resmi. Silakan masuk untuk melihat riwayat dan memasang tawaran.
             </app-alert>
             <a class="btn btn-primary btn-block btn-lg" [href]="loginLink()">
-              <app-icon name="user" [size]="16" />
+              <mat-icon fontIcon="person" [size]="16" />
               <span>Masuk untuk Menawar</span>
             </a>
           </div>
@@ -193,14 +193,14 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
             <div class="bid-quick-amounts">
               @for (preset of presets(); track preset.label) {
                 <button type="button" class="bid-quick-btn" (click)="applyPreset(preset.value)">
-                  <app-icon name="plus" [size]="12" />
+                  <mat-icon fontIcon="add" [size]="12" />
                   <span>{{ preset.label }}</span>
                 </button>
               }
             </div>
 
             <p class="bid-authority-note">
-              <app-icon name="info" [size]="14" />
+              <mat-icon fontIcon="info" [size]="14" />
               <span>
                 Tawaran Anda diverifikasi dengan harga server secara real-time. Jika harga telah naik, tawaran akan ditolak dan nilai minimal baru akan otomatis diperbarui.
               </span>
@@ -295,9 +295,10 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
         color: var(--c-text-muted);
         line-height: var(--lh-snug);
       }
-      .bid-authority-note app-icon {
+      .bid-authority-note mat-icon {
         margin-top: 2px;
         flex-shrink: 0;
+        color: var(--c-brand);
       }
       .panel-cta {
         display: flex;

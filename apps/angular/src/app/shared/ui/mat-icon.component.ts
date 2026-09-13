@@ -13,7 +13,7 @@ import {
  * property binding (`<mat-icon fontIcon="people" />` or `<mat-icon [fontIcon]="iconName" />`).
  */
 @Component({
-  selector: 'mat-icon',
+  selector: 'mat-icon, app-mat-icon',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

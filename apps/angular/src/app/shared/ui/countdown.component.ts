@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { formatCountdown } from '../../core/domain/format';
 import { ClockService } from '../../core/services/clock.service';
-import { IconComponent } from './icon.component';
+import { MatIconComponent } from './mat-icon.component';
 
 export type CountdownTone = 'default' | 'urgent' | 'muted' | 'onMedia';
 export type CountdownSize = 'sm' | 'md' | 'lg';
@@ -27,12 +27,12 @@ export type CountdownSize = 'sm' | 'md' | 'lg';
 @Component({
   selector: 'app-countdown',
   standalone: true,
-  imports: [IconComponent],
+  imports: [MatIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span [class]="wrapperClass()">
       @if (showIcon()) {
-        <app-icon [name]="iconName()" [size]="iconSize()" />
+        <mat-icon [fontIcon]="iconName()" [size]="iconSize()" />
       }
       <span>
         @if (label()) {
@@ -109,7 +109,7 @@ export class CountdownComponent {
   });
 
   readonly iconName = computed(() =>
-    this.isExpired() ? 'ban' : this.isUrgent() ? 'alert' : 'clock',
+    this.isExpired() ? 'block' : this.isUrgent() ? 'warning' : 'schedule',
   );
 
   readonly iconSize = computed(() => (this.size() === 'sm' ? 13 : this.size() === 'lg' ? 18 : 15));

@@ -10,58 +10,63 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-  /* Neutral base (60%) — clean, spacious and highly legible */
-  --c-canvas: #f8fafc;
+  /* Neutral base (60%) — warm institutional light, spacious and highly legible */
+  --c-canvas: #f7f6f2;
   --c-surface: #ffffff;
-  --c-surface-sunken: #f1f5f9;
-  --c-surface-hover: #f8fafc;
-  --c-border: #e2e8f0;
-  --c-border-strong: #cbd5e1;
+  --c-surface-sunken: #f0ece4;
+  --c-surface-hover: #f9f8f5;
+  --c-border: #e2ded5;
+  --c-border-strong: #cbc5b8;
 
-  /* Structural & text (30%) — high-contrast dark slate hierarchy */
-  --c-text: #0f172a;
+  /* Structural & text (30%) — deep charcoal & slate institutional hierarchy */
+  --c-text: #161f30;
   --c-text-secondary: #334155;
   --c-text-muted: #64748b;
   --c-text-inverse: #ffffff;
 
-  /* Brand accent (10%) — Vibrant Tokopedia / modern marketplace emerald green */
-  --c-brand: #00aa5b;
-  --c-brand-hover: #008f4c;
-  --c-brand-active: #00733d;
-  --c-brand-soft: #e8f7ee;
-  --c-brand-border: #a2e2ba;
+  /* Brand accent (10%) — Restrained institutional deep forest pine & muted brass */
+  --c-brand: #1b4d3e;
+  --c-brand-hover: #143d31;
+  --c-brand-active: #0f2e25;
+  --c-brand-soft: #edf4f1;
+  --c-brand-border: #b8d1c7;
+
+  --c-accent-brass: #b89355;
+  --c-accent-brass-hover: #a58144;
+  --c-accent-brass-soft: #faf5ec;
+  --c-accent-brass-border: #e5d2af;
 
   /* Seller/Vendor identity — deep indigo-slate: professional, commercial, enterprise */
-  --c-seller: #3730a3;
-  --c-seller-hover: #2e27a0;
-  --c-seller-active: #251e8f;
-  --c-seller-soft: #eef2ff;
-  --c-seller-border: #c7d2fe;
-  --c-seller-muted: #6366f1;
+  --c-seller: #2a3447;
+  --c-seller-hover: #1e2638;
+  --c-seller-active: #151b28;
+  --c-seller-soft: #eef2f7;
+  --c-seller-border: #cbd5e1;
+  --c-seller-muted: #475569;
 
   /* Semantic state colours (never used alone — always with icon & label) */
-  --c-success: #059669;
-  --c-success-soft: #ecfdf5;
-  --c-success-border: #a7f3d0;
+  --c-success: #1b6348;
+  --c-success-soft: #edf6f2;
+  --c-success-border: #b8ded0;
 
-  --c-warning: #d97706;
+  --c-warning: #b45309;
   --c-warning-soft: #fffbeb;
   --c-warning-border: #fde68a;
 
-  --c-danger: #dc2626;
+  --c-danger: #b91c1c;
   --c-danger-soft: #fef2f2;
   --c-danger-border: #fecaca;
 
-  --c-info: #0284c7;
+  --c-info: #0369a1;
   --c-info-soft: #f0f9ff;
   --c-info-border: #bae6fd;
 
   --c-neutral: #475569;
-  --c-neutral-soft: #f1f5f9;
-  --c-neutral-border: #cbd5e1;
+  --c-neutral-soft: #f1ede6;
+  --c-neutral-border: #cac4b7;
 
-  --c-focus: #00aa5b;
-  --c-overlay: rgba(15, 23, 42, 0.55);
+  --c-focus: #1b4d3e;
+  --c-overlay: rgba(22, 31, 48, 0.6);
 
 
   /* Type scale */
@@ -3228,209 +3233,137 @@ input[type='number'] {
   gap: var(--sp-5);
 }
 
-/* E-Commerce Hero Banner */
-.marketplace-ecom-hero {
-  position: relative;
-  background: linear-gradient(135deg, #00aa5b 0%, #00733d 100%);
-  border-radius: var(--r-lg);
-  padding: var(--sp-8);
-  color: #ffffff;
-  overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 170, 91, 0.22);
-}
+/* =========================================================================
+   INSTITUTIONAL B2B AUCTION & MARKETPLACE STYLES
+   ========================================================================= */
 
-.marketplace-ecom-hero::before {
-  content: '';
-  position: absolute;
-  top: -50px;
-  right: -50px;
-  width: 260px;
-  height: 260px;
-  border-radius: var(--r-full);
-  background: rgba(255, 255, 255, 0.09);
-  pointer-events: none;
-}
-
-.hero-ecom-content {
-  position: relative;
-  z-index: 1;
+/* Institutional Procurement Floor Header */
+.marketplace-procurement-head {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  padding: var(--sp-6) var(--sp-7);
+  box-shadow: var(--sh-xs);
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: var(--sp-8);
+  align-items: center;
+  gap: var(--sp-6);
 
-  @media (max-width: 768px) {
+  @media (max-width: 840px) {
     flex-direction: column;
     align-items: flex-start;
-    gap: var(--sp-5);
+    padding: var(--sp-5);
   }
 }
 
-.hero-ecom-text {
-  max-width: 620px;
+.procurement-head-text {
+  max-width: 680px;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  gap: var(--sp-2);
 }
 
-.hero-ecom-eyebrow {
+.procurement-eyebrow {
   display: inline-flex;
   align-items: center;
   gap: var(--sp-2);
   font-size: var(--fs-xs);
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #c7f4d9;
+  color: var(--c-brand);
 }
 
-.hero-ecom-title {
-  font-size: var(--fs-3xl);
+.procurement-title {
+  font-size: var(--fs-2xl);
   font-weight: var(--fw-bold);
-  line-height: 1.15;
-  color: #ffffff;
+  color: var(--c-text);
   letter-spacing: -0.02em;
-
-  @media (max-width: 640px) {
-    font-size: var(--fs-2xl);
-  }
+  line-height: var(--lh-tight);
 }
 
-.hero-ecom-copy {
-  font-size: var(--fs-base);
-  line-height: 1.5;
-  color: #e6f9ef;
+.procurement-copy {
+  font-size: var(--fs-sm);
+  color: var(--c-text-muted);
+  line-height: var(--lh-snug);
 }
 
-.hero-ecom-badges {
+.procurement-head-meta {
   display: flex;
   align-items: center;
-  gap: var(--sp-4);
-  flex-wrap: wrap;
-  margin-top: var(--sp-2);
-}
-
-.hero-trust-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.16);
-  padding: 4px 12px;
-  border-radius: var(--r-full);
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
-  color: #ffffff;
-  backdrop-filter: blur(4px);
-}
-
-.hero-ecom-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
   gap: var(--sp-3);
   flex-shrink: 0;
 
-  @media (max-width: 768px) {
+  @media (max-width: 840px) {
     width: 100%;
+    flex-wrap: wrap;
   }
 }
 
-.hero-ecom-stat-card {
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(6px);
-  border-radius: var(--r-md);
-  padding: var(--sp-4);
+.procurement-meta-stat {
+  background: var(--c-canvas);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  padding: var(--sp-3) var(--sp-4);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 120px;
+  min-width: 130px;
 }
 
-.hero-stat-num {
-  font-size: var(--fs-2xl);
-  font-weight: var(--fw-bold);
-  color: #ffffff;
+.procurement-stat-val {
   font-family: var(--font-mono);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+  line-height: 1;
 }
 
-.hero-stat-desc {
-  font-size: var(--fs-xs);
-  color: #c7f4d9;
+.procurement-stat-lbl {
+  font-size: var(--fs-2xs);
   font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--c-text-muted);
 }
 
-/* Tokopedia-Style Card Elevation */
+/* Institutional Auction Lot Card */
 .auction-card {
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
-  border-radius: var(--r-lg);
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
-    border-color: var(--c-brand-border);
-  }
-}
-
-.auction-card-media {
-  aspect-ratio: 4 / 3;
-}
-
-/* My Bids Transaction Card View */
-.bid-transaction-card {
   background: var(--c-surface);
   border: 1px solid var(--c-border);
-  border-radius: var(--r-lg);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  margin-bottom: var(--sp-4);
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-xs);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+  position: relative;
   transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 
   &:hover {
     border-color: var(--c-border-strong);
     box-shadow: var(--sh-sm);
   }
-}
 
-.bid-tx-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-3) var(--sp-5);
-  background: var(--c-canvas);
-  border-bottom: 1px solid var(--c-border);
-  font-size: var(--fs-sm);
-}
+  &.is-terminal {
+    opacity: 0.78;
+    background: var(--c-surface-hover);
 
-.bid-tx-body {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-5);
-  gap: var(--sp-5);
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: flex-start;
+    &:hover {
+      border-color: var(--c-border);
+      box-shadow: var(--sh-xs);
+    }
   }
 }
 
-.bid-tx-product {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-4);
-  flex: 1;
-}
-
-.bid-tx-thumb {
-  width: 72px;
-  height: 72px;
-  border-radius: var(--r-md);
+.auction-card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
   background: var(--c-surface-sunken);
+  border-bottom: 1px solid var(--c-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--c-text-muted);
-  flex-shrink: 0;
   overflow: hidden;
 
   img {
@@ -3440,21 +3373,120 @@ input[type='number'] {
   }
 }
 
-.bid-tx-pricing {
+.auction-card-media-fallback {
+  width: 100%;
+  height: 100%;
   display: flex;
-  gap: var(--sp-6);
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  color: var(--c-text-muted);
+  background: linear-gradient(180deg, var(--c-canvas) 0%, var(--c-surface-sunken) 100%);
 }
 
-.bid-tx-actions {
+.lot-schematic-watermark {
+  font-family: var(--font-mono);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  opacity: 0.7;
+}
+
+.auction-card-status {
+  position: absolute;
+  top: var(--sp-3);
+  left: var(--sp-3);
+  z-index: 2;
+}
+
+.auction-card-countdown {
+  position: absolute;
+  bottom: var(--sp-3);
+  right: var(--sp-3);
+  z-index: 2;
+  background: rgba(22, 31, 48, 0.88);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-xs);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
+
+  &.is-urgent {
+    background: rgba(185, 28, 28, 0.92);
+  }
+}
+
+.auction-card-body {
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  flex: 1;
+}
+
+.auction-card-eyebrow {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  flex-shrink: 0;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  color: var(--c-text-muted);
+}
 
-  @media (max-width: 768px) {
-    width: 100%;
-    justify-content: flex-end;
-  }
+.auction-card-title {
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+  line-height: var(--lh-snug);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 2.7em;
+}
+
+.vendor-line {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--c-text-secondary);
+}
+
+.auction-card-bid-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--c-canvas);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  margin-top: auto;
+}
+
+.auction-card-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+}
+
+.auction-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--c-surface-hover);
+  border-top: 1px solid var(--c-border);
 }
 
