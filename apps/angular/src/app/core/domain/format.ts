@@ -120,10 +120,10 @@ export function formatRelative(iso: string | null | undefined, now: number = Dat
   if (Number.isNaN(t)) return '—';
 
   const diff = now - t;
-  if (diff < 45_000) return 'just now';
-  if (diff < 3_600_000) return `${Math.round(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)}h ago`;
-  if (diff < 2_592_000_000) return `${Math.round(diff / 86_400_000)}d ago`;
+  if (diff < 45_000) return 'baru saja';
+  if (diff < 3_600_000) return `${Math.round(diff / 60_000)} mnt lalu`;
+  if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)} jam lalu`;
+  if (diff < 2_592_000_000) return `${Math.round(diff / 86_400_000)} hari lalu`;
   return formatDate(iso);
 }
 

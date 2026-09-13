@@ -75,16 +75,14 @@ export type LifecycleVariant = 'full' | 'compact';
         <p class="lifecycle-terminal-note text-helper">
           <app-icon name="ban" [size]="13" />
           <span>
-            Cancelled is a terminal state — it branches off the lifecycle and no further transitions
-            are possible.
+            Dibatalkan adalah status akhir lelang — lelang ditarik dari siklus dan tidak dapat diproses lebih lanjut.
           </span>
         </p>
       } @else if (isEnded()) {
         <p class="lifecycle-terminal-note text-helper">
           <app-icon name="check" [size]="13" />
           <span>
-            The auction has ended. The winner is derived from the highest valid bid; no separate
-            winner record is created.
+            Lelang telah selesai. Pemenang lelang ditentukan berdasarkan penawaran sah tertinggi oleh sistem.
           </span>
         </p>
       }
@@ -161,12 +159,12 @@ export class AuctionLifecycleComponent {
   private timeFor(status: AuctionStatus, auction: Auction): string {
     switch (status) {
       case AuctionStatus.DRAFT:
-        return `Created ${formatDateTime(auction.createdAt)}`;
+        return `Dibuat ${formatDateTime(auction.createdAt)}`;
       case AuctionStatus.SCHEDULED:
       case AuctionStatus.ACTIVE:
-        return `From ${formatDateTime(auction.startTime)}`;
+        return `Mulai ${formatDateTime(auction.startTime)}`;
       case AuctionStatus.ENDED:
-        return `Until ${formatDateTime(auction.endTime)}`;
+        return `Sampai ${formatDateTime(auction.endTime)}`;
       default:
         return '';
     }
@@ -174,9 +172,9 @@ export class AuctionLifecycleComponent {
 }
 
 const LABELS: Record<AuctionStatus, string> = {
-  [AuctionStatus.DRAFT]: 'Draft',
-  [AuctionStatus.SCHEDULED]: 'Scheduled',
-  [AuctionStatus.ACTIVE]: 'Active',
-  [AuctionStatus.ENDED]: 'Ended',
-  [AuctionStatus.CANCELLED]: 'Cancelled',
+  [AuctionStatus.DRAFT]: 'Draf',
+  [AuctionStatus.SCHEDULED]: 'Terjadwal',
+  [AuctionStatus.ACTIVE]: 'Berlangsung',
+  [AuctionStatus.ENDED]: 'Selesai',
+  [AuctionStatus.CANCELLED]: 'Dibatalkan',
 };

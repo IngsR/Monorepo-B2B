@@ -119,6 +119,14 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/bidder/my-bids.component').then((m) => m.MyBidsComponent),
       },
+      {
+        path: 'panduan-lelang',
+        canMatch: [roleMatchGuard(UserRole.BIDDER, UserRole.ADMIN)],
+        canActivate: [roleGuard(UserRole.BIDDER, UserRole.ADMIN)],
+        title: 'Panduan Lelang · BidForge',
+        loadComponent: () =>
+          import('./features/bidder/auction-guide.component').then((m) => m.AuctionGuideComponent),
+      },
 
       /* -------------------------------- vendor: own products & auctions */
       {

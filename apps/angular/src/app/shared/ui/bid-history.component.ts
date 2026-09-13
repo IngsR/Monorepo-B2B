@@ -30,7 +30,7 @@ export type BidSort = 'highest' | 'newest';
         <div class="state-icon">
           <app-icon name="gavel" [size]="20" />
         </div>
-        <p class="state-title">No bids yet</p>
+        <p class="state-title">Belum ada penawaran</p>
         <p class="state-description">
           {{ emptyMessage() }}
         </p>
@@ -56,17 +56,16 @@ export type BidSort = 'highest' | 'newest';
               <span class="bid-actor">
                 <span>{{ actorLabel(bid) }}</span>
                 @if (isMine(bid)) {
-                  <span class="badge badge-brand">You</span>
+                  <span class="badge badge-brand">Anda</span>
                 }
                 @if (isLeading(bid, index)) {
-                  <span class="badge badge-active">Leading bid</span>
+                  <span class="badge badge-active">Tawaran Tertinggi</span>
                 }
               </span>
               <span class="bid-time">{{ formatTime(bid.createdAt) }}</span>
             </div>
 
             <span class="bid-amount">
-              <span aria-hidden="true">$</span>
               {{ amount(bid.amount) }}
             </span>
           </div>
@@ -82,7 +81,7 @@ export class BidHistoryComponent {
   readonly currentBidderId = input<string | null>(null);
   /** True when the auction is finished and the top bid is therefore final. */
   readonly auctionEnded = input(false);
-  readonly emptyMessage = input('Bids placed on this auction will appear here.');
+  readonly emptyMessage = input('Penawaran yang masuk pada lelang ini akan tampil di sini.');
 
   readonly orderedBids = computed(() => {
     const list = [...this.bids()];
@@ -113,7 +112,7 @@ export class BidHistoryComponent {
   actorLabel(bid: Bid): string {
     if (bid.bidderCompanyName) return bid.bidderCompanyName;
     if (bid.bidderDisplayName) return bid.bidderDisplayName;
-    return 'Anonymous bidder';
+    return 'Penawar Anonim';
   }
 
   amount(value: number): string {

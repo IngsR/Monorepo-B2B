@@ -87,13 +87,13 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
         <div>
           <app-price
             [amount]="auction().currentPrice"
-            label="Current price"
+            label="Harga saat ini"
             size="hero"
             [tone]="auction().bidCount > 0 ? 'default' : 'muted'"
           />
           @if (auction().bidCount === 0) {
             <p class="text-helper no-bids-note">
-              No bids yet — the price shown is the seller's starting price.
+              Belum ada tawaran — harga yang tampil adalah harga awal vendor.
             </p>
           }
         </div>
@@ -102,29 +102,29 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
           @if (isActive() && timing().acceptingBids) {
             <app-countdown [target]="auction().endTime" prefix="closes" size="lg" />
             @if (timing().endingSoon) {
-              <app-badge tone="warning" label="Ending soon" size="sm" />
+              <app-badge tone="warning" label="Segera berakhir" size="sm" />
             }
           } @else if (isScheduled()) {
             <app-countdown [target]="auction().startTime" prefix="starts" size="lg" tone="muted" />
           } @else if (isActive()) {
             <span class="countdown is-muted">
               <app-icon name="ban" [size]="17" />
-              <span class="countdown-label">Bidding closed</span>
+              <span class="countdown-label">Penawaran ditutup</span>
             </span>
           } @else if (isEnded()) {
             <span class="countdown is-muted">
               <app-icon name="check" [size]="17" />
-              <span class="countdown-label">Auction ended</span>
+              <span class="countdown-label">Lelang berakhir</span>
             </span>
           } @else if (isCancelled()) {
             <span class="countdown is-muted">
               <app-icon name="close" [size]="17" />
-              <span class="countdown-label">Auction cancelled</span>
+              <span class="countdown-label">Lelang dibatalkan</span>
             </span>
           } @else {
             <span class="countdown is-muted">
               <app-icon name="file-text" [size]="17" />
-              <span class="countdown-label">Not yet scheduled</span>
+              <span class="countdown-label">Belum dijadwalkan</span>
             </span>
           }
         </div>
@@ -134,16 +134,16 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
       <div class="bid-panel-figures">
         <app-price-tile
           [amount]="minimumBid()"
-          label="Minimum next bid"
+          label="Tawaran minimal berikutnya"
           [size]="'md'"
           [accent]="canBidNow()"
-          [hint]="'Current price + increment'"
+          [hint]="'Harga saat ini + kelipatan'"
         />
         <app-price-tile
           [amount]="auction().bidIncrement"
-          label="Bid increment"
+          label="Kelipatan tawaran"
           size="sm"
-          hint="Fixed by the vendor"
+          hint="Ditetapkan oleh vendor"
         />
       </div>
 
@@ -156,24 +156,27 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
       @switch (panelState()) {
         @case ('anonymous') {
           <div class="panel-cta">
-            <app-alert tone="info" title="Sign in to bid">
-              Bidding requires a bidder account. Sign in to view your bid history and place bids.
+            <app-alert tone="info" title="Masuk untuk menawar">
+              Penawaran membutuhkan akun bidder resmi. Silakan masuk untuk melihat riwayat dan memasang tawaran.
             </app-alert>
-            <a class="btn btn-primary btn-block btn-lg" [href]="loginLink()">Sign in to bid</a>
+            <a class="btn btn-primary btn-block btn-lg" [href]="loginLink()">
+              <app-icon name="user" [size]="16" />
+              <span>Masuk untuk Menawar</span>
+            </a>
           </div>
         }
 
         @case ('active') {
           <form [formGroup]="form" (ngSubmit)="submit()" novalidate class="bid-form">
             <app-form-field
-              label="Your bid"
+              label="Tawaran Anda"
               [required]="true"
               [control]="amount"
               [errorMap]="amountErrors()"
               controlId="bid-amount"
             >
               <div class="input-prefix">
-                <span class="input-prefix-symbol" aria-hidden="true">$</span>
+                <span class="input-prefix-symbol" aria-hidden="true">Rp</span>
                 <input
                   id="bid-amount"
                   type="number"
@@ -190,7 +193,8 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
             <div class="bid-quick-amounts">
               @for (preset of presets(); track preset.label) {
                 <button type="button" class="bid-quick-btn" (click)="applyPreset(preset.value)">
-                  {{ preset.label }}
+                  <app-icon name="plus" [size]="12" />
+                  <span>{{ preset.label }}</span>
                 </button>
               }
             </div>
@@ -198,14 +202,14 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
             <p class="bid-authority-note">
               <app-icon name="info" [size]="14" />
               <span>
-                Your bid is checked against the live price when it reaches the server. If the price
-                has moved, the bid is refused and you will see the new minimum.
+                Tawaran Anda diverifikasi dengan harga server secara real-time. Jika harga telah naik, tawaran akan ditolak dan nilai minimal baru akan otomatis diperbarui.
               </span>
             </p>
 
             <app-button
               type="submit"
               [label]="submitLabel()"
+              icon="gavel"
               variant="primary"
               size="lg"
               [block]="true"
@@ -222,42 +226,38 @@ function minimumBidValidator(minimum: () => number): ValidatorFn {
         }
 
         @case ('bidder-inactive') {
-          <app-alert tone="danger" title="Account not active">
-            This bidder account is not active and cannot place bids. Contact your administrator.
+          <app-alert tone="danger" title="Akun belum aktif">
+            Akun bidder ini belum aktif dan tidak dapat memasang tawaran. Silakan hubungi administrator.
           </app-alert>
         }
 
         @case ('scheduled') {
-          <app-alert tone="info" title="Bidding has not opened yet">
-            This auction starts at {{ startTime() }}. You can review the lot and return then.
+          <app-alert tone="info" title="Penawaran belum dibuka">
+            Lelang ini dimulai pada {{ startTime() }}. Anda dapat meninjau rincian lot dan kembali saat lelang dibuka.
           </app-alert>
         }
 
         @case ('window-closed') {
-          <app-alert tone="warning" title="Bidding window closed">
-            The published end time for this auction has passed, so no further bids can be accepted.
-            The auction remains open on the record until the vendor or an administrator closes it.
+          <app-alert tone="warning" title="Waktu penawaran ditutup">
+            Batas waktu lelang telah berakhir, sehingga penawaran baru tidak dapat diterima.
           </app-alert>
         }
 
         @case ('ended') {
-          <app-alert tone="neutral" title="Auction ended">
-            The highest valid bid at the end time determines the outcome. The result is derived by
-            the server; no winner is declared before the auction closes.
+          <app-alert tone="neutral" title="Lelang telah berakhir">
+            Penawaran sah tertinggi pada saat lelang berakhir dinyatakan sebagai pemenang oleh sistem server.
           </app-alert>
         }
 
         @case ('cancelled') {
-          <app-alert tone="danger" title="Auction cancelled">
-            This auction was withdrawn and will not proceed. Any bids placed remain in the history
-            for the record.
+          <app-alert tone="danger" title="Lelang dibatalkan">
+            Lelang ini telah ditarik dan tidak dilanjutkan. Semua tawaran yang telah masuk tetap tercatat dalam riwayat.
           </app-alert>
         }
 
         @case ('draft') {
-          <app-alert tone="neutral" title="Not published">
-            This auction is still a draft. It will become available once it is scheduled and
-            activated.
+          <app-alert tone="neutral" title="Belum dipublikasikan">
+            Lelang ini masih berstatus draf dan akan tersedia setelah dijadwalkan dan diaktifkan.
           </app-alert>
         }
       }
@@ -394,20 +394,20 @@ export class BidPanelComponent {
   });
 
   readonly notBidderTitle = computed(() =>
-    this.role() === UserRole.VENDOR ? 'Vendors cannot bid' : 'Administrators cannot bid',
+    this.role() === UserRole.VENDOR ? 'Vendor tidak dapat menawar' : 'Administrator tidak dapat menawar',
   );
 
   readonly notBidderMessage = computed(() =>
     this.role() === UserRole.VENDOR
-      ? 'You may inspect any auction, but bidding is reserved for bidder accounts. Manage this auction from your vendor workspace.'
-      : 'Administrators inspect auctions and manage the platform. Bidding is reserved for bidder accounts.',
+      ? 'Anda dapat meninjau lelang, namun penawaran khusus untuk akun bidder. Kelola lelang ini melalui workspace vendor Anda.'
+      : 'Administrator bertugas meninjau lelang dan mengelola platform. Penawaran khusus untuk akun bidder.',
   );
 
   readonly submitLabel = computed(() =>
-    this.timing().endingSoon ? 'Place bid — closing soon' : 'Place bid',
+    this.timing().endingSoon ? 'Pasang Tawaran — Segera Berakhir' : 'Pasang Tawaran Sekarang',
   );
 
-  readonly startTime = computed(() => new Date(this.auction().startTime).toLocaleString('en-GB'));
+  readonly startTime = computed(() => new Date(this.auction().startTime).toLocaleString('id-ID'));
 
   readonly loginLink = computed(
     () => `/login?returnUrl=${encodeURIComponent(`/marketplace/${this.auction().id}`)}`,
@@ -419,15 +419,15 @@ export class BidPanelComponent {
     const increment = this.auction().bidIncrement;
     return [
       { label: formatAmount(minimum), value: minimum },
-      { label: `+${increment.toLocaleString('en-US')}`, value: minimum + increment },
-      { label: `+${(increment * 2).toLocaleString('en-US')}`, value: minimum + increment * 2 },
+      { label: `+Rp ${increment.toLocaleString('id-ID')}`, value: minimum + increment },
+      { label: `+Rp ${(increment * 2).toLocaleString('id-ID')}`, value: minimum + increment * 2 },
     ];
   });
 
   readonly amountErrors = computed(() => ({
-    required: 'Enter a bid amount',
-    min: `Your bid must be at least ${formatAmount(this.minimumBid())}`,
-    belowMinimum: `Your bid must be at least ${formatAmount(this.minimumBid())}`,
+    required: 'Masukkan nominal tawaran',
+    min: `Tawaran Anda minimal ${formatAmount(this.minimumBid())}`,
+    belowMinimum: `Tawaran Anda minimal ${formatAmount(this.minimumBid())}`,
   }));
 
   /** Outcome feedback rendered above the form. */
@@ -438,24 +438,24 @@ export class BidPanelComponent {
     if (failure.status === 409) {
       return {
         tone: 'warning' as const,
-        title: 'Bid not accepted — price moved',
+        title: 'Tawaran tidak diterima — harga telah berubah',
         message:
           failure.message ||
-          'Another bid was accepted before yours reached the server. The minimum next bid has been updated below.',
+          'Tawaran lain telah diterima server lebih dulu. Nilai tawaran minimal telah diperbarui di bawah ini.',
       };
     }
     if (failure.status === 403) {
       return {
         tone: 'danger' as const,
-        title: 'Bid refused',
+        title: 'Tawaran ditolak',
         message: failure.message,
       };
     }
     if (failure.status >= 500 || failure.status === 0) {
       return {
         tone: 'danger' as const,
-        title: 'Could not place your bid',
-        message: failure.detail ?? 'The request could not be completed. Please try again.',
+        title: 'Gagal memasang tawaran',
+        message: failure.detail ?? 'Permintaan tidak dapat diproses saat ini. Silakan coba kembali.',
       };
     }
     return { tone: 'danger' as const, title: failure.message, message: failure.detail ?? '' };

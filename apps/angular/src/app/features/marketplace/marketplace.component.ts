@@ -64,257 +64,342 @@ interface MarketplaceFilters {
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page">
-      <!-- Hero: framed like a real marketplace landing band, not a plain page head -->
-      <section class="marketplace-hero">
-        <div class="marketplace-hero-text">
-          <span class="marketplace-hero-eyebrow">BidForge · Live B2B auction floor</span>
-          <h1 class="marketplace-hero-title">Source stock at the price the market sets</h1>
-          <p class="marketplace-hero-copy">
-            Browse verified vendor lots across every category. Prices are server-authoritative:
-            they move only when a higher valid bid is accepted, so what you see is the real current
-            standing.
-          </p>
-          <div class="marketplace-hero-actions">
-            <button type="button" class="btn btn-hero" (click)="focusSearch()">
-              <app-icon name="search" [size]="15" />
-              Find a lot
-            </button>
-            <button type="button" class="btn btn-hero-ghost" (click)="setStatusValue(AuctionStatus.ACTIVE)">
-              <app-icon name="gavel" [size]="15" />
-              Only live auctions
-            </button>
+    <div class="page marketplace-page">
+      <!-- 1. E-Commerce Hero Banner (Tokopedia/Shopee style) -->
+      <section class="marketplace-ecom-hero">
+        <div class="hero-ecom-content">
+          <div class="hero-ecom-text">
+            <span class="hero-ecom-eyebrow">
+              <app-icon name="shield" [size]="14" />
+              <span>BidForge Marketplace · Lelang Resmi B2B</span>
+            </span>
+            <h1 class="hero-ecom-title">Pengadaan & Aset Industri Harga Terbaik Pasar</h1>
+            <p class="hero-ecom-copy">
+              Temukan lot lelang resmi dari vendor terverifikasi di seluruh kategori. Transparan, aman,
+              dan server-authoritative tanpa markup tersembunyi.
+            </p>
+            <div class="hero-ecom-badges">
+              <span class="hero-trust-badge">
+                <app-icon name="check" [size]="12" />
+                <span>Vendor Terverifikasi</span>
+              </span>
+              <span class="hero-trust-badge">
+                <app-icon name="shield" [size]="12" />
+                <span>Jaminan Transaksi B2B</span>
+              </span>
+              <span class="hero-trust-badge">
+                <app-icon name="clock" [size]="12" />
+                <span>Live Real-Time Timer</span>
+              </span>
+            </div>
+            <div class="marketplace-hero-actions">
+              <button type="button" class="btn btn-hero" (click)="focusSearch()">
+                <app-icon name="search" [size]="16" />
+                <span>Cari Lot Lelang</span>
+              </button>
+              <button
+                type="button"
+                class="btn btn-hero-ghost"
+                (click)="setStatusValue(AuctionStatus.ACTIVE)"
+              >
+                <app-icon name="gavel" [size]="16" />
+                <span>Lelang Sedang Berlangsung</span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <div class="marketplace-hero-stats">
-          <div class="hero-stat">
-            <span class="hero-stat-value">{{ statTotal() }}</span>
-            <span class="hero-stat-label">Lots listed</span>
-          </div>
-          <div class="hero-stat">
-            <span class="hero-stat-value">{{ statActive() }}</span>
-            <span class="hero-stat-label">Open now</span>
-          </div>
-          <div class="hero-stat">
-            <span class="hero-stat-value">{{ statEndingSoon() }}</span>
-            <span class="hero-stat-label">Closing soon</span>
-          </div>
-          <div class="hero-stat">
-            <span class="hero-stat-value">{{ statBids() }}</span>
-            <span class="hero-stat-label">Bids placed</span>
+          <div class="hero-ecom-stats">
+            <div class="hero-ecom-stat-card">
+              <span class="hero-stat-num">{{ statTotal() }}</span>
+              <span class="hero-stat-desc">Total Lot Terdaftar</span>
+            </div>
+            <div class="hero-ecom-stat-card">
+              <span class="hero-stat-num">{{ statActive() }}</span>
+              <span class="hero-stat-desc">Sedang Berlangsung</span>
+            </div>
+            <div class="hero-ecom-stat-card">
+              <span class="hero-stat-num">{{ statEndingSoon() }}</span>
+              <span class="hero-stat-desc">Segera Berakhir</span>
+            </div>
+            <div class="hero-ecom-stat-card">
+              <span class="hero-stat-num">{{ statBids() }}</span>
+              <span class="hero-stat-desc">Total Penawaran</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- Search + price + sort controls -->
-      <div class="toolbar">
-        <div class="toolbar-field toolbar-grow">
-          <label class="form-label" for="mp-search">Search lots</label>
-          <div class="input-affix-wrap">
-            <span class="search-prefix">
-              <app-icon name="search" [size]="15" />
-            </span>
-            <input
-              id="mp-search"
-              #searchBox
-              type="search"
-              class="form-input search-with-icon"
-              placeholder="Search by lot name, product code or vendor"
-              [value]="searchInput()"
-              (input)="onSearchInput($event)"
-            />
-          </div>
-        </div>
-
-        <div class="toolbar-field">
-          <label class="form-label" for="mp-status">Status</label>
-          <select
-            id="mp-status"
-            class="form-select"
-            [value]="filters().status"
-            (change)="setStatus($event)"
-          >
-            <option value="ALL">All statuses</option>
-            <option [value]="AuctionStatus.ACTIVE">Active</option>
-            <option [value]="AuctionStatus.SCHEDULED">Scheduled</option>
-            <option [value]="AuctionStatus.ENDED">Ended</option>
-            <option [value]="AuctionStatus.CANCELLED">Cancelled</option>
-          </select>
-        </div>
-
-        <div class="toolbar-field">
-          <label class="form-label" for="mp-min">Min price</label>
-          <input
-            id="mp-min"
-            type="number"
-            class="form-input"
-            min="0"
-            placeholder="No minimum"
-            [value]="filters().minPrice ?? ''"
-            (change)="setMinPrice($event)"
-          />
-        </div>
-
-        <div class="toolbar-field">
-          <label class="form-label" for="mp-max">Max price</label>
-          <input
-            id="mp-max"
-            type="number"
-            class="form-input"
-            min="0"
-            placeholder="No maximum"
-            [value]="filters().maxPrice ?? ''"
-            (change)="setMaxPrice($event)"
-          />
-        </div>
-      </div>
-
-      <!-- Category rail: one-tap narrowing -->
-      <div>
-        <p class="text-label category-rail-label">Browse by category</p>
-        <div class="category-rail" role="tablist" aria-label="Filter by category">
-          <button
-            type="button"
-            class="category-chip"
-            role="tab"
-            [class.is-active]="filters().categoryId === 'ALL'"
-            [attr.aria-selected]="filters().categoryId === 'ALL'"
-            (click)="setCategoryValue('ALL')"
-          >
-            All categories
-          </button>
-          @for (category of categories(); track category.id) {
-            <button
-              type="button"
-              class="category-chip"
-              role="tab"
-              [class.is-active]="filters().categoryId === category.id"
-              [attr.aria-selected]="filters().categoryId === category.id"
-              (click)="setCategoryValue(category.id)"
-            >
-              {{ category.name }}
-              @if (category.productCount) {
-                <span class="category-chip-count">{{ category.productCount }}</span>
+      <!-- 2. Two-Column E-Commerce Layout -->
+      <div class="marketplace-ecom-layout">
+        <!-- Left Filter Sidebar -->
+        <aside class="marketplace-sidebar-filter" aria-label="Filter lelang">
+          <div class="filter-sidebar-card">
+            <div class="filter-sidebar-header">
+              <span class="filter-sidebar-title">
+                <app-icon name="filter" [size]="16" />
+                <span>Filter Pencarian</span>
+              </span>
+              @if (hasActiveFilters()) {
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm"
+                  (click)="clearFilters()"
+                  title="Reset Semua Filter"
+                >
+                  <app-icon name="trash" [size]="13" />
+                  <span>Reset</span>
+                </button>
               }
-            </button>
-          }
-        </div>
-      </div>
+            </div>
 
-      <!-- Active filters, removable one at a time -->
-      @if (hasActiveFilters()) {
-        <div class="filter-bar">
-          <span class="filter-bar-label">Filters</span>
-          @for (chip of activeChips(); track chip.key) {
-            <span class="filter-chip">
-              {{ chip.label }}
-              <button
-                type="button"
-                class="filter-chip-remove"
-                [attr.aria-label]="'Remove filter ' + chip.label"
-                (click)="removeChip(chip.key)"
-              >
-                <app-icon name="close" [size]="12" />
-              </button>
-            </span>
-          }
-          <app-button
-            label="Clear all"
-            variant="ghost"
-            icon="close"
-            (clicked)="clearFilters()"
-          />
-        </div>
-      }
+            <!-- Status Filter -->
+            <div class="filter-section">
+              <h3 class="filter-section-title">Status Lelang</h3>
+              <div class="filter-options-list">
+                <button
+                  type="button"
+                  class="filter-option-item"
+                  [class.is-active]="filters().status === 'ALL'"
+                  (click)="setStatusValue('ALL')"
+                >
+                  <span>Semua Status</span>
+                  <app-icon name="layers" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="filter-option-item"
+                  [class.is-active]="filters().status === AuctionStatus.ACTIVE"
+                  (click)="setStatusValue(AuctionStatus.ACTIVE)"
+                >
+                  <span>Sedang Berlangsung (Live)</span>
+                  <app-icon name="gavel" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="filter-option-item"
+                  [class.is-active]="filters().status === AuctionStatus.SCHEDULED"
+                  (click)="setStatusValue(AuctionStatus.SCHEDULED)"
+                >
+                  <span>Segera Dimulai</span>
+                  <app-icon name="calendar" [size]="14" />
+                </button>
+                <button
+                  type="button"
+                  class="filter-option-item"
+                  [class.is-active]="filters().status === AuctionStatus.ENDED"
+                  (click)="setStatusValue(AuctionStatus.ENDED)"
+                >
+                  <span>Telah Berakhir</span>
+                  <app-icon name="check" [size]="14" />
+                </button>
+              </div>
+            </div>
 
-      <!-- Result count + sort -->
-      <div class="grid-toolbar">
-        @if (auctions.isSuccess() && data(); as result) {
-          <p class="grid-toolbar-count">
-            Showing <strong class="text-numeric">{{ result.items.length }}</strong> of
-            <strong class="text-numeric">{{ result.meta.total }}</strong>
-            {{ result.meta.total === 1 ? 'lot' : 'lots' }}
-          </p>
-        } @else {
-          <span></span>
-        }
+            <!-- Category Filter -->
+            <div class="filter-section">
+              <h3 class="filter-section-title">Kategori Produk</h3>
+              <div class="filter-options-list">
+                <button
+                  type="button"
+                  class="filter-option-item"
+                  [class.is-active]="filters().categoryId === 'ALL'"
+                  (click)="setCategoryValue('ALL')"
+                >
+                  <span>Semua Kategori</span>
+                  <app-icon name="layers" [size]="14" />
+                </button>
+                @for (category of categories(); track category.id) {
+                  <button
+                    type="button"
+                    class="filter-option-item"
+                    [class.is-active]="filters().categoryId === category.id"
+                    (click)="setCategoryValue(category.id)"
+                  >
+                    <span>{{ category.name }}</span>
+                    @if (category.productCount) {
+                      <span class="category-chip-count">{{ category.productCount }}</span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
 
-        <label class="sort-field" for="mp-sort">
-          <span class="sr-only">Sort auctions</span>
-          <select
-            id="mp-sort"
-            class="form-select sort-select"
-            [value]="filters().orderBy"
-            (change)="setOrderBy($event)"
-          >
-            @for (option of sortOptions; track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
-            }
-          </select>
-        </label>
-      </div>
-
-      <!-- Results -->
-      @switch (true) {
-        @case (auctions.isLoading() && !auctions.data()) {
-          <div class="auction-grid">
-            @for (i of skeletonItems; track i) {
-              <app-card-skeleton />
-            }
+            <!-- Price Range Filter -->
+            <div class="filter-section">
+              <h3 class="filter-section-title">Rentang Harga (Rp)</h3>
+              <div class="filter-price-inputs">
+                <div class="input-affix-wrap">
+                  <span class="search-prefix"><app-icon name="tag" [size]="13" /></span>
+                  <input
+                    id="mp-min"
+                    type="number"
+                    class="form-input search-with-icon"
+                    min="0"
+                    placeholder="Harga Minimum"
+                    [value]="filters().minPrice ?? ''"
+                    (change)="setMinPrice($event)"
+                  />
+                </div>
+                <div class="input-affix-wrap">
+                  <span class="search-prefix"><app-icon name="tag" [size]="13" /></span>
+                  <input
+                    id="mp-max"
+                    type="number"
+                    class="form-input search-with-icon"
+                    min="0"
+                    placeholder="Harga Maksimum"
+                    [value]="filters().maxPrice ?? ''"
+                    (change)="setMaxPrice($event)"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
-        }
-        @case (auctions.hasError()) {
-          @if (auctions.error(); as failure) {
-            <div class="card">
-              <app-error-state
-                [failure]="failure"
-                [retrying]="auctions.isLoading()"
-                (retry)="reload()"
+        </aside>
+
+        <!-- Right Main Catalog Content -->
+        <main class="marketplace-main-content">
+          <!-- In-Page Search Toolbar -->
+          <div class="toolbar">
+            <div class="toolbar-field toolbar-grow">
+              <label class="form-label" for="mp-search">Cari Lot & Produk</label>
+              <div class="input-affix-wrap">
+                <span class="search-prefix">
+                  <app-icon name="search" [size]="15" />
+                </span>
+                <input
+                  id="mp-search"
+                  #searchBox
+                  type="search"
+                  class="form-input search-with-icon"
+                  placeholder="Cari berdasarkan nama lot, kode produk, atau vendor"
+                  [value]="searchInput()"
+                  (input)="onSearchInput($event)"
+                />
+              </div>
+            </div>
+
+            <div class="toolbar-field">
+              <label class="form-label" for="mp-sort">Urutkan</label>
+              <select
+                id="mp-sort"
+                class="form-select sort-select"
+                [value]="filters().orderBy"
+                (change)="setOrderBy($event)"
+              >
+                @for (option of sortOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <!-- Active filters, removable one at a time -->
+          @if (hasActiveFilters()) {
+            <div class="filter-bar">
+              <span class="filter-bar-label">Filter Aktif:</span>
+              @for (chip of activeChips(); track chip.key) {
+                <span class="filter-chip">
+                  <span>{{ chip.label }}</span>
+                  <button
+                    type="button"
+                    class="filter-chip-remove"
+                    [attr.aria-label]="'Hapus filter ' + chip.label"
+                    (click)="removeChip(chip.key)"
+                  >
+                    <app-icon name="close" [size]="12" />
+                  </button>
+                </span>
+              }
+              <app-button
+                label="Hapus Semua"
+                variant="ghost"
+                icon="trash"
+                (clicked)="clearFilters()"
               />
             </div>
           }
-        }
-        @case (true) {
-          @let result = data()!;
-          @if (result.items.length === 0) {
-            <div class="card">
-              <app-empty-state
-                icon="search"
-                title="No auctions match these filters"
-                description="Try widening the price range, choosing a different category, or clearing the status filter."
-              >
-                <app-button label="Clear filters" variant="secondary" (clicked)="clearFilters()" />
-              </app-empty-state>
-            </div>
-          } @else {
-            <div class="auction-grid">
-              @for (auction of result.items; track auction.id) {
-                <app-auction-card
-                  [auction]="auction"
-                  linkPrefix="/marketplace"
-                  [navigateOnCta]="openAuction"
-                />
+
+          <!-- Result count toolbar -->
+          <div class="grid-toolbar">
+            @if (auctions.isSuccess() && data(); as result) {
+              <p class="grid-toolbar-count">
+                Menampilkan <strong class="text-numeric">{{ result.items.length }}</strong> dari
+                <strong class="text-numeric">{{ result.meta.total }}</strong> lot lelang
+              </p>
+            } @else {
+              <span></span>
+            }
+          </div>
+
+          <!-- Auction Cards Grid -->
+          @switch (true) {
+            @case (auctions.isLoading() && !auctions.data()) {
+              <div class="auction-grid">
+                @for (i of skeletonItems; track i) {
+                  <app-card-skeleton />
+                }
+              </div>
+            }
+            @case (auctions.hasError()) {
+              @if (auctions.error(); as failure) {
+                <div class="card">
+                  <app-error-state
+                    [failure]="failure"
+                    [retrying]="auctions.isLoading()"
+                    (retry)="reload()"
+                  />
+                </div>
               }
-            </div>
+            }
+            @case (true) {
+              @let result = data()!;
+              @if (result.items.length === 0) {
+                <div class="card">
+                  <app-empty-state
+                    icon="search"
+                    title="Tidak ada lelang yang sesuai dengan filter"
+                    description="Coba ubah kata kunci pencarian, rentang harga, atau hapus filter untuk melihat semua lot lelang."
+                  >
+                    <app-button
+                      label="Reset Semua Filter"
+                      variant="secondary"
+                      icon="refresh"
+                      (clicked)="clearFilters()"
+                    />
+                  </app-empty-state>
+                </div>
+              } @else {
+                <div class="auction-grid">
+                  @for (auction of result.items; track auction.id) {
+                    <app-auction-card
+                      [auction]="auction"
+                      linkPrefix="/marketplace"
+                      [navigateOnCta]="openAuction"
+                    />
+                  }
+                </div>
 
-            <div class="card">
-              <app-pagination [meta]="result.meta" (pageChange)="setPage($event)" />
-            </div>
+                <div class="card">
+                  <app-pagination [meta]="result.meta" (pageChange)="setPage($event)" />
+                </div>
+              }
+            }
           }
-        }
-      }
 
-      <!-- Auction lifecycle reference -->
-      <div class="card card-body lifecycle-reference">
-        <p class="text-label">Auction lifecycle</p>
-        <p class="text-helper lifecycle-reference-copy">
-          Auctions move <strong>Draft → Scheduled → Active → Ended</strong>. A draft cannot jump
-          directly to active, and a scheduled auction cannot jump to ended. Any non-terminal auction
-          can instead be <strong>Cancelled</strong>, which is final. The published end time is
-          authoritative for bidding: an auction may briefly still read Active after its window has
-          closed, until an authorised user closes it.
-        </p>
+          <!-- Auction lifecycle reference -->
+          <div class="card card-body lifecycle-reference">
+            <p class="text-label">
+              <app-icon name="info" [size]="13" />
+              <span>Ketentuan & Siklus Hidup Lelang</span>
+            </p>
+            <p class="text-helper lifecycle-reference-copy">
+              Alur lelang berlangsung <strong>Draft → Terjadwal → Berlangsung (Active) → Berakhir</strong>.
+              Waktu berakhir yang dipublikasikan bersifat server-authoritative: penawaran dinyatakan sah jika
+              diterima server sebelum batas waktu berakhir.
+            </p>
+          </div>
+        </main>
       </div>
     </div>
   `,
@@ -327,16 +412,33 @@ interface MarketplaceFilters {
         color: var(--c-text-muted);
         pointer-events: none;
       }
-      .search-with-icon { padding-left: 34px; }
-      .category-rail-label { margin-bottom: var(--sp-2); }
-      .sort-field { display: block; }
+      .search-with-icon {
+        padding-left: 34px;
+      }
+      .sort-field {
+        display: block;
+      }
       .lifecycle-reference {
         gap: var(--sp-2);
         display: flex;
         flex-direction: column;
+        margin-top: var(--sp-4);
       }
       .lifecycle-reference-copy {
         max-width: 100ch;
+      }
+      .marketplace-hero-actions {
+        display: flex;
+        gap: var(--sp-3);
+        margin-top: var(--sp-2);
+        flex-wrap: wrap;
+      }
+      .category-chip-count {
+        font-size: var(--fs-xs);
+        background: var(--c-surface-sunken);
+        color: var(--c-text-muted);
+        padding: 2px 6px;
+        border-radius: var(--r-full);
       }
     `,
   ],
@@ -355,11 +457,11 @@ export class MarketplaceComponent {
   readonly data = computed(() => this.auctions.data());
 
   readonly sortOptions: SortOption[] = [
-    { value: 'endingSoon', label: 'Closing soonest first' },
-    { value: 'newest', label: 'Newest listings' },
-    { value: 'priceAsc', label: 'Price: low to high' },
-    { value: 'priceDesc', label: 'Price: high to low' },
-    { value: 'mostBids', label: 'Most bids' },
+    { value: 'endingSoon', label: 'Segera Berakhir Dahulu' },
+    { value: 'newest', label: 'Lot Lelang Terbaru' },
+    { value: 'priceAsc', label: 'Harga: Terendah ke Tertinggi' },
+    { value: 'priceDesc', label: 'Harga: Tertinggi ke Terendah' },
+    { value: 'mostBids', label: 'Penawaran Terbanyak' },
   ];
 
   readonly searchInput = signal('');
@@ -417,14 +519,22 @@ export class MarketplaceComponent {
   readonly activeChips = computed<{ key: keyof MarketplaceFilters; label: string }[]>(() => {
     const f = this.filters();
     const chips: { key: keyof MarketplaceFilters; label: string }[] = [];
-    if (f.search) chips.push({ key: 'search', label: `Search: "${f.search}"` });
-    if (f.status !== 'ALL') chips.push({ key: 'status', label: `Status: ${f.status.toLowerCase()}` });
-    if (f.categoryId !== 'ALL') {
-      const name = this.categories().find((c) => c.id === f.categoryId)?.name ?? 'Category';
-      chips.push({ key: 'categoryId', label: `Category: ${name}` });
+    if (f.search) chips.push({ key: 'search', label: `Pencarian: "${f.search}"` });
+    if (f.status !== 'ALL') {
+      const statusMap: Record<string, string> = {
+        ACTIVE: 'Sedang Berlangsung',
+        SCHEDULED: 'Segera Dimulai',
+        ENDED: 'Telah Berakhir',
+        CANCELLED: 'Dibatalkan',
+      };
+      chips.push({ key: 'status', label: `Status: ${statusMap[f.status] ?? f.status}` });
     }
-    if (f.minPrice !== null) chips.push({ key: 'minPrice', label: `Min price: $${f.minPrice}` });
-    if (f.maxPrice !== null) chips.push({ key: 'maxPrice', label: `Max price: $${f.maxPrice}` });
+    if (f.categoryId !== 'ALL') {
+      const name = this.categories().find((c) => c.id === f.categoryId)?.name ?? 'Kategori';
+      chips.push({ key: 'categoryId', label: `Kategori: ${name}` });
+    }
+    if (f.minPrice !== null) chips.push({ key: 'minPrice', label: `Harga Min: Rp ${f.minPrice.toLocaleString('id-ID')}` });
+    if (f.maxPrice !== null) chips.push({ key: 'maxPrice', label: `Harga Maks: Rp ${f.maxPrice.toLocaleString('id-ID')}` });
     return chips;
   });
 

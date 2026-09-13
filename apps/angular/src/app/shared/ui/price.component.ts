@@ -49,7 +49,7 @@ export class PriceComponent {
   readonly size = input<PriceSize>('md');
   readonly tone = input<PriceTone>('default');
   readonly label = input<string>('');
-  readonly currency = input('$');
+  readonly currency = input('Rp');
 
   readonly formatted = computed(() => formatAmount(this.amount()));
 
