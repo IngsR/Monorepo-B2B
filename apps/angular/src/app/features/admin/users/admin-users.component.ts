@@ -1,17 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AccountStatus, UserRole } from '../../../core/domain/enums';
+import { UserRole } from '../../../core/domain/enums';
 import { ApiFailure, toApiFailure } from '../../../core/domain/api-failure';
 import { formatDateTime } from '../../../core/domain/format';
 import { Paginated, User, UserQuery } from '../../../core/domain/models';
 import { AsyncResource } from '../../../core/state/async-resource';
 import { UserService } from '../../../core/services/directory.service';
 import { NotificationService } from '../../../core/services/notification.service';
-import { AccountStatusBadgeComponent } from '../../../shared/ui/badge.component';
-import { ButtonComponent } from '../../../shared/ui/button.component';
 import { DialogComponent } from '../../../shared/ui/dialog.component';
 import { FormFieldComponent } from '../../../shared/ui/form-field.component';
-import { IconComponent } from '../../../shared/ui/icon.component';
+import { MatIconComponent } from '../../../shared/ui/mat-icon.component';
 import { PaginationComponent } from '../../../shared/ui/pagination.component';
 import {
   EmptyStateComponent,
@@ -21,26 +19,22 @@ import {
 import { AlertComponent } from '../../../shared/ui/toast.component';
 
 /**
- * User management.
+ * User Identity Management.
  *
- * The identity records behind every vendor and bidder profile. The table shows
- * exactly what the API returns — id, name, email, role and status — and nothing
- * more. Creating a user is the first step; attaching a vendor or bidder profile
- * happens on those screens.
- *
- * Status and role are administrative fields: they are only editable here, and
- * the client cannot grant them to itself (the API rejects an attempt).
+ * Provides administrative oversight and creation of core authentication identities.
+ * Realigned 100% with NestJS backend `UsersController` and DTOs:
+ * - Query: search (name/email), role (ADMIN, VENDOR, BIDDER), pagination.
+ * - Create: email, password, name, role.
+ * - Update: name, role.
  */
 @Component({
   selector: 'app-admin-users',
   standalone: true,
   imports: [
     ReactiveFormsModule,
-    AccountStatusBadgeComponent,
-    ButtonComponent,
     DialogComponent,
     FormFieldComponent,
-    IconComponent,
+    MatIconComponent,
     PaginationComponent,
     EmptyStateComponent,
     ErrorStateComponent,
@@ -49,17 +43,26 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="page">
-      <header class="page-head">
-        <div class="page-head-text">
-          <h1 class="page-title">Users</h1>
-          <p class="page-subtitle">
-            Authentication identities and their platform role. A vendor or bidder user needs a
-            matching profile before they can own products or place bids.
+    <div class="admin-page">
+      <!-- Header -->
+      <header class="admin-header">
+        <div class="admin-header-main">
+          <div class="admin-badge-strip">
+            <span class="admin-console-pill">
+              <mat-icon fontIcon="manage_accounts" [size]="14" />
+              Identity Directory
+            </span>
+          </div>
+          <h1 class="admin-title">User Accounts</h1>
+          <p class="admin-subtitle">
+            Manage central system authentication credentials and role assignments. Vendor and Bidder profiles attach to these accounts.
           </p>
         </div>
-        <div class="page-actions">
-          <app-button label="New user" icon="plus" variant="primary" (clicked)="openCreate()" />
+        <div class="admin-actions">
+          <button type="button" class="btn-admin-primary" (click)="openCreate()">
+            <mat-icon fontIcon="person_add" [size]="16" />
+            <span>Create New User</span>
+          </button>
         </div>
       </header>
 
@@ -67,139 +70,135 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
         <app-alert tone="danger" [title]="failure.message">{{ failure.detail }}</app-alert>
       }
 
-      <div class="toolbar">
-        <div class="toolbar-field toolbar-grow">
-          <label class="form-label" for="user-search">Search</label>
+      <!-- Toolbar -->
+      <div class="admin-toolbar">
+        <div class="toolbar-search-box">
+          <mat-icon fontIcon="search" [size]="18" class="search-icon" />
           <input
             id="user-search"
             type="search"
-            class="form-input"
-            placeholder="Search by name, email or role"
+            class="admin-search-input"
+            placeholder="Search by account name or email address..."
             [value]="searchInput()"
             (input)="onSearchInput($event)"
           />
         </div>
-        <div class="toolbar-field">
-          <label class="form-label" for="user-role">Role</label>
+
+        <div class="toolbar-filter-group">
+          <label class="toolbar-label" for="user-role">
+            <mat-icon fontIcon="filter_list" [size]="16" />
+            <span>Role:</span>
+          </label>
           <select
             id="user-role"
-            class="form-select"
+            class="admin-select"
             [value]="roleFilter()"
             (change)="setRole($event)"
           >
-            <option value="ALL">All roles</option>
-            <option [value]="UserRole.ADMIN">Admin</option>
+            <option value="ALL">All Roles</option>
+            <option [value]="UserRole.ADMIN">Administrator</option>
             <option [value]="UserRole.VENDOR">Vendor</option>
             <option [value]="UserRole.BIDDER">Bidder</option>
           </select>
         </div>
-        <div class="toolbar-field">
-          <label class="form-label" for="user-status">Status</label>
-          <select
-            id="user-status"
-            class="form-select"
-            [value]="statusFilter()"
-            (change)="setStatus($event)"
-          >
-            <option value="ALL">All statuses</option>
-            <option [value]="AccountStatus.ACTIVE">Active</option>
-            <option [value]="AccountStatus.INACTIVE">Inactive</option>
-            <option [value]="AccountStatus.SUSPENDED">Suspended</option>
-          </select>
-        </div>
-        <div class="toolbar-field">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="reload()"
-            [disabled]="users.isLoading()"
-          >
-            <app-icon name="refresh" [size]="15" />
-            Refresh
-          </button>
-        </div>
+
+        <button
+          type="button"
+          class="btn-admin-secondary"
+          (click)="reload()"
+          [disabled]="users.isLoading()"
+        >
+          <mat-icon fontIcon="refresh" [size]="16" [class.spin]="users.isLoading()" />
+          <span>Refresh</span>
+        </button>
       </div>
 
-      <div class="card">
+      <!-- Main Content Card -->
+      <div class="admin-card">
         @switch (true) {
           @case (users.isLoading() && !users.data()) {
             <app-table-skeleton [count]="6" />
           }
           @case (users.hasError()) {
             @if (users.error(); as failure) {
-              <app-error-state
-                [failure]="failure"
-                [retrying]="users.isLoading()"
-                (retry)="reload()"
-              />
+              <div class="card-inner-padding">
+                <app-error-state
+                  [failure]="failure"
+                  [retrying]="users.isLoading()"
+                  (retry)="reload()"
+                />
+              </div>
             }
           }
           @case (userList().length === 0) {
-            <app-empty-state
-              icon="users"
-              [title]="hasFilters() ? 'No users match these filters' : 'No users yet'"
-              [description]="
-                hasFilters()
-                  ? 'Try a different search term or clear the role and status filters.'
-                  : 'Create a user account to give someone access to the platform.'
-              "
-            >
-              @if (hasFilters()) {
-                <button type="button" class="btn btn-secondary" (click)="clearFilters()">
-                  Clear filters
-                </button>
-              } @else {
-                <app-button
-                  label="New user"
-                  icon="plus"
-                  variant="primary"
-                  (clicked)="openCreate()"
-                />
-              }
-            </app-empty-state>
+            <div class="card-inner-padding">
+              <app-empty-state
+                icon="users"
+                [title]="hasFilters() ? 'No users match criteria' : 'No users registered yet'"
+                [description]="
+                  hasFilters()
+                    ? 'Try adjusting your search query or reset the role filter.'
+                    : 'Create an identity to grant access to the B2B platform.'
+                "
+              >
+                @if (hasFilters()) {
+                  <button type="button" class="btn-admin-secondary" (click)="clearFilters()">
+                    <mat-icon fontIcon="clear" [size]="14" />
+                    <span>Clear Filters</span>
+                  </button>
+                } @else {
+                  <button type="button" class="btn-admin-primary" (click)="openCreate()">
+                    <mat-icon fontIcon="person_add" [size]="16" />
+                    <span>Create User</span>
+                  </button>
+                }
+              </app-empty-state>
+            </div>
           }
           @default {
-            <div class="table-scroll">
-              <table class="data-table data-table--stacked">
+            <div class="admin-table-container">
+              <table class="admin-data-table">
                 <thead>
                   <tr>
+                    <th scope="col">User Identity</th>
+                    <th scope="col">Email Address</th>
+                    <th scope="col">Platform Role</th>
                     <th scope="col">User ID</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Role</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Created</th>
-                    <th scope="col" class="cell-actions">Actions</th>
+                    <th scope="col">Registered</th>
+                    <th scope="col" class="cell-action-col">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (user of userList(); track user.id) {
                     <tr>
-                      <td data-label="User ID">
-                        <span class="text-mono-id">{{ user.id }}</span>
-                      </td>
-                      <td data-label="Name">
-                        <div class="user-cell">
-                          <span class="avatar avatar-sm avatar-neutral">{{ initials(user) }}</span>
-                          <span class="cell-primary">{{ name(user) }}</span>
+                      <td>
+                        <div class="user-identity-cell">
+                          <span class="user-avatar">{{ initials(user) }}</span>
+                          <span class="cell-name-strong">{{ userName(user) }}</span>
                         </div>
                       </td>
-                      <td data-label="Email">
-                        <span class="text-meta">{{ user.email }}</span>
+                      <td>
+                        <span class="cell-text-secondary">{{ user.email }}</span>
                       </td>
-                      <td data-label="Role">
-                        <span class="badge badge-plain">{{ roleLabel(user.role) }}</span>
+                      <td>
+                        <span class="role-pill" [class]="'role-pill-' + user.role.toLowerCase()">
+                          {{ roleLabel(user.role) }}
+                        </span>
                       </td>
-                      <td data-label="Status">
-                        <app-account-status-badge [status]="user.status" />
+                      <td>
+                        <span class="mono-id-tag">{{ user.id }}</span>
                       </td>
-                      <td data-label="Created">
-                        <span class="text-meta">{{ dateTime(user.createdAt) }}</span>
+                      <td>
+                        <span class="cell-text-muted">{{ dateTime(user.createdAt) }}</span>
                       </td>
-                      <td data-label="Actions" class="cell-actions">
-                        <button type="button" class="btn btn-ghost btn-sm" (click)="openEdit(user)">
-                          <app-icon name="edit" [size]="14" />
-                          Edit
+                      <td class="cell-action-col">
+                        <button
+                          type="button"
+                          class="btn-admin-table-action"
+                          (click)="openEdit(user)"
+                        >
+                          <mat-icon fontIcon="edit" [size]="14" />
+                          <span>Edit</span>
                         </button>
                       </td>
                     </tr>
@@ -208,21 +207,25 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               </table>
             </div>
 
-            <app-pagination [meta]="meta()" (pageChange)="setPage($event)" />
+            <div class="pagination-footer">
+              <app-pagination [meta]="meta()" (pageChange)="setPage($event)" />
+            </div>
           }
         }
       </div>
     </div>
 
-    <!-- Create / edit -->
+    <!-- Create / Edit Dialog -->
     @if (dialogOpen()) {
       <app-dialog
-        [title]="editing() ? 'Edit user' : 'Create user'"
+        [title]="editing() ? 'Edit User Identity' : 'Create User Account'"
         [subtitle]="
-          editing() ? editingUser()!.email : 'The account will be able to sign in immediately.'
+          editing()
+            ? 'Update identity name and role assignment for ' + editingUser()!.email
+            : 'Register a new authenticated identity with email credentials.'
         "
         icon="user"
-        [confirmLabel]="editing() ? 'Save changes' : 'Create user'"
+        [confirmLabel]="editing() ? 'Save Changes' : 'Create User'"
         [busy]="saving()"
         (confirmed)="save()"
         (dismissed)="closeDialog()"
@@ -233,105 +236,474 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
           </div>
         }
 
-        <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+        <form [formGroup]="form" (ngSubmit)="save()" novalidate class="admin-dialog-form">
+          <!-- Full Name -->
           <app-form-field
-            label="Email address"
+            label="Full Name"
             [required]="true"
-            [control]="email"
-            [errorMap]="emailErrors"
-            hint="Used to sign in and must be unique."
-            controlId="user-email"
+            [control]="nameCtrl"
+            [errorMap]="requiredErrors"
+            hint="The primary identity name displayed across platform audits."
+            controlId="user-name"
           >
             <input
-              id="user-email"
-              type="email"
+              id="user-name"
+              type="text"
               class="form-input"
-              formControlName="email"
-              autocomplete="off"
+              formControlName="name"
+              placeholder="e.g. Alexander Vance"
             />
           </app-form-field>
 
-          <div class="form-grid">
-            <app-form-field
-              label="First name"
-              [required]="true"
-              [control]="firstName"
-              [errorMap]="requiredErrors"
-              controlId="user-first-name"
-            >
-              <input
-                id="user-first-name"
-                type="text"
-                class="form-input"
-                formControlName="firstName"
-              />
-            </app-form-field>
-
-            <app-form-field
-              label="Last name"
-              [required]="true"
-              [control]="lastName"
-              [errorMap]="requiredErrors"
-              controlId="user-last-name"
-            >
-              <input
-                id="user-last-name"
-                type="text"
-                class="form-input"
-                formControlName="lastName"
-              />
-            </app-form-field>
-          </div>
-
-          <div class="form-grid">
-            <app-form-field
-              label="Role"
-              [required]="true"
-              [control]="role"
-              [errorMap]="requiredErrors"
-              hint="Determines which workspace the user can access."
-              controlId="user-role-field"
-            >
-              <select id="user-role-field" class="form-select" formControlName="role">
-                <option [value]="UserRole.ADMIN">Administrator</option>
-                <option [value]="UserRole.VENDOR">Vendor</option>
-                <option [value]="UserRole.BIDDER">Bidder</option>
-              </select>
-            </app-form-field>
-
-            <app-form-field
-              label="Status"
-              [control]="status"
-              hint="Only an active account can sign in."
-              controlId="user-status-field"
-            >
-              <select id="user-status-field" class="form-select" formControlName="status">
-                <option [value]="AccountStatus.ACTIVE">Active</option>
-                <option [value]="AccountStatus.INACTIVE">Inactive</option>
-                <option [value]="AccountStatus.SUSPENDED">Suspended</option>
-              </select>
-            </app-form-field>
-          </div>
-
+          <!-- Email (Editable on create, Readonly on edit) -->
           @if (!editing()) {
-            <app-alert tone="info" title="Password">
-              The server issues the initial password for a new account. The user should change it
-              from their profile after signing in.
-            </app-alert>
+            <app-form-field
+              label="Email Address"
+              [required]="true"
+              [control]="emailCtrl"
+              [errorMap]="emailErrors"
+              hint="Must be a unique email address used for platform sign-in."
+              controlId="user-email"
+            >
+              <input
+                id="user-email"
+                type="email"
+                class="form-input"
+                formControlName="email"
+                placeholder="user@company.com"
+                autocomplete="off"
+              />
+            </app-form-field>
+
+            <!-- Password -->
+            <app-form-field
+              label="Initial Password"
+              [required]="true"
+              [control]="passwordCtrl"
+              [errorMap]="passwordErrors"
+              hint="Minimum 8 characters. The user can change this after signing in."
+              controlId="user-password"
+            >
+              <input
+                id="user-password"
+                type="password"
+                class="form-input"
+                formControlName="password"
+                placeholder="••••••••••••"
+                autocomplete="new-password"
+              />
+            </app-form-field>
+          } @else {
+            <div class="readonly-field-group">
+              <label class="readonly-label">Email Address (Immutable)</label>
+              <div class="readonly-box">{{ editingUser()?.email }}</div>
+            </div>
           }
+
+          <!-- Role selection -->
+          <app-form-field
+            label="Platform Role"
+            [required]="true"
+            [control]="roleCtrl"
+            [errorMap]="requiredErrors"
+            hint="Controls access boundaries and workspace tools."
+            controlId="user-role-field"
+          >
+            <select id="user-role-field" class="form-select" formControlName="role">
+              <option [value]="UserRole.ADMIN">Administrator (Full Access)</option>
+              <option [value]="UserRole.VENDOR">Vendor (Product & Auction Provider)</option>
+              <option [value]="UserRole.BIDDER">Bidder (Marketplace Participant)</option>
+            </select>
+          </app-form-field>
         </form>
       </app-dialog>
     }
   `,
   styles: [
     `
-      .user-cell {
+      .admin-page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        padding: 24px 28px 48px;
+        max-width: 1400px;
+        margin: 0 auto;
+        color: #172033;
+      }
+
+      .admin-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #ddd9d0;
+      }
+
+      .admin-badge-strip {
         display: flex;
         align-items: center;
-        gap: var(--sp-2);
+        gap: 10px;
+        margin-bottom: 8px;
       }
+
+      .admin-console-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: #172033;
+        color: #c6a15b;
+        border-radius: 4px;
+
+        mat-icon {
+          color: #c6a15b;
+        }
+      }
+
+      .admin-title {
+        font-size: 1.625rem;
+        font-weight: 700;
+        color: #172033;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        margin: 0 0 6px 0;
+      }
+
+      .admin-subtitle {
+        font-size: 0.875rem;
+        color: #667085;
+        margin: 0;
+        max-width: 720px;
+        line-height: 1.5;
+      }
+
+      .btn-admin-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: #172033;
+        color: #ffffff;
+        border: 1px solid #172033;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        mat-icon {
+          color: #c6a15b;
+        }
+
+        &:hover {
+          background: #222e46;
+          border-color: #222e46;
+        }
+      }
+
+      .btn-admin-secondary {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        background: #ffffff;
+        color: #172033;
+        border: 1px solid #ddd9d0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover:not(:disabled) {
+          border-color: #c6a15b;
+          background: #fcfbf8;
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+      }
+
+      @keyframes spin {
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Toolbar */
+      .admin-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .toolbar-search-box {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 260px;
+        position: relative;
+
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          color: #98a2b3;
+          pointer-events: none;
+        }
+
+        .admin-search-input {
+          width: 100%;
+          height: 38px;
+          padding: 0 14px 0 38px;
+          font-size: 0.8125rem;
+          color: #172033;
+          background: #ffffff;
+          border: 1px solid #ddd9d0;
+          border-radius: 6px;
+          transition: border-color 0.15s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #c6a15b;
+            box-shadow: 0 0 0 3px rgba(198, 161, 91, 0.15);
+          }
+
+          &::placeholder {
+            color: #98a2b3;
+          }
+        }
+      }
+
+      .toolbar-filter-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 12px;
+        background: #ffffff;
+        border: 1px solid #ddd9d0;
+        border-radius: 6px;
+      }
+
+      .toolbar-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #667085;
+      }
+
+      .admin-select {
+        border: none;
+        background: transparent;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #172033;
+        cursor: pointer;
+        outline: none;
+      }
+
+      /* Main Card & Table */
+      .admin-card {
+        background: #ffffff;
+        border: 1px solid #ddd9d0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .card-inner-padding {
+        padding: 24px;
+      }
+
+      .admin-table-container {
+        overflow-x: auto;
+      }
+
+      .admin-data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8125rem;
+
+        th {
+          padding: 12px 18px;
+          text-align: left;
+          font-size: 0.6875rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          color: #667085;
+          background: #fcfbf8;
+          border-bottom: 1px solid #ddd9d0;
+          white-space: nowrap;
+        }
+
+        td {
+          padding: 12px 18px;
+          vertical-align: middle;
+          border-bottom: 1px solid #f5f3ef;
+          color: #172033;
+        }
+
+        tr:last-child td {
+          border-bottom: none;
+        }
+
+        tbody tr:hover {
+          background-color: #faf8f5;
+        }
+      }
+
+      .user-identity-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .user-avatar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        background: #172033;
+        color: #c6a15b;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .cell-name-strong {
+        font-weight: 600;
+        color: #172033;
+      }
+
+      .cell-text-secondary {
+        color: #667085;
+      }
+
+      .cell-text-muted {
+        color: #98a2b3;
+      }
+
+      .mono-id-tag {
+        font-family: var(--font-mono, monospace);
+        font-size: 0.6875rem;
+        color: #667085;
+        background: #f5f3ef;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #ddd9d0;
+      }
+
+      .cell-action-col {
+        text-align: right;
+      }
+
+      .btn-admin-table-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #172033;
+        background: #ffffff;
+        border: 1px solid #ddd9d0;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+
+        &:hover {
+          background: #172033;
+          color: #ffffff;
+          border-color: #172033;
+
+          mat-icon {
+            color: #c6a15b;
+          }
+        }
+      }
+
+      .role-pill {
+        display: inline-flex;
+        padding: 3px 8px;
+        font-size: 0.6875rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-radius: 4px;
+
+        &.role-pill-admin {
+          background: #172033;
+          color: #c6a15b;
+        }
+
+        &.role-pill-vendor {
+          background: #edf5f1;
+          color: #2f6b57;
+          border: 1px solid #b4d8ca;
+        }
+
+        &.role-pill-bidder {
+          background: #edf3f8;
+          color: #3f668c;
+          border: 1px solid #b8d0e5;
+        }
+      }
+
+      .pagination-footer {
+        padding: 12px 18px;
+        border-top: 1px solid #ddd9d0;
+        background: #fcfbf8;
+      }
+
+      /* Dialog Form Styles */
+      .admin-dialog-form {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .readonly-field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .readonly-label {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: #667085;
+      }
+
+      .readonly-box {
+        padding: 8px 12px;
+        background: #f5f3ef;
+        border: 1px solid #ddd9d0;
+        border-radius: 6px;
+        font-size: 0.8125rem;
+        color: #172033;
+        font-weight: 500;
+      }
+
       .dialog-alert {
-        margin-bottom: var(--sp-4);
+        margin-bottom: 16px;
       }
     `,
   ],
@@ -342,13 +714,11 @@ export class AdminUsersComponent {
   private readonly notifications = inject(NotificationService);
 
   protected readonly UserRole = UserRole;
-  protected readonly AccountStatus = AccountStatus;
 
   readonly users = new AsyncResource<Paginated<User>>();
 
   readonly searchInput = signal('');
   readonly roleFilter = signal<UserRole | 'ALL'>('ALL');
-  readonly statusFilter = signal<AccountStatus | 'ALL'>('ALL');
   readonly page = signal(1);
 
   readonly dialogOpen = signal(false);
@@ -360,31 +730,31 @@ export class AdminUsersComponent {
 
   readonly form = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
-    firstName: ['', [Validators.required]],
-    lastName: ['', [Validators.required]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
+    name: ['', [Validators.required]],
     role: [UserRole.BIDDER, [Validators.required]],
-    status: [AccountStatus.ACTIVE],
   });
 
-  get email() {
+  get emailCtrl() {
     return this.form.controls.email;
   }
-  get firstName() {
-    return this.form.controls.firstName;
+  get passwordCtrl() {
+    return this.form.controls.password;
   }
-  get lastName() {
-    return this.form.controls.lastName;
+  get nameCtrl() {
+    return this.form.controls.name;
   }
-  get role() {
+  get roleCtrl() {
     return this.form.controls.role;
-  }
-  get status() {
-    return this.form.controls.status;
   }
 
   readonly emailErrors = {
     required: 'Email address is required',
     email: 'Enter a valid email address',
+  };
+  readonly passwordErrors = {
+    required: 'Initial password is required',
+    minlength: 'Password must be at least 8 characters',
   };
   readonly requiredErrors = { required: 'This field is required' };
 
@@ -394,7 +764,7 @@ export class AdminUsersComponent {
   );
 
   readonly hasFilters = computed(
-    () => !!this.searchInput() || this.roleFilter() !== 'ALL' || this.statusFilter() !== 'ALL',
+    () => !!this.searchInput() || this.roleFilter() !== 'ALL',
   );
 
   constructor() {
@@ -407,7 +777,6 @@ export class AdminUsersComponent {
       limit: 12,
       search: this.searchInput() || undefined,
       role: this.roleFilter(),
-      status: this.statusFilter(),
       sort: 'newest',
     };
     this.users.load(this.userService.list(query), { keepData: true });
@@ -430,12 +799,6 @@ export class AdminUsersComponent {
     this.reload();
   }
 
-  setStatus(event: Event): void {
-    this.statusFilter.set((event.target as HTMLSelectElement).value as AccountStatus | 'ALL');
-    this.page.set(1);
-    this.reload();
-  }
-
   setPage(page: number): void {
     this.page.set(page);
     this.reload();
@@ -444,7 +807,6 @@ export class AdminUsersComponent {
   clearFilters(): void {
     this.searchInput.set('');
     this.roleFilter.set('ALL');
-    this.statusFilter.set('ALL');
     this.page.set(1);
     this.reload();
   }
@@ -453,12 +815,15 @@ export class AdminUsersComponent {
     this.editing.set(false);
     this.editingUser.set(null);
     this.dialogFailure.set(null);
+    this.passwordCtrl.setValidators([Validators.required, Validators.minLength(8)]);
+    this.passwordCtrl.updateValueAndValidity();
+    this.emailCtrl.setValidators([Validators.required, Validators.email]);
+    this.emailCtrl.updateValueAndValidity();
     this.form.reset({
       email: '',
-      firstName: '',
-      lastName: '',
+      password: '',
+      name: '',
       role: UserRole.BIDDER,
-      status: AccountStatus.ACTIVE,
     });
     this.dialogOpen.set(true);
   }
@@ -467,12 +832,16 @@ export class AdminUsersComponent {
     this.editing.set(true);
     this.editingUser.set(user);
     this.dialogFailure.set(null);
+    // Clear password and email validation when editing since backend update accepts name & role only
+    this.passwordCtrl.clearValidators();
+    this.passwordCtrl.updateValueAndValidity();
+    this.emailCtrl.clearValidators();
+    this.emailCtrl.updateValueAndValidity();
     this.form.reset({
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      password: '',
+      name: this.userName(user),
       role: user.role,
-      status: user.status,
     });
     this.dialogOpen.set(true);
   }
@@ -499,18 +868,14 @@ export class AdminUsersComponent {
 
     const request$ = user
       ? this.userService.update(user.id, {
-          email: value.email.trim(),
-          firstName: value.firstName.trim(),
-          lastName: value.lastName.trim(),
+          name: value.name.trim(),
           role: value.role,
-          status: value.status,
         })
       : this.userService.create({
           email: value.email.trim(),
-          firstName: value.firstName.trim(),
-          lastName: value.lastName.trim(),
+          password: value.password,
+          name: value.name.trim(),
           role: value.role,
-          status: value.status,
         });
 
     request$.subscribe({
@@ -519,8 +884,8 @@ export class AdminUsersComponent {
         this.dialogOpen.set(false);
         this.editingUser.set(null);
         this.notifications.success(
-          user ? 'User updated' : 'User created',
-          `${saved.firstName} ${saved.lastName} · ${saved.email}`,
+          user ? 'User updated successfully' : 'User created successfully',
+          `${saved.name ?? value.name} · ${saved.email ?? value.email}`,
         );
         this.reload();
       },
@@ -529,24 +894,25 @@ export class AdminUsersComponent {
         const failure = toApiFailure(error);
         this.dialogFailure.set(failure);
 
-        // A duplicate email surfaces on the field itself.
         if (failure.fieldErrors?.['email'] || failure.status === 409) {
-          this.email.setErrors({ server: true });
-          this.email.markAsTouched();
+          this.emailCtrl.setErrors({ server: true });
+          this.emailCtrl.markAsTouched();
         }
       },
     });
   }
 
-  name(user: User): string {
-    const value = `${user.firstName} ${user.lastName}`.trim();
-    return value && value !== '—' ? value : user.email;
+  userName(user: User): string {
+    return user.name?.trim() || `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || user.email;
   }
 
   initials(user: User): string {
-    const first = user.firstName?.trim()[0] ?? '';
-    const last = user.lastName?.trim()[0] ?? '';
-    return `${first}${last}`.toUpperCase() || user.email[0]?.toUpperCase() || '?';
+    const name = this.userName(user);
+    const parts = name.trim().split(/\s+/);
+    if (parts.length > 1) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return parts[0][0]?.toUpperCase() || '?';
   }
 
   roleLabel(role: UserRole): string {

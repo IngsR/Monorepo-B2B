@@ -48,52 +48,56 @@ export interface ListQuery {
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name?: string;
   role: UserRole;
-  status: AccountStatus;
   createdAt: string;
   updatedAt: string;
+  /** Optional backward compatibility */
+  firstName?: string;
+  lastName?: string;
+  status?: AccountStatus;
 }
 
 export interface Vendor {
   id: string;
   userId: string;
   companyName: string;
-  contactPerson: string;
-  phone: string;
-  address?: string;
-  description?: string;
-  status: AccountStatus;
+  companyAddress?: string | null;
+  phone?: string | null;
   createdAt: string;
   updatedAt: string;
-  /** Present when the API joins the owning user (admin listings). */
-  user?: Pick<User, 'id' | 'email' | 'firstName' | 'lastName' | 'status'>;
+  /** Legacy / optional fields */
+  contactPerson?: string;
+  address?: string;
+  description?: string;
+  status?: AccountStatus;
+  user?: Pick<User, 'id' | 'email' | 'name' | 'firstName' | 'lastName' | 'status'>;
   productCount?: number;
 }
 
 export interface Bidder {
   id: string;
   userId: string;
-  companyName?: string;
-  contactPerson: string;
-  phone: string;
-  address?: string;
-  status: AccountStatus;
+  phone?: string | null;
+  address?: string | null;
   createdAt: string;
   updatedAt: string;
-  user?: Pick<User, 'id' | 'email' | 'firstName' | 'lastName' | 'status'>;
+  /** Legacy / optional fields */
+  companyName?: string;
+  contactPerson?: string;
+  status?: AccountStatus;
+  user?: Pick<User, 'id' | 'email' | 'name' | 'firstName' | 'lastName' | 'status'>;
   bidCount?: number;
 }
 
 export interface Category {
   id: string;
   name: string;
-  slug: string;
-  description?: string;
   createdAt: string;
   updatedAt: string;
-  /** Derived by the API from the products attached to this category. */
+  /** Legacy / optional fields */
+  slug?: string;
+  description?: string;
   productCount?: number;
 }
 
@@ -133,6 +137,8 @@ export interface Auction {
   bidIncrement: number;
   startTime: string;
   endTime: string;
+  startAt?: string;
+  endAt?: string;
   status: AuctionStatus;
   /** Highest bid amount, or null when no valid bid has been placed. */
   highestBidAmount?: number | null;
@@ -190,6 +196,8 @@ export interface CreateAuctionPayload {
   bidIncrement: number;
   startTime: string;
   endTime: string;
+  startAt?: string;
+  endAt?: string;
 }
 
 export type UpdateAuctionPayload = Partial<CreateAuctionPayload>;
@@ -201,41 +209,62 @@ export interface PlaceBidPayload {
 
 export interface CreateUserPayload {
   email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
   password?: string;
+  name?: string;
+  role: UserRole;
+  firstName?: string;
+  lastName?: string;
   status?: AccountStatus;
 }
 
-export type UpdateUserPayload = Partial<Omit<CreateUserPayload, 'password'>>;
-
-export interface CreateVendorPayload {
-  userId?: string;
+export interface UpdateUserPayload {
+  name?: string;
+  role?: UserRole;
   email?: string;
   firstName?: string;
   lastName?: string;
+  status?: AccountStatus;
+}
+
+export interface CreateVendorPayload {
+  userId?: string;
   companyName: string;
-  contactPerson: string;
-  phone: string;
+  companyAddress?: string;
+  phone?: string;
+  contactPerson?: string;
+  address?: string;
+  description?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+}
+
+export interface UpdateVendorPayload {
+  companyName?: string;
+  companyAddress?: string | null;
+  phone?: string | null;
+  contactPerson?: string;
   address?: string;
   description?: string;
 }
 
-export type UpdateVendorPayload = Partial<CreateVendorPayload>;
-
 export interface CreateBidderPayload {
   userId?: string;
-  email?: string;
+  phone?: string;
+  address?: string;
+  companyName?: string;
+  contactPerson?: string;
   firstName?: string;
   lastName?: string;
-  companyName?: string;
-  contactPerson: string;
-  phone: string;
-  address?: string;
+  email?: string;
 }
 
-export type UpdateBidderPayload = Partial<CreateBidderPayload>;
+export interface UpdateBidderPayload {
+  phone?: string | null;
+  address?: string | null;
+  companyName?: string;
+  contactPerson?: string;
+}
 
 export interface CategoryPayload {
   name: string;

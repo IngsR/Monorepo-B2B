@@ -47,16 +47,16 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
     <div class="page">
       <header class="page-head">
         <div class="page-head-text">
-          <h1 class="page-title">My products</h1>
+          <h1 class="page-title">Produk / Lot</h1>
           <p class="page-subtitle">
-            Products are the base record an auction is created from. Each product belongs to your
-            vendor account and is classified by category.
+            Produk adalah aset dasar yang digunakan untuk membuat lelang. Setiap produk dimiliki
+            oleh akun penjual Anda dan diklasifikasikan berdasarkan kategori.
           </p>
         </div>
         <div class="page-actions">
-          <a class="btn btn-primary" routerLink="/vendor/products/new">
+          <a class="btn btn-seller" routerLink="/vendor/products/new">
             <app-icon name="plus" [size]="15" />
-            New product
+            Tambah Produk
           </a>
         </div>
       </header>
@@ -67,25 +67,30 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
 
       <div class="toolbar">
         <div class="toolbar-field toolbar-grow">
-          <label class="form-label" for="product-search">Search</label>
-          <input
-            id="product-search"
-            type="search"
-            class="form-input"
-            placeholder="Search by product code, name or description"
-            [value]="searchInput()"
-            (input)="onSearchInput($event)"
-          />
+          <label class="form-label" for="product-search">Cari</label>
+          <div class="input-affix-wrap">
+            <span class="search-prefix">
+              <app-icon name="search" [size]="15" />
+            </span>
+            <input
+              id="product-search"
+              type="search"
+              class="form-input search-with-icon"
+              placeholder="Cari berdasarkan kode, nama, atau deskripsi produk"
+              [value]="searchInput()"
+              (input)="onSearchInput($event)"
+            />
+          </div>
         </div>
         <div class="toolbar-field">
-          <label class="form-label" for="product-category">Category</label>
+          <label class="form-label" for="product-category">Kategori</label>
           <select
             id="product-category"
             class="form-select"
             [value]="categoryFilter()"
             (change)="setCategory($event)"
           >
-            <option value="ALL">All categories</option>
+            <option value="ALL">Semua Kategori</option>
             @for (category of categories(); track category.id) {
               <option [value]="category.id">{{ category.name }}</option>
             }
@@ -93,7 +98,7 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
         </div>
         <div class="toolbar-field">
           <app-button
-            label="Refresh"
+            label="Perbarui"
             icon="refresh"
             variant="secondary"
             [loading]="products.isLoading()"
@@ -119,17 +124,24 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
           @case (productList().length === 0) {
             <app-empty-state
               icon="package"
-              [title]="hasFilters() ? 'No products match this search' : 'No products yet'"
+              [title]="hasFilters() ? 'Tidak ada produk yang cocok' : 'Belum ada produk'"
               [description]="
                 hasFilters()
-                  ? 'Try a different search term or clear the category filter.'
-                  : 'Create your first product to start building auctions against it.'
+                  ? 'Coba kata kunci yang berbeda atau hapus filter kategori.'
+                  : 'Tambahkan produk pertama Anda untuk mulai membuat lelang.'
               "
             >
               @if (hasFilters()) {
-                <app-button label="Clear filters" variant="secondary" (clicked)="clearFilters()" />
+                <app-button
+                  label="Hapus Filter"
+                  variant="secondary"
+                  (clicked)="clearFilters()"
+                />
               } @else {
-                <a class="btn btn-primary" routerLink="/vendor/products/new">Create a product</a>
+                <a class="btn btn-seller" routerLink="/vendor/products/new">
+                  <app-icon name="plus" [size]="15" />
+                  Tambah Produk
+                </a>
               }
             </app-empty-state>
           }
@@ -138,36 +150,36 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               <table class="data-table data-table--stacked">
                 <thead>
                   <tr>
-                    <th scope="col">Code</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Category</th>
-                    <th scope="col">Auctions</th>
-                    <th scope="col">Updated</th>
-                    <th scope="col" class="cell-actions">Actions</th>
+                    <th scope="col">Kode</th>
+                    <th scope="col">Nama Produk</th>
+                    <th scope="col">Kategori</th>
+                    <th scope="col">Lelang</th>
+                    <th scope="col">Diperbarui</th>
+                    <th scope="col" class="cell-actions">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (product of productList(); track product.id) {
                     <tr>
-                      <td data-label="Code">
+                      <td data-label="Kode">
                         <span class="text-mono-id">{{ product.code }}</span>
                       </td>
-                      <td data-label="Name">
+                      <td data-label="Nama Produk">
                         <span class="cell-primary">{{ product.name }}</span>
                         @if (product.description) {
                           <p class="text-helper row-description">{{ product.description }}</p>
                         }
                       </td>
-                      <td data-label="Category">
+                      <td data-label="Kategori">
                         <span class="badge badge-plain">{{ product.category?.name ?? '—' }}</span>
                       </td>
-                      <td data-label="Auctions">
+                      <td data-label="Lelang">
                         <span class="text-numeric">{{ product.auctionCount ?? 0 }}</span>
                       </td>
-                      <td data-label="Updated">
+                      <td data-label="Diperbarui">
                         <span class="text-meta">{{ updated(product.updatedAt) }}</span>
                       </td>
-                      <td data-label="Actions" class="cell-actions">
+                      <td data-label="Aksi" class="cell-actions">
                         <div class="row-actions">
                           <a
                             class="btn btn-ghost btn-sm"
@@ -182,7 +194,7 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                             (click)="confirmDelete(product)"
                           >
                             <app-icon name="trash" [size]="14" />
-                            Delete
+                            Hapus
                           </button>
                         </div>
                       </td>
@@ -200,14 +212,14 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
 
     @if (pendingDelete(); as product) {
       <app-confirm-dialog
-        title="Delete this product?"
+        title="Hapus produk ini?"
         [subtitle]="product.name"
         [message]="
-          'The product ' +
+          'Produk ' +
           product.code +
-          ' will be permanently removed from your catalogue. Products that are already used by an auction cannot be deleted.'
+          ' akan dihapus secara permanen dari katalog Anda. Produk yang sudah digunakan dalam lelang tidak dapat dihapus.'
         "
-        confirmLabel="Delete product"
+        confirmLabel="Hapus Produk"
         icon="trash"
         tone="danger"
         [busy]="deleting()"
@@ -350,7 +362,7 @@ export class ProductListComponent {
         this.pendingDelete.set(null);
         const failure = toApiFailure(error);
         this.deleteFailure.set(failure);
-        this.notifications.fromFailure(failure, 'Could not delete product');
+        this.notifications.fromFailure(failure, 'Gagal menghapus produk');
       },
     });
   }

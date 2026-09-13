@@ -25,6 +25,7 @@ import { IconComponent } from '../../../shared/ui/icon.component';
 import { BreadcrumbsComponent, Crumb } from '../../../shared/ui/pagination.component';
 import { ErrorStateComponent } from '../../../shared/ui/state-block.component';
 import { AlertComponent } from '../../../shared/ui/toast.component';
+import { focusAndShakeFirstInvalid } from '../../../shared/ui/form-utils';
 
 /**
  * Create / edit auction.
@@ -62,19 +63,19 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
 
       <header class="page-head">
         <div class="page-head-text">
-          <h1 class="page-title">{{ isEdit() ? 'Edit auction' : 'Create auction' }}</h1>
+          <h1 class="page-title">{{ isEdit() ? 'Edit Lelang' : 'Buat Lelang Baru' }}</h1>
           <p class="page-subtitle">
             {{
               isEdit()
-                ? 'Auction terms can be changed while the auction is a draft or scheduled. Once it is active the terms are locked, because bidders have already bid against them.'
-                : 'A new auction is created as a draft. Schedule it when the terms are settled, and it will run for the window you set.'
+                ? 'Ketentuan lelang dapat diubah selama statusnya Draft atau Terjadwal. Setelah lelang Aktif, ketentuan terkunci untuk melindungi integritas penawaran.'
+                : 'Lelang baru dibuat dengan status Draft. Jadwalkan lelang setelah ketentuan siap dan tentukan periode waktu penawaran.'
             }}
           </p>
         </div>
         <div class="page-actions">
           <a class="btn btn-secondary" routerLink="/vendor/auctions">
             <app-icon name="chevron-left" [size]="15" />
-            Back to auctions
+            Kembali ke Lelang
           </a>
         </div>
       </header>
@@ -95,9 +96,8 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
         }
 
         @if (editingLocked()) {
-          <app-alert tone="warning" title="This auction can no longer be edited">
-            Auction terms are fixed once an auction is active or has ended. Manage its lifecycle
-            from the auction management screen instead.
+          <app-alert tone="warning" title="Lelang ini tidak dapat diedit lagi">
+            Ketentuan lelang terkunci setelah lelang Aktif atau Selesai. Kelola statusnya melalui halaman Manajemen Lelang.
           </app-alert>
         }
 
@@ -107,25 +107,25 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
             <div class="form-section-head">
               <span class="form-section-index">1</span>
               <div>
-                <h2 class="form-section-title">Product</h2>
+                <h2 class="form-section-title">Produk / Lot</h2>
                 <p class="form-section-desc">
-                  Choose one of your products. A product can back several auctions over time.
+                  Pilih produk katalog Anda yang akan dilelang.
                 </p>
               </div>
             </div>
 
             @if (productList().length === 0 && !products.isLoading()) {
-              <app-alert tone="warning" title="No products available">
-                You need at least one product before you can create an auction.
-                <a routerLink="/vendor/products/new">Create a product first.</a>
+              <app-alert tone="warning" title="Belum ada produk tersedia">
+                Anda memerlukan minimal satu produk sebelum membuat lelang.
+                <a routerLink="/vendor/products/new">Tambah produk baru terlebih dahulu.</a>
               </app-alert>
             } @else {
               <app-form-field
-                label="Product"
+                label="Produk / Lot"
                 [required]="true"
                 [control]="productId"
                 [errorMap]="productErrors"
-                hint="Only products owned by your vendor account are listed."
+                hint="Hanya produk terdaftar di bawah akun vendor Anda yang ditampilkan."
                 controlId="auction-product"
               >
                 <select
@@ -134,7 +134,7 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                   formControlName="productId"
                   [disabled]="editingLocked()"
                 >
-                  <option value="" disabled>Select a product</option>
+                  <option value="" disabled>Pilih produk untuk dilelang</option>
                   @for (product of productList(); track product.id) {
                     <option [value]="product.id">{{ product.code }} — {{ product.name }}</option>
                   }
@@ -148,59 +148,58 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
             <div class="form-section-head">
               <span class="form-section-index">2</span>
               <div>
-                <h2 class="form-section-title">Pricing</h2>
+                <h2 class="form-section-title">Penetapan Harga</h2>
                 <p class="form-section-desc">
-                  The starting price is where bidding begins. The increment is the smallest amount
-                  by which each new bid must exceed the current price.
+                  Harga awal adalah nilai pembuka lelang. Kelipatan tawaran adalah kenaikan nominal minimum setiap penawaran baru.
                 </p>
               </div>
             </div>
 
             <div class="form-grid">
               <app-form-field
-                label="Starting price"
+                label="Harga Awal"
                 [required]="true"
                 [control]="startingPrice"
                 [errorMap]="startingPriceErrors"
-                hint="Must be greater than zero."
+                hint="Harga minimum saat penawaran dimulai."
                 controlId="auction-starting-price"
               >
                 <div class="input-prefix">
-                  <span class="input-prefix-symbol" aria-hidden="true">$</span>
+                  <span class="input-prefix-symbol" aria-hidden="true">Rp</span>
                   <input
                     id="auction-starting-price"
-                    type="number"
-                    class="form-input"
-                    formControlName="startingPrice"
-                    min="0.01"
-                    step="0.01"
-                    inputmode="decimal"
-                    placeholder="0.00"
+                    type="text"
+                    inputmode="numeric"
+                    class="form-input currency-field"
+                    [value]="startingPriceDisplay()"
+                    (input)="onCurrencyInput($event, 'startingPrice')"
+                    placeholder="0"
                     [disabled]="editingLocked()"
+                    autocomplete="off"
                   />
                 </div>
               </app-form-field>
 
               <app-form-field
-                label="Bid increment"
+                label="Kelipatan Tawaran"
                 [required]="true"
                 [control]="bidIncrement"
                 [errorMap]="bidIncrementErrors"
-                hint="Must be greater than zero."
+                hint="Kenaikan minimum untuk setiap tawaran berikutnya."
                 controlId="auction-bid-increment"
               >
                 <div class="input-prefix">
-                  <span class="input-prefix-symbol" aria-hidden="true">$</span>
+                  <span class="input-prefix-symbol" aria-hidden="true">Rp</span>
                   <input
                     id="auction-bid-increment"
-                    type="number"
-                    class="form-input"
-                    formControlName="bidIncrement"
-                    min="0.01"
-                    step="0.01"
-                    inputmode="decimal"
-                    placeholder="0.00"
+                    type="text"
+                    inputmode="numeric"
+                    class="form-input currency-field"
+                    [value]="bidIncrementDisplay()"
+                    (input)="onCurrencyInput($event, 'bidIncrement')"
+                    placeholder="0"
                     [disabled]="editingLocked()"
+                    autocomplete="off"
                   />
                 </div>
               </app-form-field>
@@ -208,9 +207,9 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               <!-- Derived, never submitted -->
               <div class="form-grid-full">
                 <app-readonly-field
-                  label="Minimum first bid"
+                  label="Tawaran Pertama Minimum"
                   [value]="firstBidLabel()"
-                  hint="Starting price plus the increment. Bidders cannot bid below this."
+                  hint="Harga awal ditambah kelipatan tawaran. Penawar tidak dapat menawar di bawah nilai ini."
                 />
               </div>
             </div>
@@ -221,21 +220,20 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
             <div class="form-section-head">
               <span class="form-section-index">3</span>
               <div>
-                <h2 class="form-section-title">Schedule</h2>
+                <h2 class="form-section-title">Jadwal Pelaksanaan</h2>
                 <p class="form-section-desc">
-                  The end time is authoritative for bidding — no bid is accepted after it, even if
-                  the auction has not been closed yet.
+                  Waktu selesai bersifat mutlak untuk penawaran — penawaran tidak lagi diterima setelah waktu tersebut berlalu.
                 </p>
               </div>
             </div>
 
             <div class="form-grid">
               <app-form-field
-                label="Start date and time"
+                label="Waktu Mulai"
                 [required]="true"
                 [control]="startTime"
                 [errorMap]="startTimeErrors"
-                hint="Your local time."
+                hint="Waktu lokal perangkat Anda."
                 controlId="auction-start-time"
               >
                 <input
@@ -248,11 +246,11 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               </app-form-field>
 
               <app-form-field
-                label="End date and time"
+                label="Waktu Selesai"
                 [required]="true"
                 [control]="endTime"
                 [errorMap]="endTimeErrors"
-                hint="Must be later than the start time."
+                hint="Harus lebih lambat dari waktu mulai."
                 controlId="auction-end-time"
               >
                 <input
@@ -269,7 +267,7 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               <p class="duration-note">
                 <app-icon name="clock" [size]="14" />
                 <span
-                  >The bidding window will be open for <strong>{{ duration }}</strong
+                  >Periode penawaran dibuka selama <strong>{{ duration }}</strong
                   >.</span
                 >
               </p>
@@ -281,43 +279,45 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
             <div class="form-section-head">
               <span class="form-section-index">4</span>
               <div>
-                <h2 class="form-section-title">Platform-managed values</h2>
+                <h2 class="form-section-title">Parameter Sistem</h2>
                 <p class="form-section-desc">
-                  These are set by the platform. They are shown so you know what to expect, and they
-                  are never sent from this form.
+                  Parameter ini dikelola secara otomatis oleh platform sebagai referensi dan tidak dapat diubah manual.
                 </p>
               </div>
             </div>
 
             <div class="form-grid">
               <app-readonly-field
-                label="Vendor"
+                label="Vendor Penyelenggara"
                 [value]="vendorLabel()"
-                hint="Ownership comes from your authenticated vendor account."
+                hint="Ditetapkan otomatis sesuai akun vendor Anda yang terautentikasi."
               />
               <app-readonly-field
-                label="Current price"
+                label="Harga Saat Ini"
                 [value]="currentPriceLabel()"
-                hint="Equals the starting price until a valid bid is accepted."
+                hint="Sama dengan harga awal sampai ada tawaran sah pertama."
               />
               <app-readonly-field
-                label="Initial status"
+                label="Status Awal"
                 [value]="isEdit() ? (existing.data()?.status ?? '—') : 'DRAFT'"
-                hint="New auctions always begin as a draft."
+                hint="Lelang baru selalu dimulai dengan status DRAFT."
               />
               <app-readonly-field
-                label="Winner"
-                [value]="'Not stored'"
-                hint="The winner is derived from the highest valid bid at the end time. There is no winner record."
+                label="Pemenang Lelang"
+                [value]="'Dihitung Otomatis'"
+                hint="Pemenang ditentukan dari penawar tertinggi yang sah saat periode lelang berakhir."
               />
             </div>
           </section>
 
           <div class="card-footer">
-            <a class="btn btn-secondary" routerLink="/vendor/auctions">Cancel</a>
+            <a class="btn btn-secondary" routerLink="/vendor/auctions">
+              <app-icon name="close" [size]="15" />
+              Batal
+            </a>
             <app-button
               type="submit"
-              [label]="isEdit() ? 'Save changes' : 'Create draft auction'"
+              [label]="isEdit() ? 'Simpan Perubahan' : 'Buat Draft Lelang'"
               variant="primary"
               [loading]="saving()"
               [disabled]="editingLocked() || productList().length === 0"
@@ -380,26 +380,29 @@ export class AuctionFormComponent {
     return this.form.controls.endTime;
   }
 
-  readonly productErrors = { required: 'Select a product' };
+  readonly productErrors = { required: 'Pilih produk untuk dilelang' };
 
   readonly startingPriceErrors = {
-    required: 'Starting price is required',
-    min: 'Starting price must be greater than zero',
+    required: 'Harga awal wajib diisi',
+    min: 'Harga awal harus lebih besar dari nol',
   };
 
   readonly bidIncrementErrors = {
-    required: 'Bid increment is required',
-    min: 'Bid increment must be greater than zero',
+    required: 'Kelipatan tawaran wajib diisi',
+    min: 'Kelipatan tawaran harus lebih besar dari nol',
   };
 
-  readonly startTimeErrors = { required: 'Start date and time is required' };
+  readonly startTimeErrors = { required: 'Waktu mulai wajib diisi' };
   readonly endTimeErrors = {
-    required: 'End date and time is required',
-    order: 'End time must be later than the start time',
+    required: 'Waktu selesai wajib diisi',
+    order: 'Waktu selesai harus lebih lambat dari waktu mulai',
   };
 
   readonly productList = computed(() => this.products.data()?.items ?? []);
   readonly vendorLabel = computed(() => this.auth.vendor()?.companyName ?? '—');
+
+  readonly startingPriceDisplay = signal<string>('');
+  readonly bidIncrementDisplay = signal<string>('');
 
   /** Active and ended auctions are read-only for terms. */
   readonly editingLocked = computed(() => {
@@ -439,20 +442,51 @@ export class AuctionFormComponent {
     const remainder = hours % 24;
 
     if (days > 0)
-      return `${days} ${days === 1 ? 'day' : 'days'}${remainder ? ` ${remainder}h` : ''}`;
+      return `${days} hari${remainder ? ` ${remainder} jam` : ''}`;
     const minutes = Math.round((diff % 3_600_000) / 60_000);
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+    return hours > 0 ? `${hours} jam ${minutes} menit` : `${minutes} menit`;
   });
 
   readonly crumbs = computed<Crumb[]>(() => [
-    { label: 'My auctions', link: '/vendor/auctions' },
-    { label: this.isEdit() ? 'Edit auction' : 'Create auction' },
+    { label: 'Lelang Saya', link: '/vendor/auctions' },
+    { label: this.isEdit() ? 'Edit Lelang' : 'Buat Lelang' },
   ]);
 
   constructor() {
     this.loadProducts();
     if (this.isEdit()) this.loadAuction();
     this.watchSchedule();
+  }
+
+  onCurrencyInput(event: Event, controlName: 'startingPrice' | 'bidIncrement'): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '');
+
+    if (!digits) {
+      if (controlName === 'startingPrice') {
+        this.startingPriceDisplay.set('');
+        this.startingPrice.setValue(null);
+      } else {
+        this.bidIncrementDisplay.set('');
+        this.bidIncrement.setValue(null);
+      }
+      input.value = '';
+      return;
+    }
+
+    const num = parseInt(digits, 10);
+    const formatted = new Intl.NumberFormat('id-ID').format(num);
+    input.value = formatted;
+
+    if (controlName === 'startingPrice') {
+      this.startingPriceDisplay.set(formatted);
+      this.startingPrice.setValue(num);
+      this.startingPrice.markAsDirty();
+    } else {
+      this.bidIncrementDisplay.set(formatted);
+      this.bidIncrement.setValue(num);
+      this.bidIncrement.markAsDirty();
+    }
   }
 
   /** Cross-field check so the end-before-start error appears while typing. */
@@ -485,9 +519,15 @@ export class AuctionFormComponent {
           productId: auction.productId,
           startingPrice: auction.startingPrice,
           bidIncrement: auction.bidIncrement,
-          startTime: isoToLocalInput(auction.startTime),
-          endTime: isoToLocalInput(auction.endTime),
+          startTime: isoToLocalInput(auction.startTime || (auction as any).startAt || ''),
+          endTime: isoToLocalInput(auction.endTime || (auction as any).endAt || ''),
         });
+        if (auction.startingPrice) {
+          this.startingPriceDisplay.set(new Intl.NumberFormat('id-ID').format(auction.startingPrice));
+        }
+        if (auction.bidIncrement) {
+          this.bidIncrementDisplay.set(new Intl.NumberFormat('id-ID').format(auction.bidIncrement));
+        }
       },
       error: (error: unknown) => {
         this.existing.load(new Observable<Auction>((subscriber) => subscriber.error(error)));
@@ -498,6 +538,7 @@ export class AuctionFormComponent {
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => focusAndShakeFirstInvalid(), 50);
       return;
     }
 
@@ -509,6 +550,7 @@ export class AuctionFormComponent {
     if (new Date(endIso).getTime() <= new Date(startIso).getTime()) {
       this.endTime.setErrors({ order: true });
       this.endTime.markAsTouched();
+      setTimeout(() => focusAndShakeFirstInvalid(), 50);
       return;
     }
 
@@ -518,6 +560,8 @@ export class AuctionFormComponent {
       bidIncrement: parseAmount(raw.bidIncrement) ?? 0,
       startTime: startIso,
       endTime: endIso,
+      startAt: startIso,
+      endAt: endIso,
     };
 
     this.saving.set(true);
@@ -531,10 +575,10 @@ export class AuctionFormComponent {
       next: (auction) => {
         this.saving.set(false);
         this.notifications.success(
-          this.isEdit() ? 'Auction updated' : 'Draft auction created',
+          this.isEdit() ? 'Lelang berhasil diperbarui' : 'Draft lelang berhasil dibuat',
           this.isEdit()
-            ? 'Your changes have been saved.'
-            : 'The auction is a draft. Schedule it from the management screen when it is ready.',
+            ? 'Perubahan ketentuan lelang Anda telah disimpan.'
+            : 'Lelang disimpan sebagai Draft. Jadwalkan lelang dari halaman manajemen saat sudah siap.',
         );
         void this.router.navigate(['/vendor/auctions', auction.id]);
       },
@@ -551,6 +595,8 @@ export class AuctionFormComponent {
               bidIncrement: this.bidIncrement,
               startTime: this.startTime,
               endTime: this.endTime,
+              startAt: this.startTime,
+              endAt: this.endTime,
             };
           for (const [field, message] of Object.entries(failure.fieldErrors)) {
             const control = map[field];
@@ -560,6 +606,7 @@ export class AuctionFormComponent {
             }
           }
         }
+        setTimeout(() => focusAndShakeFirstInvalid(), 50);
       },
     });
   }

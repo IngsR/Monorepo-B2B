@@ -11,29 +11,32 @@ import { Router } from '@angular/router';
 import { UserRole } from '../../core/domain/enums';
 import { AuthService } from '../../core/services/session.service';
 import { IconComponent } from '../ui/icon.component';
+import { MatIconComponent } from '../ui/mat-icon.component';
 
 /**
  * Application topbar.
  *
  * Holds the mobile drawer trigger, the current page context slot (pages project
- * their own title and actions here) and the account menu. The account menu is
- * the only place role-switching context is exposed, and it shows the role
- * explicitly so a user working across accounts is never unsure who they are.
+ * their own title and actions here) and the account menu.
  */
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, MatIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="shell-topbar">
+    <header class="shell-topbar" [class.admin-topbar]="isAdmin()">
       <button
         type="button"
         class="topbar-menu-btn"
         aria-label="Open navigation"
         (click)="toggleMenu.emit()"
       >
-        <app-icon name="menu" [size]="18" />
+        @if (isAdmin()) {
+          <mat-icon fontIcon="menu" [size]="20" />
+        } @else {
+          <app-icon name="menu" [size]="18" />
+        }
       </button>
 
       <div class="topbar-context">
@@ -55,7 +58,11 @@ import { IconComponent } from '../ui/icon.component';
             <span class="user-trigger-name">{{ displayName() }}</span>
             <span class="user-trigger-role">{{ roleLabel() }}</span>
           </span>
-          <app-icon name="chevron-down" [size]="14" />
+          @if (isAdmin()) {
+            <mat-icon fontIcon="expand_more" [size]="18" />
+          } @else {
+            <app-icon name="chevron-down" [size]="14" />
+          }
         </button>
 
         @if (menuOpen()) {
@@ -66,19 +73,31 @@ import { IconComponent } from '../ui/icon.component';
             </div>
 
             <button type="button" class="menu-item" role="menuitem" (click)="goToProfile()">
-              <app-icon name="user" [size]="15" />
+              @if (isAdmin()) {
+                <mat-icon fontIcon="person_outline" [size]="18" />
+              } @else {
+                <app-icon name="user" [size]="15" />
+              }
               <span>{{ profileLabel() }}</span>
             </button>
 
             <button type="button" class="menu-item" role="menuitem" (click)="goToPassword()">
-              <app-icon name="key" [size]="15" />
+              @if (isAdmin()) {
+                <mat-icon fontIcon="lock_outline" [size]="18" />
+              } @else {
+                <app-icon name="key" [size]="15" />
+              }
               <span>Change password</span>
             </button>
 
             <div class="menu-separator"></div>
 
             <button type="button" class="menu-item is-danger" role="menuitem" (click)="signOut()">
-              <app-icon name="log-out" [size]="15" />
+              @if (isAdmin()) {
+                <mat-icon fontIcon="logout" [size]="18" />
+              } @else {
+                <app-icon name="log-out" [size]="15" />
+              }
               <span>Sign out</span>
             </button>
           </div>
@@ -94,6 +113,52 @@ import { IconComponent } from '../ui/icon.component';
         gap: var(--sp-3);
         min-width: 0;
       }
+
+      .admin-topbar {
+        background-color: #ffffff;
+        border-bottom: 1px solid #ddd9d0;
+
+        .user-trigger {
+          border: 1px solid #ddd9d0;
+          background: #fcfbf8;
+          transition: all var(--dur-fast) var(--ease);
+
+          &:hover {
+            border-color: #c6a15b;
+            background: #ffffff;
+          }
+
+          .avatar {
+            background: #172033;
+            color: #c6a15b;
+            font-weight: 600;
+          }
+
+          .user-trigger-name {
+            color: #172033;
+            font-weight: 600;
+          }
+
+          .user-trigger-role {
+            color: #c6a15b;
+            font-weight: 700;
+          }
+        }
+
+        .menu-panel {
+          border-color: #ddd9d0;
+          box-shadow: 0 4px 20px rgba(23, 32, 51, 0.08);
+
+          .user-menu-head {
+            background: #fcfbf8;
+            border-bottom: 1px solid #ddd9d0;
+          }
+
+          .user-menu-name {
+            color: #172033;
+          }
+        }
+      }
     `,
   ],
 })
@@ -105,6 +170,7 @@ export class TopbarComponent {
 
   readonly menuOpen = signal(false);
 
+  readonly isAdmin = computed(() => this.auth.role() === UserRole.ADMIN);
   readonly displayName = computed(() => this.auth.displayName() || 'Signed in');
   readonly email = computed(() => this.auth.user()?.email ?? '');
 
@@ -136,6 +202,13 @@ export class TopbarComponent {
   readonly initials = computed(() => {
     const user = this.auth.user();
     if (!user) return '?';
+    if (user.name) {
+      const parts = user.name.trim().split(/\s+/);
+      if (parts.length > 1) {
+        return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+      }
+      return parts[0][0]?.toUpperCase() || '?';
+    }
     const first = user.firstName?.trim()[0] ?? '';
     const last = user.lastName?.trim()[0] ?? '';
     return `${first}${last}`.toUpperCase() || user.email[0]?.toUpperCase() || '?';

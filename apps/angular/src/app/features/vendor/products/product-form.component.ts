@@ -17,6 +17,7 @@ import { IconComponent } from '../../../shared/ui/icon.component';
 import { BreadcrumbsComponent, Crumb } from '../../../shared/ui/pagination.component';
 import { ErrorStateComponent } from '../../../shared/ui/state-block.component';
 import { AlertComponent } from '../../../shared/ui/toast.component';
+import { focusAndShakeFirstInvalid } from '../../../shared/ui/form-utils';
 
 /**
  * Create / edit product.
@@ -49,16 +50,15 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
 
       <header class="page-head">
         <div class="page-head-text">
-          <h1 class="page-title">{{ isEdit() ? 'Edit product' : 'Create product' }}</h1>
+          <h1 class="page-title">{{ isEdit() ? 'Edit Produk' : 'Tambah Produk Baru' }}</h1>
           <p class="page-subtitle">
-            A product is a catalogue record — the thing auctions are created from. It does not hold
-            a price; pricing lives on the auction.
+            Produk adalah data katalog yang menjadi dasar pembuatan lelang. Harga dan jadwal ditentukan saat membuat lelang.
           </p>
         </div>
         <div class="page-actions">
           <a class="btn btn-secondary" routerLink="/vendor/products">
             <app-icon name="chevron-left" [size]="15" />
-            Back to products
+            Kembali ke Produk
           </a>
         </div>
       </header>
@@ -83,20 +83,20 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
             <div class="form-section-head">
               <span class="form-section-index">1</span>
               <div>
-                <h2 class="form-section-title">Identification</h2>
+                <h2 class="form-section-title">Identifikasi</h2>
                 <p class="form-section-desc">
-                  A code your team recognises and the name bidders will see on the auction.
+                  Kode internal tim Anda dan nama lot yang akan dilihat peserta lelang.
                 </p>
               </div>
             </div>
 
             <div class="form-grid">
               <app-form-field
-                label="Product code"
+                label="Kode Produk"
                 [required]="true"
                 [control]="code"
                 [errorMap]="codeErrors"
-                hint="Unique across the platform. Letters, digits and dashes."
+                hint="Unik di seluruh platform. Huruf, angka, dan tanda hubung (-)."
                 controlId="product-code"
               >
                 <input
@@ -104,21 +104,21 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                   type="text"
                   class="form-input"
                   formControlName="code"
-                  placeholder="e.g. HMS-2401"
+                  placeholder="contoh: HMS-2401"
                   autocomplete="off"
                 />
               </app-form-field>
 
               <app-form-field
-                label="Category"
+                label="Kategori"
                 [required]="true"
                 [control]="categoryId"
                 [errorMap]="categoryErrors"
-                hint="Categories are managed by administrators."
+                hint="Kategori resmi yang terdaftar di platform."
                 controlId="product-category"
               >
                 <select id="product-category" class="form-select" formControlName="categoryId">
-                  <option value="" disabled>Select a category</option>
+                  <option value="" disabled>Pilih kategori produk</option>
                   @for (category of categories(); track category.id) {
                     <option [value]="category.id">{{ category.name }}</option>
                   }
@@ -127,7 +127,7 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
 
               <div class="form-grid-full">
                 <app-form-field
-                  label="Product name"
+                  label="Nama Produk / Lot"
                   [required]="true"
                   [control]="name"
                   [errorMap]="nameErrors"
@@ -138,7 +138,7 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                     type="text"
                     class="form-input"
                     formControlName="name"
-                    placeholder="e.g. HMS 1&2 Heavy Melting Steel Scrap"
+                    placeholder="contoh: Scrap Besi Baja HMS 1&2"
                     autocomplete="off"
                   />
                 </app-form-field>
@@ -150,16 +150,15 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
             <div class="form-section-head">
               <span class="form-section-index">2</span>
               <div>
-                <h2 class="form-section-title">Description</h2>
+                <h2 class="form-section-title">Deskripsi & Spesifikasi</h2>
                 <p class="form-section-desc">
-                  Optional. Describe grade, condition, handling requirements or documentation. This
-                  is shown to bidders on the auction page.
+                  Opsional. Jelaskan mutu, kondisi material, ketentuan inspeksi, atau penanganan pengiriman.
                 </p>
               </div>
             </div>
 
             <app-form-field
-              label="Description"
+              label="Deskripsi Lengkap"
               [control]="description"
               controlId="product-description"
             >
@@ -168,7 +167,7 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                 class="form-textarea"
                 formControlName="description"
                 rows="5"
-                placeholder="Material grade, contamination tolerances, inspection arrangements, loading terms…"
+                placeholder="Spesifikasi mutu material, toleransi kontaminasi, jadwal survei/inspeksi, ketentuan pemuatan..."
               ></textarea>
             </app-form-field>
           </section>
@@ -179,33 +178,36 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
               <div class="form-section-head">
                 <span class="form-section-index">3</span>
                 <div>
-                  <h2 class="form-section-title">Record ownership</h2>
+                  <h2 class="form-section-title">Informasi Sistem</h2>
                   <p class="form-section-desc">
-                    These values are set by the platform and cannot be edited.
+                    Nilai ini ditetapkan oleh platform dan tidak dapat diubah langsung.
                   </p>
                 </div>
               </div>
 
               <div class="form-grid">
                 <app-readonly-field
-                  label="Owning vendor"
+                  label="Vendor Pemilik"
                   [value]="vendorLabel()"
-                  hint="Taken from your authenticated vendor account."
+                  hint="Sesuai akun vendor Anda yang terautentikasi."
                 />
                 <app-readonly-field
-                  label="Product ID"
+                  label="ID Produk"
                   [value]="product.id"
-                  hint="Assigned by the platform."
+                  hint="Ditetapkan otomatis oleh platform."
                 />
               </div>
             </section>
           }
 
           <div class="card-footer">
-            <a class="btn btn-secondary" routerLink="/vendor/products">Cancel</a>
+            <a class="btn btn-secondary" routerLink="/vendor/products">
+              <app-icon name="close" [size]="15" />
+              Batal
+            </a>
             <app-button
               type="submit"
-              [label]="isEdit() ? 'Save changes' : 'Create product'"
+              [label]="isEdit() ? 'Simpan Perubahan' : 'Buat Produk'"
               variant="primary"
               [loading]="saving()"
             />
@@ -253,22 +255,22 @@ export class ProductFormComponent {
   }
 
   readonly codeErrors = {
-    required: 'Product code is required',
-    maxlength: 'Product code is too long (maximum 64 characters)',
+    required: 'Kode produk wajib diisi',
+    maxlength: 'Kode produk terlalu panjang (maksimal 64 karakter)',
   };
 
   readonly nameErrors = {
-    required: 'Product name is required',
-    maxlength: 'Product name is too long (maximum 200 characters)',
+    required: 'Nama produk wajib diisi',
+    maxlength: 'Nama produk terlalu panjang (maksimal 200 karakter)',
   };
 
   readonly categoryErrors = {
-    required: 'Select a category',
+    required: 'Pilih salah satu kategori',
   };
 
   readonly crumbs = computed<Crumb[]>(() => [
-    { label: 'My products', link: '/vendor/products' },
-    { label: this.isEdit() ? 'Edit product' : 'Create product' },
+    { label: 'Produk Saya', link: '/vendor/products' },
+    { label: this.isEdit() ? 'Edit Produk' : 'Tambah Produk' },
   ]);
 
   /** Read-only display of the vendor that owns this record. */
@@ -310,6 +312,7 @@ export class ProductFormComponent {
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => focusAndShakeFirstInvalid(), 50);
       return;
     }
 
@@ -332,7 +335,7 @@ export class ProductFormComponent {
       next: (product) => {
         this.saving.set(false);
         this.notifications.success(
-          this.isEdit() ? 'Product updated' : 'Product created',
+          this.isEdit() ? 'Produk diperbarui' : 'Produk berhasil dibuat',
           `${product.code} — ${product.name}`,
         );
         void this.router.navigate(['/vendor/products']);
@@ -357,6 +360,7 @@ export class ProductFormComponent {
             this.categoryId.markAsTouched();
           }
         }
+        setTimeout(() => focusAndShakeFirstInvalid(), 50);
       },
     });
   }

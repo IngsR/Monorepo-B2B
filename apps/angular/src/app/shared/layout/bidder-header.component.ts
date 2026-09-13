@@ -10,79 +10,86 @@ import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter } from 'rxjs';
 import { AuthService } from '../../core/services/session.service';
-import { IconComponent } from '../ui/icon.component';
+import { MatIconComponent } from '../ui/mat-icon.component';
 
 /**
- * Bidder E-Commerce Top Header & Navigation Bar.
+ * Bidder Institutional Navigation & Header.
  *
- * Designed to mirror familiar e-commerce marketplace navigation (Tokopedia / Shopee style):
- *   - Top utility bar with trust assurance and guide links
- *   - Main header with marketplace branding, large search bar, My Bids link, and user profile
- *   - Sub-navigation bar with quick category chips and status shortcuts
+ * Designed as an enterprise B2B procurement & auction platform:
+ *  - Top enterprise utility bar with platform verification & role identity
+ *  - Main header with dignified BidForge branding, structured search, and bidder activity links
+ *  - Five official navigation shortcuts with verified Material Symbols:
+ *      1. Semua Lot Lelang (/marketplace?status=ALL&categoryId=ALL)
+ *      2. Lelang Sedang Berlangsung (/marketplace?status=ACTIVE)
+ *      3. Segera Berakhir (/marketplace?orderBy=closingSoonest&status=ACTIVE)
+ *      4. Tawaran Memimpin (/my-bids?filter=winning)
+ *      5. Tawaran Terlampaui (/my-bids?filter=outbid)
+ *  - Deterministic router & query-parameter active state highlighting
  */
 @Component({
   selector: 'app-bidder-header',
   standalone: true,
-  imports: [RouterLink, FormsModule, IconComponent],
+  imports: [RouterLink, FormsModule, MatIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <header class="bidder-header">
-      <!-- 1. Top Utility Ribbon -->
+    <header class="bidder-header" role="banner">
+      <!-- 1. Top Enterprise Ribbon -->
       <div class="bidder-top-ribbon">
         <div class="bidder-header-container ribbon-content">
           <div class="ribbon-badges">
             <span class="ribbon-item">
-              <app-icon name="shield" [size]="12" />
-              <span>Platform Lelang Resmi & Terpercaya B2B</span>
+              <mat-icon fontIcon="verified_user" [size]="14" />
+              <span>Platform Pengadaan & Lelang B2B Resmi</span>
             </span>
+            <span class="ribbon-sep" aria-hidden="true">|</span>
             <span class="ribbon-item hide-mobile">
-              <app-icon name="check" [size]="12" />
-              <span>Vendor Terverifikasi</span>
+              <mat-icon fontIcon="domain" [size]="14" />
+              <span>Vendor & Aset Terverifikasi</span>
             </span>
           </div>
 
           <div class="ribbon-links">
             <a routerLink="/panduan-lelang" class="ribbon-link">
-              <app-icon name="info" [size]="12" />
-              <span>Panduan Lelang</span>
+              <mat-icon fontIcon="help_outline" [size]="14" />
+              <span>Tata Cara & Panduan Lelang</span>
             </a>
             <span class="ribbon-sep" aria-hidden="true">|</span>
             <span class="ribbon-role-badge">
-              <app-icon name="user" [size]="11" />
-              <span>Akun Bidder</span>
+              <mat-icon fontIcon="badge" [size]="13" />
+              <span>Akun Penawar Resmi</span>
             </span>
           </div>
         </div>
       </div>
 
-      <!-- 2. Main E-Commerce Navbar -->
+      <!-- 2. Main B2B Navigation Bar -->
       <div class="bidder-main-nav">
         <div class="bidder-header-container main-nav-content">
-          <!-- Brand Logo -->
-          <a routerLink="/marketplace" class="bidder-brand" aria-label="BidForge Marketplace">
-            <span class="brand-logo-mark">
-              <app-icon name="gavel" [size]="18" />
+          <!-- Brand Identity -->
+          <a routerLink="/marketplace" class="bidder-brand" aria-label="BidForge - Beranda Pasar Lelang">
+            <span class="brand-logo-mark" aria-hidden="true">
+              <mat-icon fontIcon="gavel" [size]="20" />
             </span>
             <div class="brand-logo-text">
               <span class="brand-title">BidForge</span>
-              <span class="brand-badge">Pasar Lelang</span>
+              <span class="brand-badge">B2B Auction Exchange</span>
             </div>
           </a>
 
-          <!-- Big Marketplace Search Bar -->
+          <!-- Enterprise Search Bar -->
           <form class="bidder-search-bar" (ngSubmit)="performSearch()" role="search">
             <div class="search-input-wrap">
-              <span class="search-icon-slot">
-                <app-icon name="search" [size]="17" />
+              <span class="search-icon-slot" aria-hidden="true">
+                <mat-icon fontIcon="search" [size]="18" />
               </span>
               <input
                 type="search"
                 class="header-search-input"
-                placeholder="Cari mesin pabrik, peralatan industri, nomor lot, vendor..."
+                placeholder="Cari berdasarkan nama lot, kode lot, nomor spesifikasi, vendor..."
                 [ngModel]="searchQuery()"
                 (ngModelChange)="searchQuery.set($event)"
                 name="search"
-                aria-label="Cari lelang di BidForge"
+                aria-label="Cari lot lelang B2B"
                 autocomplete="off"
               />
               @if (searchQuery()) {
@@ -90,52 +97,48 @@ import { IconComponent } from '../ui/icon.component';
                   type="button"
                   class="search-clear-btn"
                   (click)="clearSearch()"
-                  aria-label="Hapus teks pencarian"
+                  aria-label="Hapus kata kunci pencarian"
                 >
-                  <app-icon name="close" [size]="13" />
+                  <mat-icon fontIcon="close" [size]="15" />
                 </button>
               }
             </div>
-            <button type="submit" class="search-submit-btn" aria-label="Cari">
-              <app-icon name="search" [size]="15" />
-              <span class="search-submit-text">Cari</span>
+            <button type="submit" class="search-submit-btn" aria-label="Jalankan pencarian lot">
+              <mat-icon fontIcon="search" [size]="16" />
+              <span class="search-submit-text">Cari Lot</span>
             </button>
           </form>
 
           <!-- Right Action Items -->
           <div class="bidder-actions">
-            <!-- Explore Marketplace Link -->
+            <!-- Marketplace Floor Link -->
             <a
               routerLink="/marketplace"
               class="action-item-link"
               [class.is-active]="isMarketplaceRoute()"
-              title="Jelajahi Pasar Lelang"
+              title="Lantai Lelang Industri"
             >
-              <span class="action-icon-pill">
-                <app-icon name="gavel" [size]="17" />
-              </span>
-              <span class="action-label">Pasar Lelang</span>
+              <mat-icon fontIcon="storefront" [size]="18" />
+              <span class="action-label">Lantai Lelang</span>
             </a>
 
-            <!-- My Bids Button with Accent Badge -->
+            <!-- My Bids Link -->
             <a
               routerLink="/my-bids"
-              class="action-item-link my-bids-btn"
+              class="action-item-link my-bids-link"
               [class.is-active]="isMyBidsRoute()"
               title="Tawaran Saya"
             >
-              <span class="action-icon-pill">
-                <app-icon name="trending-up" [size]="17" />
-              </span>
+              <mat-icon fontIcon="gavel" [size]="18" />
               <div class="action-label-group">
                 <span class="action-label">Tawaran Saya</span>
-                <span class="action-sublabel">Aktivitas Lelang</span>
+                <span class="action-sublabel">Aktivitas Penawaran</span>
               </div>
             </a>
 
             <div class="action-divider" aria-hidden="true"></div>
 
-            <!-- User Profile Dropdown -->
+            <!-- User Account Profile Menu -->
             <div class="user-menu-wrap">
               <button
                 type="button"
@@ -143,16 +146,17 @@ import { IconComponent } from '../ui/icon.component';
                 [attr.aria-expanded]="userMenuOpen()"
                 aria-haspopup="menu"
                 (click)="toggleUserMenu()"
+                aria-label="Menu akun penawar"
               >
-                <span class="avatar avatar-sm user-avatar">{{ initials() }}</span>
+                <span class="user-avatar" aria-hidden="true">{{ initials() }}</span>
                 <div class="user-info-text hide-mobile">
                   <span class="user-info-name">{{ displayName() }}</span>
                   <span class="user-info-status">
-                    <span class="status-dot"></span>
-                    <span>Penawar Aktif</span>
+                    <span class="status-indicator-dot"></span>
+                    <span>Bidder Terdaftar</span>
                   </span>
                 </div>
-                <app-icon name="chevron-down" [size]="14" />
+                <mat-icon fontIcon="arrow_drop_down" [size]="18" />
               </button>
 
               @if (userMenuOpen()) {
@@ -160,9 +164,9 @@ import { IconComponent } from '../ui/icon.component';
                   <div class="dropdown-header">
                     <p class="dropdown-user-name">{{ displayName() }}</p>
                     <p class="dropdown-user-email">{{ email() }}</p>
-                    <span class="badge badge-brand dropdown-badge">
-                      <app-icon name="shield" [size]="11" />
-                      <span>Akun Terverifikasi</span>
+                    <span class="dropdown-verified-chip">
+                      <mat-icon fontIcon="check_circle" [size]="13" />
+                      <span>Terverifikasi B2B</span>
                     </span>
                   </div>
 
@@ -173,8 +177,8 @@ import { IconComponent } from '../ui/icon.component';
                       role="menuitem"
                       (click)="closeUserMenu()"
                     >
-                      <app-icon name="user" [size]="16" />
-                      <span>Profil Perusahaan & Penawar</span>
+                      <mat-icon fontIcon="business" [size]="16" />
+                      <span>Profil Perusahaan Penawar</span>
                     </a>
 
                     <a
@@ -183,8 +187,8 @@ import { IconComponent } from '../ui/icon.component';
                       role="menuitem"
                       (click)="closeUserMenu()"
                     >
-                      <app-icon name="trending-up" [size]="16" />
-                      <span>Riwayat Tawaran Saya</span>
+                      <mat-icon fontIcon="history" [size]="16" />
+                      <span>Riwayat Penawaran Saya</span>
                     </a>
 
                     <a
@@ -193,11 +197,11 @@ import { IconComponent } from '../ui/icon.component';
                       role="menuitem"
                       (click)="closeUserMenu()"
                     >
-                      <app-icon name="key" [size]="16" />
-                      <span>Keamanan & Kata Sandi</span>
+                      <mat-icon fontIcon="lock" [size]="16" />
+                      <span>Keamanan & Sandi</span>
                     </a>
 
-                    <div class="dropdown-separator"></div>
+                    <div class="dropdown-separator" role="separator"></div>
 
                     <button
                       type="button"
@@ -205,7 +209,7 @@ import { IconComponent } from '../ui/icon.component';
                       role="menuitem"
                       (click)="signOut()"
                     >
-                      <app-icon name="log-out" [size]="16" />
+                      <mat-icon fontIcon="logout" [size]="16" />
                       <span>Keluar dari Akun</span>
                     </button>
                   </div>
@@ -216,58 +220,73 @@ import { IconComponent } from '../ui/icon.component';
         </div>
       </div>
 
-      <!-- 3. Sub-Nav Category Strip (Deterministic active states) -->
-      <nav class="bidder-sub-nav" aria-label="Kategori Lelang Cepat">
+      <!-- 3. Sub-Nav Ribbon: 5 Official Bidder Shortcuts -->
+      <nav class="bidder-sub-nav" aria-label="Navigasi Akses Cepat Lot Lelang">
         <div class="bidder-header-container sub-nav-content">
-          <div class="quick-category-scroll">
+          <div class="quick-shortcuts-list" role="tablist">
+            <!-- 1. Semua Lot Lelang -->
             <a
               routerLink="/marketplace"
               [queryParams]="{ status: 'ALL', categoryId: 'ALL' }"
-              [class.is-sub-active]="activePill() === 'all'"
-              class="sub-nav-pill"
+              [class.is-shortcut-active]="activePill() === 'all'"
+              class="shortcut-pill"
+              role="tab"
+              [attr.aria-selected]="activePill() === 'all'"
             >
-              <app-icon name="layers" [size]="13" />
+              <mat-icon fontIcon="layers" [size]="16" />
               <span>Semua Lot Lelang</span>
             </a>
 
+            <!-- 2. Lelang Sedang Berlangsung -->
             <a
               routerLink="/marketplace"
               [queryParams]="{ status: 'ACTIVE' }"
-              [class.is-sub-active]="activePill() === 'live'"
-              class="sub-nav-pill live-pill"
+              [class.is-shortcut-active]="activePill() === 'live'"
+              class="shortcut-pill live-shortcut"
+              role="tab"
+              [attr.aria-selected]="activePill() === 'live'"
             >
-              <span class="pulse-indicator"></span>
-              <app-icon name="gavel" [size]="13" />
+              <span class="pulse-live-marker" aria-hidden="true"></span>
+              <mat-icon fontIcon="gavel" [size]="16" />
               <span>Lelang Sedang Berlangsung</span>
             </a>
 
+            <!-- 3. Segera Berakhir -->
             <a
               routerLink="/marketplace"
               [queryParams]="{ orderBy: 'closingSoonest', status: 'ACTIVE' }"
-              [class.is-sub-active]="activePill() === 'closingSoon'"
-              class="sub-nav-pill"
+              [class.is-shortcut-active]="activePill() === 'closingSoon'"
+              class="shortcut-pill urgent-shortcut"
+              role="tab"
+              [attr.aria-selected]="activePill() === 'closingSoon'"
             >
-              <app-icon name="clock" [size]="13" />
+              <mat-icon fontIcon="schedule" [size]="16" />
               <span>Segera Berakhir</span>
             </a>
 
+            <!-- 4. Tawaran Memimpin -->
             <a
               routerLink="/my-bids"
               [queryParams]="{ filter: 'winning' }"
-              [class.is-sub-active]="activePill() === 'winning'"
-              class="sub-nav-pill"
+              [class.is-shortcut-active]="activePill() === 'winning'"
+              class="shortcut-pill winning-shortcut"
+              role="tab"
+              [attr.aria-selected]="activePill() === 'winning'"
             >
-              <app-icon name="trending-up" [size]="13" />
+              <mat-icon fontIcon="trending_up" [size]="16" />
               <span>Tawaran Memimpin</span>
             </a>
 
+            <!-- 5. Tawaran Terlampaui -->
             <a
               routerLink="/my-bids"
               [queryParams]="{ filter: 'outbid' }"
-              [class.is-sub-active]="activePill() === 'outbid'"
-              class="sub-nav-pill outbid-pill"
+              [class.is-shortcut-active]="activePill() === 'outbid'"
+              class="shortcut-pill outbid-shortcut"
+              role="tab"
+              [attr.aria-selected]="activePill() === 'outbid'"
             >
-              <app-icon name="alert" [size]="13" />
+              <mat-icon fontIcon="trending_down" [size]="16" />
               <span>Tawaran Terlampaui</span>
             </a>
           </div>
@@ -282,8 +301,8 @@ import { IconComponent } from '../ui/icon.component';
         top: 0;
         z-index: 100;
         background-color: var(--c-surface);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
         border-bottom: 1px solid var(--c-border);
+        box-shadow: 0 1px 3px rgba(22, 31, 48, 0.05);
       }
 
       .bidder-header-container {
@@ -292,55 +311,57 @@ import { IconComponent } from '../ui/icon.component';
         padding: 0 var(--sp-4);
       }
 
-      /* 1. Ribbon */
+      /* 1. Top Enterprise Ribbon */
       .bidder-top-ribbon {
         background-color: var(--c-canvas);
         border-bottom: 1px solid var(--c-border);
         font-size: var(--fs-xs);
-        color: var(--c-text-secondary);
-        padding: var(--sp-1) 0;
+        color: var(--c-text-muted);
+        padding: 2px 0;
       }
 
       .ribbon-content {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        height: 30px;
+        height: 28px;
       }
 
       .ribbon-badges,
       .ribbon-links {
         display: flex;
         align-items: center;
-        gap: var(--sp-4);
+        gap: var(--sp-3);
       }
 
       .ribbon-item {
         display: inline-flex;
         align-items: center;
-        gap: var(--sp-1);
+        gap: 6px;
         color: var(--c-text-secondary);
         font-weight: var(--fw-medium);
       }
 
-      .ribbon-item app-icon {
+      .ribbon-item mat-icon {
         color: var(--c-brand);
       }
 
       .ribbon-link {
         display: inline-flex;
         align-items: center;
-        gap: var(--sp-1);
+        gap: 5px;
         color: var(--c-text-muted);
+        text-decoration: none;
         transition: color var(--dur-fast) var(--ease);
 
         &:hover {
-          color: var(--c-brand);
+          color: var(--c-text);
         }
       }
 
       .ribbon-sep {
         color: var(--c-border-strong);
+        opacity: 0.6;
       }
 
       .ribbon-role-badge {
@@ -350,11 +371,12 @@ import { IconComponent } from '../ui/icon.component';
         background-color: var(--c-brand-soft);
         color: var(--c-brand);
         font-weight: var(--fw-semibold);
-        padding: 2px 8px;
-        border-radius: var(--r-full);
+        padding: 1px 8px;
+        border-radius: var(--r-sm);
+        border: 1px solid var(--c-brand-border);
       }
 
-      /* 2. Main Nav */
+      /* 2. Main B2B Navbar */
       .bidder-main-nav {
         padding: var(--sp-3) 0;
         background-color: var(--c-surface);
@@ -370,7 +392,7 @@ import { IconComponent } from '../ui/icon.component';
       .bidder-brand {
         display: flex;
         align-items: center;
-        gap: var(--sp-2);
+        gap: var(--sp-3);
         text-decoration: none;
         flex-shrink: 0;
       }
@@ -378,49 +400,51 @@ import { IconComponent } from '../ui/icon.component';
       .brand-logo-mark {
         width: 36px;
         height: 36px;
-        border-radius: var(--r-md);
-        background: linear-gradient(135deg, var(--c-brand), #008f4c);
+        border-radius: var(--r-sm);
+        background-color: var(--c-brand);
         color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 2px 6px rgba(0, 170, 91, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 1px 3px rgba(27, 77, 62, 0.25);
       }
 
       .brand-logo-text {
         display: flex;
         flex-direction: column;
-        line-height: 1.1;
+        line-height: 1.15;
       }
 
       .brand-title {
         font-size: var(--fs-lg);
         font-weight: var(--fw-bold);
         color: var(--c-text);
-        letter-spacing: -0.02em;
+        letter-spacing: -0.025em;
       }
 
       .brand-badge {
         font-size: 0.65rem;
-        font-weight: var(--fw-bold);
+        font-weight: var(--fw-semibold);
         text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--c-brand);
+        letter-spacing: 0.08em;
+        color: var(--c-text-muted);
       }
 
-      /* Search Bar (Tokopedia style) */
+      /* Search Bar */
       .bidder-search-bar {
         flex: 1;
         display: flex;
         align-items: center;
-        border: 2px solid var(--c-border-strong);
-        border-radius: var(--r-md);
-        background-color: var(--c-surface);
+        border: 1px solid var(--c-border-strong);
+        border-radius: var(--r-sm);
+        background-color: var(--c-canvas);
         transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
 
         &:focus-within {
           border-color: var(--c-brand);
-          box-shadow: 0 0 0 3px rgba(0, 170, 91, 0.15);
+          background-color: var(--c-surface);
+          box-shadow: 0 0 0 2px rgba(27, 77, 62, 0.12);
         }
       }
 
@@ -433,21 +457,22 @@ import { IconComponent } from '../ui/icon.component';
 
       .search-icon-slot {
         position: absolute;
-        left: 14px;
+        left: 12px;
         color: var(--c-text-muted);
         pointer-events: none;
         display: flex;
+        align-items: center;
       }
 
       .header-search-input {
         width: 100%;
-        height: 42px;
+        height: 38px;
         border: none;
         outline: none;
         background: transparent;
-        padding-left: 42px;
+        padding-left: 38px;
         padding-right: 32px;
-        font-size: var(--fs-base);
+        font-size: var(--fs-sm);
         font-family: inherit;
         color: var(--c-text);
 
@@ -458,14 +483,15 @@ import { IconComponent } from '../ui/icon.component';
 
       .search-clear-btn {
         position: absolute;
-        right: 10px;
+        right: 8px;
         border: none;
         background: transparent;
         color: var(--c-text-muted);
         cursor: pointer;
         padding: 4px;
         display: flex;
-        border-radius: var(--r-full);
+        align-items: center;
+        border-radius: var(--r-sm);
 
         &:hover {
           color: var(--c-text);
@@ -474,19 +500,19 @@ import { IconComponent } from '../ui/icon.component';
       }
 
       .search-submit-btn {
-        height: 42px;
-        padding: 0 var(--sp-5);
+        height: 38px;
+        padding: 0 var(--sp-4);
         background-color: var(--c-brand);
         color: #ffffff;
         border: none;
-        border-top-right-radius: calc(var(--r-md) - 2px);
-        border-bottom-right-radius: calc(var(--r-md) - 2px);
-        font-size: var(--fs-sm);
+        border-top-right-radius: calc(var(--r-sm) - 1px);
+        border-bottom-right-radius: calc(var(--r-sm) - 1px);
+        font-size: var(--fs-xs);
         font-weight: var(--fw-semibold);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: var(--sp-2);
+        gap: 6px;
         transition: background-color var(--dur-fast) var(--ease);
 
         &:hover {
@@ -498,7 +524,7 @@ import { IconComponent } from '../ui/icon.component';
       .bidder-actions {
         display: flex;
         align-items: center;
-        gap: var(--sp-3);
+        gap: var(--sp-2);
         flex-shrink: 0;
       }
 
@@ -507,54 +533,49 @@ import { IconComponent } from '../ui/icon.component';
         align-items: center;
         gap: var(--sp-2);
         padding: var(--sp-2) var(--sp-3);
-        border-radius: var(--r-md);
-        color: var(--c-text);
+        border-radius: var(--r-sm);
+        color: var(--c-text-secondary);
         text-decoration: none;
+        font-size: var(--fs-sm);
+        font-weight: var(--fw-medium);
         transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 
-        &:hover,
+        &:hover {
+          background-color: var(--c-canvas);
+          color: var(--c-text);
+        }
+
         &.is-active {
           background-color: var(--c-brand-soft);
           color: var(--c-brand);
+          font-weight: var(--fw-semibold);
         }
       }
 
-      .action-icon-pill {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: inherit;
-      }
-
-      .action-label-group {
-        display: flex;
-        flex-direction: column;
-        line-height: 1.2;
-      }
-
-      .action-label {
-        font-size: var(--fs-sm);
-        font-weight: var(--fw-semibold);
-      }
-
-      .action-sublabel {
-        font-size: 0.7rem;
-        color: var(--c-text-muted);
-      }
-
-      .my-bids-btn {
+      .my-bids-link {
         border: 1px solid var(--c-border);
 
-        &:hover,
         &.is-active {
           border-color: var(--c-brand-border);
         }
       }
 
+      .action-label-group {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+      }
+
+      .action-sublabel {
+        font-size: 0.65rem;
+        color: var(--c-text-muted);
+      }
+
       .action-divider {
         width: 1px;
-        height: 28px;
+        height: 24px;
         background-color: var(--c-border);
+        margin: 0 4px;
       }
 
       /* User Menu */
@@ -566,37 +587,44 @@ import { IconComponent } from '../ui/icon.component';
         display: flex;
         align-items: center;
         gap: var(--sp-2);
-        padding: 4px 8px;
+        padding: 3px 8px 3px 4px;
         border: 1px solid var(--c-border);
-        border-radius: var(--r-full);
+        border-radius: var(--r-sm);
         background-color: var(--c-surface);
         cursor: pointer;
-        transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+        transition: border-color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
 
         &:hover {
           border-color: var(--c-border-strong);
-          background-color: var(--c-surface-hover);
+          background-color: var(--c-canvas);
         }
       }
 
       .user-avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: var(--r-sm);
         background-color: var(--c-brand);
         color: #ffffff;
+        font-size: var(--fs-xs);
+        font-weight: var(--fw-bold);
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .user-info-text {
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        line-height: 1.2;
-        padding-right: var(--sp-1);
+        line-height: 1.15;
       }
 
       .user-info-name {
         font-size: var(--fs-xs);
         font-weight: var(--fw-semibold);
         color: var(--c-text);
-        max-width: 120px;
+        max-width: 130px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -607,35 +635,35 @@ import { IconComponent } from '../ui/icon.component';
         align-items: center;
         gap: 4px;
         font-size: 0.65rem;
-        color: var(--c-success);
+        color: var(--c-brand);
         font-weight: var(--fw-medium);
       }
 
-      .status-dot {
-        width: 6px;
-        height: 6px;
+      .status-indicator-dot {
+        width: 5px;
+        height: 5px;
         border-radius: var(--r-full);
-        background-color: var(--c-success);
+        background-color: var(--c-brand);
       }
 
       .user-dropdown-panel {
         position: absolute;
-        top: calc(100% + 8px);
+        top: calc(100% + 6px);
         right: 0;
-        width: 250px;
+        width: 260px;
         background-color: var(--c-surface);
         border: 1px solid var(--c-border);
-        border-radius: var(--r-lg);
-        box-shadow: var(--sh-lg);
+        border-radius: var(--r-md);
+        box-shadow: var(--sh-md);
         padding: var(--sp-2);
         z-index: 200;
-        animation: dropFadeIn 140ms ease-out;
+        animation: panelFade 120ms ease-out;
       }
 
-      @keyframes dropFadeIn {
+      @keyframes panelFade {
         from {
           opacity: 0;
-          transform: translateY(-6px);
+          transform: translateY(-4px);
         }
         to {
           opacity: 1;
@@ -664,11 +692,17 @@ import { IconComponent } from '../ui/icon.component';
         white-space: nowrap;
       }
 
-      .dropdown-badge {
+      .dropdown-verified-chip {
         font-size: 0.7rem;
+        font-weight: var(--fw-medium);
         display: inline-flex;
         align-items: center;
         gap: 4px;
+        color: var(--c-brand);
+        background: var(--c-brand-soft);
+        padding: 2px 8px;
+        border-radius: var(--r-sm);
+        border: 1px solid var(--c-brand-border);
       }
 
       .dropdown-menu-list {
@@ -682,7 +716,7 @@ import { IconComponent } from '../ui/icon.component';
         align-items: center;
         gap: var(--sp-3);
         padding: var(--sp-2) var(--sp-3);
-        border-radius: var(--r-md);
+        border-radius: var(--r-sm);
         font-size: var(--fs-sm);
         color: var(--c-text);
         text-decoration: none;
@@ -694,7 +728,7 @@ import { IconComponent } from '../ui/icon.component';
         transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 
         &:hover {
-          background-color: var(--c-surface-sunken);
+          background-color: var(--c-canvas);
           color: var(--c-brand);
         }
 
@@ -713,11 +747,11 @@ import { IconComponent } from '../ui/icon.component';
         margin: var(--sp-2) 0;
       }
 
-      /* 3. Sub Nav Category Strip */
+      /* 3. Sub-Nav Ribbon: 5 Official Shortcuts */
       .bidder-sub-nav {
-        background-color: var(--c-surface);
+        background-color: var(--c-canvas);
         border-top: 1px solid var(--c-border);
-        padding: var(--sp-2) 0;
+        padding: 6px 0;
       }
 
       .sub-nav-content {
@@ -725,81 +759,86 @@ import { IconComponent } from '../ui/icon.component';
         align-items: center;
       }
 
-      .quick-category-scroll {
+      .quick-shortcuts-list {
         display: flex;
         align-items: center;
         gap: var(--sp-2);
         overflow-x: auto;
         scrollbar-width: none;
-        padding-bottom: 2px;
 
         &::-webkit-scrollbar {
           display: none;
         }
       }
 
-      .sub-nav-pill {
+      .shortcut-pill {
         display: inline-flex;
         align-items: center;
         gap: 6px;
         padding: 5px 12px;
-        border-radius: var(--r-full);
-        background-color: var(--c-canvas);
+        border-radius: var(--r-sm);
+        background-color: var(--c-surface);
         color: var(--c-text-secondary);
         font-size: var(--fs-xs);
         font-weight: var(--fw-medium);
         text-decoration: none;
         white-space: nowrap;
-        border: 1px solid transparent;
+        border: 1px solid var(--c-border);
         transition: all var(--dur-fast) var(--ease);
 
         &:hover {
-          background-color: var(--c-brand-soft);
-          color: var(--c-brand);
-          border-color: var(--c-brand-border);
+          background-color: var(--c-surface-hover);
+          color: var(--c-text);
+          border-color: var(--c-border-strong);
         }
 
-        &.is-sub-active {
+        &.is-shortcut-active {
           background-color: var(--c-brand);
           color: #ffffff;
           font-weight: var(--fw-semibold);
+          border-color: var(--c-brand);
+
+          mat-icon {
+            color: #ffffff;
+          }
         }
       }
 
-      .live-pill {
-        color: var(--c-success);
-        background-color: var(--c-success-soft);
-        border-color: var(--c-success-border);
-
-        &.is-sub-active {
-          background-color: var(--c-success);
+      .live-shortcut {
+        &.is-shortcut-active {
+          background-color: var(--c-brand);
           color: #ffffff;
         }
       }
 
-      .outbid-pill {
-        color: var(--c-warning);
-        background-color: var(--c-warning-soft);
+      .urgent-shortcut {
+        &.is-shortcut-active {
+          background-color: var(--c-brand);
+          color: #ffffff;
+        }
       }
 
-      .pulse-indicator {
-        width: 7px;
-        height: 7px;
+      .winning-shortcut {
+        &.is-shortcut-active {
+          background-color: var(--c-brand);
+          color: #ffffff;
+        }
+      }
+
+      .outbid-shortcut {
+        &.is-shortcut-active {
+          background-color: var(--c-warning);
+          color: #ffffff;
+          border-color: var(--c-warning);
+        }
+      }
+
+      .pulse-live-marker {
+        width: 6px;
+        height: 6px;
         border-radius: var(--r-full);
-        background-color: var(--c-success);
-        animation: pulseLive 1.5s infinite;
-      }
-
-      @keyframes pulseLive {
-        0%,
-        100% {
-          opacity: 1;
-          transform: scale(1);
-        }
-        50% {
-          opacity: 0.4;
-          transform: scale(1.3);
-        }
+        background-color: #10b981;
+        flex-shrink: 0;
       }
 
       /* Responsive */
@@ -834,7 +873,7 @@ export class BidderHeaderComponent {
   readonly searchQuery = signal('');
   readonly userMenuOpen = signal(false);
 
-  readonly displayName = computed(() => this.auth.displayName() || 'Signed in');
+  readonly displayName = computed(() => this.auth.displayName() || 'Penawar Terdaftar');
   readonly email = computed(() => this.auth.user()?.email ?? '');
 
   readonly initials = computed(() => {
@@ -847,13 +886,22 @@ export class BidderHeaderComponent {
 
   readonly currentUrl = signal(this.router.url);
 
+  /**
+   * Evaluates active state deterministically from Angular Router URL and Query Params.
+   * Direct URL entries and parameter changes accurately highlight the matching shortcut.
+   */
   readonly activePill = computed<'all' | 'live' | 'closingSoon' | 'winning' | 'outbid' | null>(() => {
     const url = this.currentUrl();
     if (url.startsWith('/marketplace')) {
-      // If it's a detail page like /marketplace/abc, don't mark any category pill
-      if (/^\/marketplace\/[^?]+/.test(url)) return null;
-      if (url.includes('closingSoonest')) return 'closingSoon';
-      if (url.includes('status=ACTIVE')) return 'live';
+      // Exclude item detail routes like /marketplace/:uuid
+      if (/^\/marketplace\/[a-f0-9-]+/.test(url)) return null;
+
+      if (url.includes('orderBy=closingSoonest')) {
+        return 'closingSoon';
+      }
+      if (url.includes('status=ACTIVE')) {
+        return 'live';
+      }
       if (url.includes('status=ALL') || url === '/marketplace' || !url.includes('status=')) {
         return 'all';
       }

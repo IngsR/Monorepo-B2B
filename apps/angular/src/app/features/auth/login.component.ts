@@ -10,6 +10,7 @@ import { ButtonComponent } from '../../shared/ui/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field.component';
 import { IconComponent } from '../../shared/ui/icon.component';
 import { AlertComponent } from '../../shared/ui/toast.component';
+import { focusAndShakeFirstInvalid } from '../../shared/ui/form-utils';
 
 /**
  * Sign-in screen.
@@ -262,6 +263,7 @@ export class LoginComponent {
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      setTimeout(() => focusAndShakeFirstInvalid(), 50);
       return;
     }
 
@@ -284,12 +286,13 @@ export class LoginComponent {
           failure.status === 401
             ? {
                 ...failure,
-                message: 'Sign-in failed',
+                message: 'Gagal Masuk',
                 detail:
-                  'The email address or password is incorrect. Check your details and try again.',
+                  'Email atau kata sandi tidak cocok. Periksa kembali informasi Anda.',
               }
             : failure,
         );
+        setTimeout(() => focusAndShakeFirstInvalid(), 50);
       },
     });
   }

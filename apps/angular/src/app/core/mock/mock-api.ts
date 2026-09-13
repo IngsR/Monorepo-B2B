@@ -168,7 +168,7 @@ function bidderLabel(bidderId: string): { name: string; company: string } {
   const bidder = bidders.find((b) => b.id === bidderId);
   if (!bidder) return { name: 'Bidder', company: 'Bidder' };
   const company = bidder.companyName ?? bidder.contactPerson ?? 'Bidder';
-  return { name: bidder.contactPerson, company };
+  return { name: bidder.contactPerson ?? bidder.phone ?? 'Bidder', company };
 }
 
 /** Masks a company name into a stable anonymous label: "Helix Smelting AG" → "H••• S•••". */
@@ -299,7 +299,13 @@ export const mockApi = {
     if (query.role && query.role !== 'ALL') items = items.filter((u) => u.role === query.role);
     if (query.status && query.status !== 'ALL')
       items = items.filter((u) => u.status === query.status);
-    items = applySearch(items, query.search, (u) => [u.firstName, u.lastName, u.email, u.role]);
+    items = applySearch(items, query.search, (u) => [
+      u.name ?? '',
+      u.firstName ?? '',
+      u.lastName ?? '',
+      u.email,
+      u.role,
+    ]);
 
     const sort = query.sort ?? 'newest';
     if (sort === 'oldest') items.sort((a, b) => byLatest(b, a));
@@ -343,8 +349,9 @@ export const mockApi = {
     const user: User = {
       id: nextId('usr'),
       email,
-      firstName: payload.firstName.trim(),
-      lastName: payload.lastName.trim(),
+      name: payload.name?.trim() || `${payload.firstName ?? ''} ${payload.lastName ?? ''}`.trim(),
+      firstName: payload.firstName?.trim() || payload.name?.split(' ')[0] || 'User',
+      lastName: payload.lastName?.trim() || payload.name?.split(' ').slice(1).join(' ') || '',
       role: payload.role,
       status: payload.status ?? AccountStatus.ACTIVE,
       createdAt: nowIso(),
@@ -425,8 +432,8 @@ export const mockApi = {
     let items = vendors.map((v) => withVendorMeta(v));
     items = applySearch(items, query.search, (v) => [
       v.companyName,
-      v.contactPerson,
-      v.phone,
+      v.contactPerson ?? '',
+      v.phone ?? '',
       v.user?.email ?? '',
     ]);
     items.sort((a, b) => a.companyName.localeCompare(b.companyName));
@@ -516,7 +523,8 @@ export const mockApi = {
       const newUser: User = {
         id: nextId('usr'),
         email,
-        firstName: payload.firstName?.trim() || payload.contactPerson.trim(),
+        name: payload.companyName?.trim() || 'Vendor',
+        firstName: payload.firstName?.trim() || payload.contactPerson?.trim() || 'Vendor',
         lastName: payload.lastName?.trim() || '—',
         role: UserRole.VENDOR,
         status: AccountStatus.ACTIVE,
@@ -533,8 +541,9 @@ export const mockApi = {
       id: nextId('vnd'),
       userId,
       companyName: payload.companyName.trim(),
-      contactPerson: payload.contactPerson.trim(),
-      phone: payload.phone.trim(),
+      contactPerson: payload.contactPerson?.trim() || payload.companyName.trim(),
+      phone: payload.phone?.trim() || '',
+      companyAddress: payload.companyAddress || payload.address,
       address: payload.address,
       description: payload.description,
       status: AccountStatus.ACTIVE,
@@ -554,11 +563,11 @@ export const mockApi = {
     let items = bidders.map((b) => withBidderMeta(b));
     items = applySearch(items, query.search, (b) => [
       b.companyName ?? '',
-      b.contactPerson,
-      b.phone,
+      b.contactPerson ?? '',
+      b.phone ?? '',
       b.user?.email ?? '',
     ]);
-    items.sort((a, b) => a.contactPerson.localeCompare(b.contactPerson));
+    items.sort((a, b) => (a.contactPerson ?? a.phone ?? '').localeCompare(b.contactPerson ?? b.phone ?? ''));
     return paginate(items, query.page, query.limit);
   },
 
@@ -636,7 +645,8 @@ export const mockApi = {
       const newUser: User = {
         id: nextId('usr'),
         email,
-        firstName: payload.firstName?.trim() || payload.contactPerson.trim(),
+        name: payload.contactPerson?.trim() || 'Bidder',
+        firstName: payload.firstName?.trim() || payload.contactPerson?.trim() || 'Bidder',
         lastName: payload.lastName?.trim() || '—',
         role: UserRole.BIDDER,
         status: AccountStatus.ACTIVE,
@@ -651,8 +661,8 @@ export const mockApi = {
       id: nextId('bdr'),
       userId,
       companyName: payload.companyName,
-      contactPerson: payload.contactPerson.trim(),
-      phone: payload.phone.trim(),
+      contactPerson: payload.contactPerson?.trim() || 'Bidder',
+      phone: payload.phone?.trim() || '',
       address: payload.address,
       status: AccountStatus.ACTIVE,
       createdAt: nowIso(),
@@ -670,7 +680,7 @@ export const mockApi = {
       ...c,
       productCount: products.filter((p) => p.categoryId === c.id).length,
     }));
-    items = applySearch(items, query.search, (c) => [c.name, c.slug, c.description ?? '']);
+    items = applySearch(items, query.search, (c) => [c.name, c.slug ?? '', c.description ?? '']);
     items.sort(byName);
     // Category selectors need the full set; the management table paginates.
     return paginate(items, query.page, query.limit ?? 50);

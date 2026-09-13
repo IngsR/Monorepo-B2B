@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { formatAmount, formatRelative } from '../../core/domain/format';
 import { Bid } from '../../core/domain/models';
-import { IconComponent } from './icon.component';
+import { MatIconComponent } from './mat-icon.component';
 
 export type BidSort = 'highest' | 'newest';
 
@@ -22,13 +22,13 @@ export type BidSort = 'highest' | 'newest';
 @Component({
   selector: 'app-bid-history',
   standalone: true,
-  imports: [IconComponent],
+  imports: [MatIconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (bids().length === 0) {
       <div class="state-block">
         <div class="state-icon">
-          <app-icon name="gavel" [size]="20" />
+          <mat-icon fontIcon="gavel" [size]="20" />
         </div>
         <p class="state-title">Belum ada penawaran</p>
         <p class="state-description">
@@ -46,7 +46,7 @@ export type BidSort = 'highest' | 'newest';
           >
             <span class="bid-rank" aria-hidden="true">
               @if (isLeading(bid, index)) {
-                <app-icon name="trending-up" [size]="13" />
+                <mat-icon fontIcon="trending_up" [size]="13" />
               } @else {
                 {{ index + 1 }}
               }

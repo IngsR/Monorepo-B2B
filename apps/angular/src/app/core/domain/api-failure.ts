@@ -103,9 +103,26 @@ export function toApiFailure(error: unknown): ApiFailure {
     detail: 'Please try again. If the problem continues, contact your administrator.',
   };
 
-  const rawMessage = typeof body?.message === 'string' ? body.message : '';
+  let rawMessage = '';
+  const fieldErrors: Record<string, string> = { ...(body?.fieldErrors ?? {}) };
+
+  if (Array.isArray(body?.message)) {
+    rawMessage = body.message.join('. ');
+    for (const msg of body.message) {
+      if (typeof msg === 'string') {
+        const words = msg.split(' ');
+        const field = words[0];
+        if (field && !fieldErrors[field]) {
+          fieldErrors[field] = msg;
+        }
+      }
+    }
+  } else if (typeof body?.message === 'string') {
+    rawMessage = body.message;
+  }
+
   const useServerMessage =
-    rawMessage.length > 0 && rawMessage.length < 200 && !looksTechnical(rawMessage);
+    rawMessage.length > 0 && rawMessage.length < 500 && !looksTechnical(rawMessage);
 
   if (status === 0) {
     return {
@@ -121,7 +138,7 @@ export function toApiFailure(error: unknown): ApiFailure {
     code,
     message: useServerMessage ? rawMessage : fallback.message,
     detail: fallback.detail,
-    fieldErrors: body?.fieldErrors,
+    fieldErrors: Object.keys(fieldErrors).length > 0 ? fieldErrors : body?.fieldErrors,
   };
 }
 
