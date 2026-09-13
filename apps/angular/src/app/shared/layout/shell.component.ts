@@ -100,7 +100,9 @@ import { ToastHostComponent } from '../ui/toast.component';
         display: flex;
         flex-direction: column;
         min-height: 100vh;
-        background-color: var(--c-canvas);
+        background-color: #f5f3ee;
+        color: #17201e;
+        font-family: var(--font-sans);
       }
 
       .seller-shell-content {
