@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Scripts dijalankan dengan tsx; bundler mode memperbolehkan import relatif
+    // tanpa akhiran .js agar file script pendek & mudah dibaca.
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "isolatedModules": false,
+    "noEmit": true
+  },
+  "include": ["scripts"]
+}

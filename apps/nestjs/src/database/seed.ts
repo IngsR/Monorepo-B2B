@@ -41,6 +41,21 @@ async function seed(): Promise<void> {
 
   const users = [
     {
+      email: 'admin@bidforge.test',
+      name: 'Admin User',
+      role: 'ADMIN' as const,
+    },
+    {
+      email: 'vendor@bidforge.test',
+      name: 'Vendor User',
+      role: 'VENDOR' as const,
+    },
+    {
+      email: 'bidder@bidforge.test',
+      name: 'Bidder User',
+      role: 'BIDDER' as const,
+    },
+    {
       email: 'admin@scrapbid.test',
       name: 'Admin User',
       role: 'ADMIN' as const,
@@ -81,35 +96,45 @@ async function seed(): Promise<void> {
 
   // Role profiles: a vendor and a bidder need a profile row so the UI can
   // resolve ownership (the marketplace and "my …" screens depend on it).
-  const vendorUser = await prisma.user.findUniqueOrThrow({
-    where: { email: 'vendor@scrapbid.test' },
-  });
-  const bidderUser = await prisma.user.findUniqueOrThrow({
-    where: { email: 'bidder@scrapbid.test' },
-  });
+  const vendorEmails = ['vendor@bidforge.test', 'vendor@scrapbid.test'];
+  const bidderEmails = ['bidder@bidforge.test', 'bidder@scrapbid.test'];
 
-  const vendor = await prisma.vendor.upsert({
-    where: { userId: vendorUser.id },
-    update: {},
-    create: {
-      userId: vendorUser.id,
-      companyName: 'Nusantara Asset Auctioneers',
-      companyAddress: 'Jl. Jenderal Sudirman No. 45, Jakarta',
-      phone: '+62 21 5550 1234',
-    },
-  });
-  console.log(`  ✅ Seeded vendor profile: ${vendor.companyName}`);
+  let primaryVendor: { id: string } | null = null;
+  for (const email of vendorEmails) {
+    const vUser = await prisma.user.findUnique({ where: { email } });
+    if (vUser) {
+      const v = await prisma.vendor.upsert({
+        where: { userId: vUser.id },
+        update: {},
+        create: {
+          userId: vUser.id,
+          companyName: email.includes('bidforge') ? 'BidForge Industrial Holdings' : 'Nusantara Asset Auctioneers',
+          companyAddress: 'Jl. Jenderal Sudirman No. 45, Jakarta',
+          phone: '+62 21 5550 1234',
+        },
+      });
+      if (!primaryVendor) primaryVendor = v;
+      console.log(`  ✅ Seeded vendor profile: ${v.companyName} (${email})`);
+    }
+  }
 
-  await prisma.bidder.upsert({
-    where: { userId: bidderUser.id },
-    update: {},
-    create: {
-      userId: bidderUser.id,
-      phone: '+62 812 3456 7890',
-      address: 'Jl. Gatot Subroto No. 12, Bandung',
-    },
-  });
-  console.log('  ✅ Seeded bidder profile');
+  for (const email of bidderEmails) {
+    const bUser = await prisma.user.findUnique({ where: { email } });
+    if (bUser) {
+      await prisma.bidder.upsert({
+        where: { userId: bUser.id },
+        update: {},
+        create: {
+          userId: bUser.id,
+          phone: '+62 812 3456 7890',
+          address: 'Jl. Gatot Subroto No. 12, Bandung',
+        },
+      });
+      console.log(`  ✅ Seeded bidder profile (${email})`);
+    }
+  }
+
+  const vendor = primaryVendor ?? (await prisma.vendor.findFirstOrThrow());
 
   // Sample lots so the marketplace is not empty on a fresh database.
   const now = Date.now();

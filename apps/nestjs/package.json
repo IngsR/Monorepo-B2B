@@ -24,6 +24,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
+    "role": "tsx --env-file=.env scripts/role.ts",
     "seed": "tsx --env-file=.env src/database/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",

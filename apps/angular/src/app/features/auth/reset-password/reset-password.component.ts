@@ -110,13 +110,23 @@ import { AlertComponent } from '../../../shared/ui/toast.component';
                 errorText="Passwords do not match"
                 controlId="reset-password-confirm"
               >
-                <input
-                  id="reset-password-confirm"
-                  type="password"
-                  class="form-input"
-                  formControlName="confirmPassword"
-                  autocomplete="new-password"
-                />
+                <div class="input-affix-wrap">
+                  <input
+                    id="reset-password-confirm"
+                    [type]="showConfirm() ? 'text' : 'password'"
+                    class="form-input"
+                    formControlName="confirmPassword"
+                    autocomplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    class="input-affix-btn"
+                    [attr.aria-label]="showConfirm() ? 'Hide password' : 'Show password'"
+                    (click)="showConfirm.set(!showConfirm())"
+                  >
+                    <app-icon [name]="showConfirm() ? 'eye-off' : 'eye'" [size]="16" />
+                  </button>
+                </div>
               </app-form-field>
 
               <app-button
@@ -157,6 +167,7 @@ export class ResetPasswordComponent {
   readonly submitting = signal(false);
   readonly succeeded = signal(false);
   readonly show = signal(false);
+  readonly showConfirm = signal(false);
   readonly failure = signal<ApiFailure | null>(null);
 
   readonly form = this.fb.nonNullable.group(

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AccountStatus, UserRole } from '../domain/enums';
 import {
@@ -89,12 +89,7 @@ export class AuthService {
       map((res) => res.data),
       tap(({ accessToken }) => this.setToken(accessToken)),
       // Identity must be resolved before navigation so guards see a full session.
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      map(() => undefined),
-      tap({
-        next: () => this.loadIdentity(),
-      }),
-      map(() => this._user()),
+      switchMap(() => this.loadIdentity()),
     );
   }
 

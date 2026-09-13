@@ -4,6 +4,7 @@ node_modules
 build
 .next
 .turbo
+*.tsbuildinfo
 
 # Logs
 logs
