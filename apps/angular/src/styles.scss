@@ -10,49 +10,50 @@
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-  /* Neutral base — structure, not decoration */
-  --c-canvas: #f5f6f8;
+  /* Neutral base (60%) — clean, spacious and highly legible */
+  --c-canvas: #f8fafc;
   --c-surface: #ffffff;
-  --c-surface-sunken: #eef0f4;
-  --c-surface-hover: #f8f9fb;
-  --c-border: #e2e6ec;
-  --c-border-strong: #c8cfda;
+  --c-surface-sunken: #f1f5f9;
+  --c-surface-hover: #f8fafc;
+  --c-border: #e2e8f0;
+  --c-border-strong: #cbd5e1;
 
-  --c-text: #111827;
-  --c-text-secondary: #4b5563;
-  --c-text-muted: #7c8798;
+  /* Structural & text (30%) — high-contrast dark slate hierarchy */
+  --c-text: #0f172a;
+  --c-text-secondary: #334155;
+  --c-text-muted: #64748b;
   --c-text-inverse: #ffffff;
 
-  /* Brand accent — exactly one strong accent */
-  --c-brand: #1d3a8a;
-  --c-brand-hover: #162d6d;
-  --c-brand-active: #10214f;
-  --c-brand-soft: #edf1fa;
-  --c-brand-border: #c3cee8;
+  /* Brand accent (10%) — Vibrant Tokopedia / modern marketplace emerald green */
+  --c-brand: #00aa5b;
+  --c-brand-hover: #008f4c;
+  --c-brand-active: #00733d;
+  --c-brand-soft: #e8f7ee;
+  --c-brand-border: #a2e2ba;
 
-  /* Semantic state colours (never used alone — always with icon/label) */
-  --c-success: #04634a;
-  --c-success-soft: #e7f4ef;
-  --c-success-border: #a9d8c8;
+  /* Semantic state colours (never used alone — always with icon & label) */
+  --c-success: #059669;
+  --c-success-soft: #ecfdf5;
+  --c-success-border: #a7f3d0;
 
-  --c-warning: #8a4708;
-  --c-warning-soft: #fcf2e2;
-  --c-warning-border: #efd0a0;
+  --c-warning: #d97706;
+  --c-warning-soft: #fffbeb;
+  --c-warning-border: #fde68a;
 
-  --c-danger: #ab2318;
-  --c-danger-soft: #fdecea;
-  --c-danger-border: #f1bdb7;
+  --c-danger: #dc2626;
+  --c-danger-soft: #fef2f2;
+  --c-danger-border: #fecaca;
 
-  --c-info: #1553bd;
-  --c-info-soft: #e9f0fc;
-  --c-info-border: #b8cbf0;
+  --c-info: #0284c7;
+  --c-info-soft: #f0f9ff;
+  --c-info-border: #bae6fd;
 
-  --c-neutral: #47505f;
-  --c-neutral-soft: #eff1f4;
-  --c-neutral-border: #d5dae2;
+  --c-neutral: #475569;
+  --c-neutral-soft: #f1f5f9;
+  --c-neutral-border: #cbd5e1;
 
-  --c-focus: #2563eb;
-  --c-overlay: rgba(17, 24, 39, 0.5);
+  --c-focus: #00aa5b;
+  --c-overlay: rgba(15, 23, 42, 0.55);
 
   /* Type scale */
   --fs-2xs: 0.625rem;
@@ -2972,3 +2973,362 @@ table {
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: var(--sp-4);
 }
+
+/* -------------------------------------------------------------------------
+   30. E-COMMERCE BIDDER EXPERIENCE (TOKOPEDIA / SHOPEE FAMILIAR PATTERNS)
+   ------------------------------------------------------------------------- */
+
+/* Marketplace 2-column e-commerce layout */
+.marketplace-ecom-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-6);
+  margin-top: var(--sp-6);
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    gap: var(--sp-4);
+  }
+}
+
+/* Left Filter Sidebar (Tokopedia style) */
+.marketplace-sidebar-filter {
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+
+  @media (max-width: 1024px) {
+    width: 100%;
+    position: static;
+  }
+}
+
+.filter-sidebar-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.filter-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.filter-sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+}
+
+.filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.filter-section-title {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.filter-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.filter-option-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--c-text-secondary);
+  font-size: var(--fs-sm);
+  transition: all var(--dur-fast) var(--ease);
+
+  &:hover {
+    background: var(--c-surface-sunken);
+    color: var(--c-brand);
+  }
+
+  &.is-active {
+    background: var(--c-brand-soft);
+    color: var(--c-brand);
+    font-weight: var(--fw-semibold);
+    border-color: var(--c-brand-border);
+  }
+}
+
+.filter-price-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.filter-price-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* Marketplace Main Content */
+.marketplace-main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+/* E-Commerce Hero Banner */
+.marketplace-ecom-hero {
+  position: relative;
+  background: linear-gradient(135deg, #00aa5b 0%, #00733d 100%);
+  border-radius: var(--r-lg);
+  padding: var(--sp-8);
+  color: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 170, 91, 0.22);
+}
+
+.marketplace-ecom-hero::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 260px;
+  height: 260px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.09);
+  pointer-events: none;
+}
+
+.hero-ecom-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-5);
+  }
+}
+
+.hero-ecom-text {
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.hero-ecom-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #c7f4d9;
+}
+
+.hero-ecom-title {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  line-height: 1.15;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+
+  @media (max-width: 640px) {
+    font-size: var(--fs-2xl);
+  }
+}
+
+.hero-ecom-copy {
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  color: #e6f9ef;
+}
+
+.hero-ecom-badges {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  margin-top: var(--sp-2);
+}
+
+.hero-trust-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.16);
+  padding: 4px 12px;
+  border-radius: var(--r-full);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  color: #ffffff;
+  backdrop-filter: blur(4px);
+}
+
+.hero-ecom-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--sp-3);
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+}
+
+.hero-ecom-stat-card {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(6px);
+  border-radius: var(--r-md);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+}
+
+.hero-stat-num {
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  color: #ffffff;
+  font-family: var(--font-mono);
+}
+
+.hero-stat-desc {
+  font-size: var(--fs-xs);
+  color: #c7f4d9;
+  font-weight: var(--fw-medium);
+}
+
+/* Tokopedia-Style Card Elevation */
+.auction-card {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  border-radius: var(--r-lg);
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+    border-color: var(--c-brand-border);
+  }
+}
+
+.auction-card-media {
+  aspect-ratio: 4 / 3;
+}
+
+/* My Bids Transaction Card View */
+.bid-transaction-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  margin-bottom: var(--sp-4);
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+
+  &:hover {
+    border-color: var(--c-border-strong);
+    box-shadow: var(--sh-sm);
+  }
+}
+
+.bid-tx-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--c-canvas);
+  border-bottom: 1px solid var(--c-border);
+  font-size: var(--fs-sm);
+}
+
+.bid-tx-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-5);
+  gap: var(--sp-5);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.bid-tx-product {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex: 1;
+}
+
+.bid-tx-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--r-md);
+  background: var(--c-surface-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-text-muted);
+  flex-shrink: 0;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.bid-tx-pricing {
+  display: flex;
+  gap: var(--sp-6);
+  align-items: center;
+}
+
+.bid-tx-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+

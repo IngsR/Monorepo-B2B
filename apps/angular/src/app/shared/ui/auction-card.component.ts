@@ -100,13 +100,13 @@ import { PriceComponent } from './price.component';
           />
           <span class="badge badge-plain bid-count">
             <app-icon name="gavel" [size]="12" />
-            {{ auction().bidCount }} {{ auction().bidCount === 1 ? 'bid' : 'bids' }}
+            {{ auction().bidCount }} tawaran
           </span>
         </div>
 
         <div class="auction-card-metrics">
           <div class="meta-item">
-            <span class="price-label">Increment</span>
+            <span class="price-label">Kelipatan</span>
             <span class="meta-value text-numeric">{{ incrementLabel() }}</span>
           </div>
           @if (secondaryFigure(); as figure) {
@@ -121,8 +121,8 @@ import { PriceComponent } from './price.component';
       <div class="auction-card-footer">
         <span class="cta-hint">{{ ctaHint() }}</span>
         <a class="btn btn-primary btn-sm" [href]="link()" (click)="onCta($event)">
-          {{ ctaLabel() }}
-          <app-icon name="arrow-right" [size]="14" />
+          <app-icon [name]="ctaIcon()" [size]="14" />
+          <span>{{ ctaLabel() }}</span>
         </a>
       </div>
     </article>
@@ -178,66 +178,72 @@ export class AuctionCardComponent {
   readonly isTerminal = computed(() => this.isEnded() || this.isCancelled());
 
   readonly imageUrl = computed(() => null as string | null);
-  readonly productName = computed(() => this.auction().product?.name ?? 'Untitled product');
+  readonly productName = computed(() => this.auction().product?.name ?? 'Produk tanpa nama');
   readonly productCode = computed(() => this.auction().product?.code ?? '—');
-  readonly categoryName = computed(() => this.auction().product?.category?.name ?? 'Uncategorised');
+  readonly categoryName = computed(() => this.auction().product?.category?.name ?? 'Tanpa Kategori');
   readonly vendorName = computed(() => this.auction().vendor?.companyName ?? '');
 
   readonly incrementLabel = computed(
-    () => `$${this.auction().bidIncrement.toLocaleString('en-US')}`,
+    () => `Rp ${this.auction().bidIncrement.toLocaleString('id-ID')}`,
   );
 
   /** Active auctions lead with the price; scheduled ones lead with the start price. */
   readonly priceLabel = computed(() => {
-    if (this.isActive()) return 'Current price';
-    if (this.isScheduled()) return 'Starting price';
-    if (this.isEnded()) return 'Final price';
-    if (this.isCancelled()) return 'Last price';
-    return 'Starting price';
+    if (this.isActive()) return 'Tawaran saat ini';
+    if (this.isScheduled()) return 'Harga awal';
+    if (this.isEnded()) return 'Harga akhir';
+    if (this.isCancelled()) return 'Harga terakhir';
+    return 'Harga awal';
   });
 
   readonly secondaryFigure = computed<{ label: string; value: string } | null>(() => {
     const auction = this.auction();
     if (this.isActive()) {
-      return { label: 'Closes', value: formatDateTime(auction.endTime) };
+      return { label: 'Ditutup', value: formatDateTime(auction.endTime) };
     }
     if (this.isScheduled()) {
-      return { label: 'Opens', value: formatDateTime(auction.startTime) };
+      return { label: 'Dibuka', value: formatDateTime(auction.startTime) };
     }
     if (this.isDraft()) {
-      return { label: 'Scheduled for', value: formatDateTime(auction.startTime) };
+      return { label: 'Dijadwalkan', value: formatDateTime(auction.startTime) };
     }
-    return { label: 'Closed', value: formatDateTime(auction.endTime) };
+    return { label: 'Selesai', value: formatDateTime(auction.endTime) };
   });
 
   readonly timeToStart = computed(() => {
     const ms = this.timing().msToStart;
-    return ms > 0 ? `in ${formatDuration(ms)}` : 'starting now';
+    return ms > 0 ? `dalam ${formatDuration(ms)}` : 'dimulai sekarang';
   });
 
   readonly closedLabel = computed(() => {
-    if (this.isCancelled()) return 'Cancelled';
-    if (this.isEnded()) return 'Ended';
-    if (this.isDraft()) return 'Not scheduled';
+    if (this.isCancelled()) return 'Dibatalkan';
+    if (this.isEnded()) return 'Selesai';
+    if (this.isDraft()) return 'Belum dijadwalkan';
     // ACTIVE with an expired clock: the window closed but the status has not been
     // updated yet. Say so plainly rather than implying bidding is still open.
-    return 'Window closed';
+    return 'Waktu ditutup';
   });
 
   readonly ctaLabel = computed(() => {
-    if (this.isActive()) return this.timing().acceptingBids ? 'Bid now' : 'View';
-    if (this.isScheduled()) return 'View lot';
-    if (this.isDraft()) return 'Review';
-    return 'View result';
+    if (this.isActive()) return this.timing().acceptingBids ? 'Tawar Sekarang' : 'Lihat Lot';
+    if (this.isScheduled()) return 'Lihat Jadwal';
+    if (this.isDraft()) return 'Tinjau';
+    return 'Lihat Hasil';
+  });
+
+  readonly ctaIcon = computed(() => {
+    if (this.isActive() && this.timing().acceptingBids) return 'gavel';
+    if (this.isScheduled()) return 'calendar';
+    return 'arrow-right';
   });
 
   readonly ctaHint = computed(() => {
-    if (this.isActive() && !this.timing().acceptingBids) return 'Awaiting close';
-    if (this.isActive()) return 'Open for bidding';
-    if (this.isScheduled()) return 'Opens soon';
-    if (this.isDraft()) return 'Not published';
-    if (this.isCancelled()) return 'Withdrawn';
-    return 'Finished';
+    if (this.isActive() && !this.timing().acceptingBids) return 'Menunggu penutupan';
+    if (this.isActive()) return 'Terbuka untuk penawaran';
+    if (this.isScheduled()) return 'Segera dimulai';
+    if (this.isDraft()) return 'Belum dipublikasikan';
+    if (this.isCancelled()) return 'Dibatalkan';
+    return 'Lelang selesai';
   });
 
   readonly link = computed(() => `${this.linkPrefix()}/${this.auction().id}`);

@@ -89,7 +89,10 @@ import { BidPanelComponent } from './bid-panel.component';
                 [retrying]="auction.isLoading()"
                 (retry)="reload()"
               >
-                <a class="btn btn-secondary" routerLink="/marketplace">Back to marketplace</a>
+                <a class="btn btn-secondary" routerLink="/marketplace">
+                  <app-icon name="chevron-left" [size]="15" />
+                  <span>Kembali ke Marketplace</span>
+                </a>
               </app-error-state>
             }
           </div>
@@ -113,7 +116,7 @@ import { BidPanelComponent } from './bid-panel.component';
               <h1 class="detail-title">{{ productName() }}</h1>
               <p class="detail-vendor">
                 <app-icon name="building" [size]="14" />
-                <span>Offered by {{ vendorName() }}</span>
+                <span>Disediakan oleh {{ vendorName() }}</span>
               </p>
             </div>
 
@@ -122,22 +125,21 @@ import { BidPanelComponent } from './bid-panel.component';
               @if (canManage()) {
                 <a class="btn btn-secondary" [routerLink]="['/vendor/auctions', auctionData.id]">
                   <app-icon name="edit" [size]="15" />
-                  Manage auction
+                  <span>Kelola Lelang</span>
                 </a>
               }
               <a class="btn btn-secondary" routerLink="/marketplace">
                 <app-icon name="chevron-left" [size]="15" />
-                Marketplace
+                <span>Marketplace</span>
               </a>
             </div>
           </header>
 
           <!-- Recorded status vs. bidding window -->
           @if (statusWindowMismatch()) {
-            <app-alert tone="warning" title="Recorded status and bidding window differ">
-              This auction is recorded as <strong>{{ auctionData.status | titlecase }}</strong
-              >, but its published end time has already passed. Bidding is closed; the auction
-              remains open on the record until an authorised user closes it.
+            <app-alert tone="warning" title="Status tercatat dan waktu lelang berbeda">
+              Lelang ini berstatus <strong>{{ auctionData.status | titlecase }}</strong
+              >, namun waktu penutupan yang dipublikasikan telah lewat. Penawaran telah ditutup dan status lelang menunggu pembaruan resmi.
             </app-alert>
           }
 
@@ -157,8 +159,8 @@ import { BidPanelComponent } from './bid-panel.component';
                     <div class="media-placeholder">
                       <app-icon name="image" [size]="34" />
                       <p class="state-description">
-                        Product photography is not published for this lot. Technical details and
-                        vendor information are listed below.
+                        Foto produk belum diunggah untuk lot ini. Rincian teknis dan
+                        informasi vendor tertera di bawah.
                       </p>
                     </div>
                   </div>
@@ -181,21 +183,21 @@ import { BidPanelComponent } from './bid-panel.component';
                 <div class="fact">
                   <span class="fact-icon"><app-icon name="gavel" [size]="16" /></span>
                   <div class="fact-body">
-                    <span class="fact-label">Current price</span>
+                    <span class="fact-label">Harga saat ini</span>
                     <span class="fact-value text-numeric">{{ amountLabel(auctionData.currentPrice) }}</span>
                   </div>
                 </div>
                 <div class="fact">
                   <span class="fact-icon"><app-icon name="trending-up" [size]="16" /></span>
                   <div class="fact-body">
-                    <span class="fact-label">Minimum next bid</span>
+                    <span class="fact-label">Tawaran minimal berikutnya</span>
                     <span class="fact-value text-numeric">{{ minimumLabel() }}</span>
                   </div>
                 </div>
                 <div class="fact">
                   <span class="fact-icon"><app-icon name="users" [size]="16" /></span>
                   <div class="fact-body">
-                    <span class="fact-label">Total bids</span>
+                    <span class="fact-label">Total tawaran</span>
                     <span class="fact-value text-numeric">{{ auctionData.bidCount }}</span>
                   </div>
                 </div>
@@ -203,7 +205,7 @@ import { BidPanelComponent } from './bid-panel.component';
                   <span class="fact-icon"><app-icon name="clock" [size]="16" /></span>
                   <div class="fact-body">
                     <span class="fact-label">
-                      {{ auctionData.status === AuctionStatus.ACTIVE ? 'Closes' : 'Ends' }}
+                      {{ auctionData.status === AuctionStatus.ACTIVE ? 'Ditutup' : 'Berakhir' }}
                     </span>
                     <span class="fact-value">{{ endLabel() }}</span>
                   </div>
@@ -212,14 +214,14 @@ import { BidPanelComponent } from './bid-panel.component';
 
               <!-- Price summary, repeated here for scanning on mobile -->
               <div class="card card-body detail-price-strip hide-desktop">
-                <app-price [amount]="auctionData.currentPrice" label="Current price" size="lg" />
+                <app-price [amount]="auctionData.currentPrice" label="Harga saat ini" size="lg" />
                 <div class="detail-price-figures">
                   <div class="meta-item">
-                    <span class="price-label">Minimum next bid</span>
+                    <span class="price-label">Tawaran minimal berikutnya</span>
                     <span class="meta-value text-numeric">{{ minimumLabel() }}</span>
                   </div>
                   <div class="meta-item">
-                    <span class="price-label">Bid increment</span>
+                    <span class="price-label">Kelipatan tawaran</span>
                     <span class="meta-value text-numeric">{{ incrementLabel() }}</span>
                   </div>
                 </div>
@@ -228,7 +230,7 @@ import { BidPanelComponent } from './bid-panel.component';
               <!-- Schedule & terms -->
               <section class="card">
                 <div class="card-header">
-                  <h2 class="section-heading">Schedule & terms</h2>
+                  <h2 class="section-heading">Jadwal & Ketentuan</h2>
                   @if (auctionData.status === AuctionStatus.ACTIVE && timing().acceptingBids) {
                     <app-countdown [target]="auctionData.endTime" prefix="closes" size="md" />
                   }
@@ -236,27 +238,27 @@ import { BidPanelComponent } from './bid-panel.component';
                 <div class="card-body">
                   <div class="spec-list">
                     <div class="spec-item">
-                      <span class="spec-item-label">Opening time</span>
+                      <span class="spec-item-label">Waktu mulai</span>
                       <span class="spec-item-value">{{ startLabel() }}</span>
                     </div>
                     <div class="spec-item">
-                      <span class="spec-item-label">Closing time</span>
+                      <span class="spec-item-label">Waktu selesai</span>
                       <span class="spec-item-value">{{ endLabel() }}</span>
                     </div>
                     <div class="spec-item">
-                      <span class="spec-item-label">Starting price</span>
+                      <span class="spec-item-label">Harga awal</span>
                       <span class="spec-item-value text-numeric">{{ startingLabel() }}</span>
                     </div>
                     <div class="spec-item">
-                      <span class="spec-item-label">Bid increment</span>
+                      <span class="spec-item-label">Kelipatan tawaran</span>
                       <span class="spec-item-value text-numeric">{{ incrementLabel() }}</span>
                     </div>
                     <div class="spec-item">
-                      <span class="spec-item-label">Duration</span>
+                      <span class="spec-item-label">Durasi lelang</span>
                       <span class="spec-item-value">{{ durationLabel() }}</span>
                     </div>
                     <div class="spec-item">
-                      <span class="spec-item-label">Recorded status</span>
+                      <span class="spec-item-label">Status saat ini</span>
                       <span class="spec-item-value">{{ auctionData.status | titlecase }}</span>
                     </div>
                   </div>
@@ -266,7 +268,7 @@ import { BidPanelComponent } from './bid-panel.component';
               <!-- Product information -->
               <section class="card">
                 <div class="card-header">
-                  <h2 class="section-heading">Product information</h2>
+                  <h2 class="section-heading">Informasi Produk</h2>
                   @if (auctionData.product?.category; as category) {
                     <span class="badge badge-plain">{{ category.name }}</span>
                   }
@@ -274,32 +276,31 @@ import { BidPanelComponent } from './bid-panel.component';
                 <div class="card-body stack">
                   <div class="spec-list">
                     <div class="spec-item">
-                      <span class="spec-item-label">Product code</span>
+                      <span class="spec-item-label">Kode produk</span>
                       <span class="spec-item-value text-numeric">{{
                         auctionData.product?.code ?? '—'
                       }}</span>
                     </div>
                     <div class="spec-item">
-                      <span class="spec-item-label">Category</span>
+                      <span class="spec-item-label">Kategori</span>
                       <span class="spec-item-value">{{
                         auctionData.product?.category?.name ?? '—'
                       }}</span>
                     </div>
                     <div class="spec-item">
-                      <span class="spec-item-label">Listing ID</span>
+                      <span class="spec-item-label">ID Lot Lelang</span>
                       <span class="spec-item-value text-mono-id">{{ auctionData.id }}</span>
                     </div>
                   </div>
 
                   @if (auctionData.product?.description) {
                     <div>
-                      <p class="price-label description-label">Description</p>
+                      <p class="price-label description-label">Deskripsi Produk</p>
                       <p class="detail-description">{{ auctionData.product.description }}</p>
                     </div>
                   } @else {
                     <p class="text-helper">
-                      The vendor has not published a description for this lot. Review the schedule
-                      and terms above before bidding.
+                      Vendor belum melampirkan deskripsi untuk lot ini. Periksa jadwal dan ketentuan di atas sebelum menawar.
                     </p>
                   }
                 </div>
@@ -308,14 +309,14 @@ import { BidPanelComponent } from './bid-panel.component';
               <!-- Vendor -->
               <section class="card">
                 <div class="card-header">
-                  <h2 class="section-heading">Offered by</h2>
+                  <h2 class="section-heading">Disediakan Oleh</h2>
                 </div>
                 <div class="card-body">
                   <div class="seller-card">
                     <span class="seller-avatar">{{ vendorInitials() }}</span>
                     <div class="seller-meta">
                       <span class="seller-name">{{ vendorName() }}</span>
-                      <span class="text-helper">Verified vendor · listing this lot on BidForge</span>
+                      <span class="text-helper">Vendor Terverifikasi · Lot Resmi BidForge</span>
                     </div>
                   </div>
                 </div>
@@ -324,37 +325,34 @@ import { BidPanelComponent } from './bid-panel.component';
               <!-- How bidding works -->
               <section class="card">
                 <div class="card-header">
-                  <h2 class="section-heading">How this auction works</h2>
+                  <h2 class="section-heading">Panduan & Cara Kerja Lelang</h2>
                 </div>
                 <div class="card-body">
                   <ol class="process-list">
                     <li class="process-step">
                       <span class="process-index">1</span>
                       <div class="process-text">
-                        <p class="process-title">Place a bid at or above the minimum</p>
+                        <p class="process-title">1. Masukkan tawaran sesuai batas minimal</p>
                         <p class="process-copy">
-                          Every bid must clear the current price plus the increment. The server
-                          re-checks this when your bid arrives.
+                          Setiap tawaran harus lebih tinggi dari harga berjalan ditambah kelipatan tawaran. Server memvalidasi nominal saat tawaran dikirim.
                         </p>
                       </div>
                     </li>
                     <li class="process-step">
                       <span class="process-index">2</span>
                       <div class="process-text">
-                        <p class="process-title">The price moves only on a valid higher bid</p>
+                        <p class="process-title">2. Harga naik saat ada tawaran lebih tinggi</p>
                         <p class="process-copy">
-                          If the price changes before your bid is accepted, the bid is refused and
-                          the new minimum is shown immediately.
+                          Jika tawaran lain masuk lebih dahulu, tawaran Anda akan ditolak dan nominal tawaran minimal terbaru akan langsung ditampilkan.
                         </p>
                       </div>
                     </li>
                     <li class="process-step">
                       <span class="process-index">3</span>
                       <div class="process-text">
-                        <p class="process-title">The highest valid bid at the close determines the outcome</p>
+                        <p class="process-title">3. Penawaran tertinggi sah pada penutupan dinyatakan menang</p>
                         <p class="process-copy">
-                          The result is derived from the bid history at the published end time — no
-                          winner is declared before the auction closes.
+                          Pemenang ditentukan secara otomatis oleh sistem server berdasarkan riwayat penawaran pada waktu penutupan lelang.
                         </p>
                       </div>
                     </li>
@@ -366,33 +364,31 @@ import { BidPanelComponent } from './bid-panel.component';
               @if (highestBid(); as top) {
                 <section class="card">
                   <div class="card-header">
-                    <h2 class="section-heading">Highest bid</h2>
+                    <h2 class="section-heading">Tawaran Tertinggi Saat Ini</h2>
                     <span class="badge badge-active">
                       <span class="status-dot status-dot-pulse"></span>
-                      {{ auctionData.status === AuctionStatus.ENDED ? 'Final' : 'Leading' }}
+                      {{ auctionData.status === AuctionStatus.ENDED ? 'Pemenang' : 'Memimpin' }}
                     </span>
                   </div>
                   <div class="card-body">
                     <div class="bid-summary">
                       <div class="meta-item">
-                        <span class="price-label">Amount</span>
+                        <span class="price-label">Nominal</span>
                         <span class="meta-value text-numeric">{{ amountLabel(top.amount) }}</span>
                       </div>
                       @if (top.bidderCompanyName) {
                         <div class="meta-item">
-                          <span class="price-label">Bidder</span>
+                          <span class="price-label">Penawar</span>
                           <span class="meta-value">{{ top.bidderCompanyName }}</span>
                         </div>
                       }
                       <div class="meta-item">
-                        <span class="price-label">Placed</span>
+                        <span class="price-label">Waktu Masuk</span>
                         <span class="meta-value">{{ placedLabel(top.createdAt) }}</span>
                       </div>
                     </div>
                     <p class="text-helper highest-note">
-                      The highest valid bid at the end time determines the outcome. The server
-                      derives the result — no winner is recorded separately, and no winner is
-                      declared before the auction closes.
+                      Penawaran tertinggi yang sah saat waktu berakhir menentukan pemenang. Hasil ditentukan server secara otomatis saat lelang ditutup.
                     </p>
                   </div>
                 </section>
@@ -401,9 +397,9 @@ import { BidPanelComponent } from './bid-panel.component';
               <!-- Bid history -->
               <section class="card">
                 <div class="card-header">
-                  <h2 class="section-heading">Bid history</h2>
+                  <h2 class="section-heading">Riwayat Penawaran</h2>
                   <span class="badge badge-plain">
-                    {{ auctionData.bidCount }} {{ auctionData.bidCount === 1 ? 'bid' : 'bids' }}
+                    {{ auctionData.bidCount }} tawaran
                   </span>
                 </div>
                 @if (bids.isLoading() && !bids.data()) {
@@ -433,7 +429,7 @@ import { BidPanelComponent } from './bid-panel.component';
               <!-- Lifecycle -->
               <section class="card">
                 <div class="card-header">
-                  <h2 class="section-heading">Auction lifecycle</h2>
+                  <h2 class="section-heading">Tahapan Siklus Lelang</h2>
                 </div>
                 <div class="card-body">
                   <app-auction-lifecycle [auction]="auctionData" variant="full" />
@@ -574,8 +570,8 @@ export class AuctionDetailComponent {
     return resolveTiming(auction);
   });
 
-  readonly productName = computed(() => this.data()?.product?.name ?? 'Auction lot');
-  readonly vendorName = computed(() => this.data()?.vendor?.companyName ?? 'Unknown vendor');
+  readonly productName = computed(() => this.data()?.product?.name ?? 'Lot lelang');
+  readonly vendorName = computed(() => this.data()?.vendor?.companyName ?? 'Vendor');
 
   readonly vendorInitials = computed(() => {
     const name = this.vendorName();
@@ -676,8 +672,8 @@ export class AuctionDetailComponent {
       next: (bid) => {
         this.bidding.set(false);
         this.notifications.success(
-          'Bid accepted',
-          `Your bid of ${formatAmount(bid.amount)} is currently the highest.`,
+          'Tawaran Diterima',
+          `Tawaran Anda sebesar ${formatAmount(bid.amount)} saat ini memimpin lelang.`,
         );
         this.reload();
       },
@@ -702,7 +698,7 @@ export class AuctionDetailComponent {
             return {
               status: e.status ?? 0,
               code: e.error?.code ?? 'UNKNOWN_ERROR',
-              message: e.error?.message ?? 'The bid could not be placed.',
+              message: e.error?.message ?? 'Tawaran tidak dapat dipasang saat ini.',
             };
           })()
         : null;

@@ -127,6 +127,7 @@ import { AlertComponent } from '../shared/ui/toast.component';
                 <app-button
                   type="submit"
                   label="Save changes"
+                  icon="check"
                   variant="primary"
                   [loading]="savingAccount()"
                 />
@@ -310,6 +311,7 @@ import { AlertComponent } from '../shared/ui/toast.component';
                   <app-button
                     type="submit"
                     label="Save profile"
+                    icon="check"
                     variant="primary"
                     [loading]="savingProfile()"
                   />
@@ -393,7 +395,8 @@ import { AlertComponent } from '../shared/ui/toast.component';
                 <app-button
                   type="submit"
                   label="Change password"
-                  variant="secondary"
+                  icon="lock"
+                  variant="primary"
                   [loading]="savingPassword()"
                 />
               </div>

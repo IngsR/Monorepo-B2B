@@ -100,9 +100,9 @@ export class CountdownComponent {
     const expired = this.isExpired();
     switch (this.prefix()) {
       case 'starts':
-        return expired ? 'Started' : 'Starts in';
+        return expired ? 'Telah dimulai' : 'Dimulai dalam';
       case 'closes':
-        return expired ? 'Closed' : 'Closes in';
+        return expired ? 'Ditutup' : 'Ditutup dalam';
       default:
         return '';
     }

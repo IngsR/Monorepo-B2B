@@ -116,7 +116,7 @@ export class BadgeComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (endingSoon()) {
-      <app-badge tone="warning" size="sm" label="Ending soon" />
+      <app-badge tone="warning" size="sm" label="Segera Berakhir" />
     } @else {
       <app-badge [tone]="tone()" [size]="size()" [label]="label()" />
     }
@@ -131,15 +131,15 @@ export class AuctionStatusBadgeComponent {
   readonly label = computed(() => {
     switch (this.status()) {
       case AuctionStatus.DRAFT:
-        return 'Draft';
+        return 'Draf';
       case AuctionStatus.SCHEDULED:
-        return 'Scheduled';
+        return 'Terjadwal';
       case AuctionStatus.ACTIVE:
-        return 'Active';
+        return 'Berlangsung';
       case AuctionStatus.ENDED:
-        return 'Ended';
+        return 'Selesai';
       case AuctionStatus.CANCELLED:
-        return 'Cancelled';
+        return 'Dibatalkan';
       default:
         return this.status();
     }
@@ -175,11 +175,11 @@ export class AccountStatusBadgeComponent {
   readonly label = computed(() => {
     switch (this.status()) {
       case AccountStatus.ACTIVE:
-        return 'Active';
+        return 'Aktif';
       case AccountStatus.INACTIVE:
-        return 'Inactive';
+        return 'Tidak Aktif';
       case AccountStatus.SUSPENDED:
-        return 'Suspended';
+        return 'Ditangguhkan';
       default:
         return this.status();
     }

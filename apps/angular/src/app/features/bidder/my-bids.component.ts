@@ -66,17 +66,15 @@ interface MyBidRow {
     <div class="page">
       <header class="page-head">
         <div class="page-head-text">
-          <h1 class="page-title">My bids</h1>
+          <h1 class="page-title">Penawaran Saya</h1>
           <p class="page-subtitle">
-            Every bid you have placed, with your current position on each auction. The highest valid
-            bid at the end time determines the outcome — that result is derived by the platform, not
-            decided here.
+            Daftar seluruh tawaran yang telah Anda pasang beserta posisi peringkat Anda pada setiap lot lelang. Penawaran tertinggi sah pada penutupan lelang menentukan pemenang secara transparan.
           </p>
         </div>
         <div class="page-actions">
           <a class="btn btn-primary" routerLink="/marketplace">
             <app-icon name="gavel" [size]="15" />
-            Browse auctions
+            <span>Jelajahi Lelang</span>
           </a>
         </div>
       </header>
@@ -85,24 +83,24 @@ interface MyBidRow {
       @if (bids.isSuccess()) {
         <div class="stat-grid">
           <div class="stat-card">
-            <span class="stat-label">Currently highest</span>
+            <span class="stat-label">Memimpin Saat Ini</span>
             <span class="stat-value">{{ countStanding('winning') }}</span>
-            <span class="stat-foot">Leading on active auctions</span>
+            <span class="stat-foot">Tawaran tertinggi pada lelang aktif</span>
           </div>
           <div class="stat-card">
-            <span class="stat-label">Outbid</span>
+            <span class="stat-label">Terlampaui</span>
             <span class="stat-value">{{ countStanding('outbid') }}</span>
-            <span class="stat-foot">A higher bid exists</span>
+            <span class="stat-foot">Ada tawaran lain lebih tinggi</span>
           </div>
           <div class="stat-card">
-            <span class="stat-label">Ended</span>
+            <span class="stat-label">Lelang Berakhir</span>
             <span class="stat-value">{{ countStanding('ended') }}</span>
-            <span class="stat-foot">Result already derived</span>
+            <span class="stat-foot">Hasil telah ditetapkan server</span>
           </div>
           <div class="stat-card">
-            <span class="stat-label">Cancelled</span>
+            <span class="stat-label">Dibatalkan</span>
             <span class="stat-value">{{ countStanding('cancelled') }}</span>
-            <span class="stat-foot">Auction withdrawn</span>
+            <span class="stat-foot">Lelang ditarik kembali</span>
           </div>
         </div>
       }
@@ -116,7 +114,8 @@ interface MyBidRow {
           [attr.aria-selected]="filter() === 'ALL'"
           (click)="setFilter('ALL')"
         >
-          All bids ({{ rows().length }})
+          <app-icon name="layers" [size]="14" />
+          <span>Semua ({{ rows().length }})</span>
         </button>
         <button
           type="button"
@@ -126,7 +125,8 @@ interface MyBidRow {
           [attr.aria-selected]="filter() === 'winning'"
           (click)="setFilter('winning')"
         >
-          Highest ({{ countStanding('winning') }})
+          <app-icon name="trending-up" [size]="14" />
+          <span>Memimpin ({{ countStanding('winning') }})</span>
         </button>
         <button
           type="button"
@@ -136,7 +136,8 @@ interface MyBidRow {
           [attr.aria-selected]="filter() === 'outbid'"
           (click)="setFilter('outbid')"
         >
-          Outbid ({{ countStanding('outbid') }})
+          <app-icon name="alert" [size]="14" />
+          <span>Terlampaui ({{ countStanding('outbid') }})</span>
         </button>
         <button
           type="button"
@@ -146,7 +147,8 @@ interface MyBidRow {
           [attr.aria-selected]="filter() === 'closed'"
           (click)="setFilter('closed')"
         >
-          Closed ({{ countStanding('ended') + countStanding('cancelled') }})
+          <app-icon name="check" [size]="14" />
+          <span>Selesai ({{ countStanding('ended') + countStanding('cancelled') }})</span>
         </button>
       </div>
 
@@ -171,10 +173,14 @@ interface MyBidRow {
               [description]="emptyDescription()"
             >
               @if (filter() === 'ALL') {
-                <a class="btn btn-primary" routerLink="/marketplace">Find an auction</a>
+                <a class="btn btn-primary" routerLink="/marketplace">
+                  <app-icon name="gavel" [size]="15" />
+                  <span>Jelajahi Lelang</span>
+                </a>
               } @else {
                 <button type="button" class="btn btn-secondary" (click)="setFilter('ALL')">
-                  Show all bids
+                  <app-icon name="refresh" [size]="15" />
+                  <span>Tampilkan Semua Tawaran</span>
                 </button>
               }
             </app-empty-state>
@@ -184,21 +190,21 @@ interface MyBidRow {
               <table class="data-table data-table--stacked">
                 <thead>
                   <tr>
-                    <th scope="col">Auction</th>
+                    <th scope="col">Lot Lelang</th>
                     <th scope="col">Status</th>
-                    <th scope="col" class="col-numeric">Your bid</th>
-                    <th scope="col" class="col-numeric">Highest bid</th>
-                    <th scope="col">Placed</th>
-                    <th scope="col">Your position</th>
-                    <th scope="col" class="cell-actions">Actions</th>
+                    <th scope="col" class="col-numeric">Tawaran Anda</th>
+                    <th scope="col" class="col-numeric">Tawaran Tertinggi</th>
+                    <th scope="col">Waktu</th>
+                    <th scope="col">Posisi Anda</th>
+                    <th scope="col" class="cell-actions">Tindakan</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (row of visibleRows(); track row.bid.id) {
                     <tr>
-                      <td data-label="Auction">
+                      <td data-label="Lot Lelang">
                         <span class="cell-primary">
-                          {{ row.bid.auction?.product?.name ?? 'Auction' }}
+                          {{ row.bid.auction?.product?.name ?? 'Lot Lelang' }}
                         </span>
                         <span class="text-mono-id">{{ row.bid.auction?.product?.code }}</span>
                       </td>
@@ -213,16 +219,16 @@ interface MyBidRow {
                           <span class="text-meta">—</span>
                         }
                       </td>
-                      <td data-label="Your bid" class="col-numeric">
+                      <td data-label="Tawaran Anda" class="col-numeric">
                         <span class="text-numeric bid-my-amount">{{ money(row.bid.amount) }}</span>
                       </td>
-                      <td data-label="Highest bid" class="col-numeric">
+                      <td data-label="Tawaran Tertinggi" class="col-numeric">
                         <span class="text-numeric">{{ money(row.highestAmount) }}</span>
                       </td>
-                      <td data-label="Placed">
+                      <td data-label="Waktu">
                         <span class="text-meta">{{ relative(row.bid.createdAt) }}</span>
                       </td>
-                      <td data-label="Your position">
+                      <td data-label="Posisi Anda">
                         <span [class]="'bid-state bid-state-' + stateClass(row.standing)">
                           @if (row.standing === 'winning') {
                             <app-icon name="trending-up" [size]="11" />
@@ -240,11 +246,11 @@ interface MyBidRow {
 
                         @if (row.standing === 'outbid') {
                           <p class="outbid-hint text-helper">
-                            Bid at least {{ money(minimumFor(row)) }} to retake the lead.
+                            Tawar minimal {{ money(minimumFor(row)) }} untuk merebut kembali peringkat teratas.
                           </p>
                         }
                       </td>
-                      <td data-label="Actions" class="cell-actions">
+                      <td data-label="Tindakan" class="cell-actions">
                         @if (row.bid.auction; as auction) {
                           <a
                             class="btn btn-sm"
@@ -252,7 +258,12 @@ interface MyBidRow {
                             [class.btn-secondary]="row.standing !== 'outbid'"
                             [routerLink]="['/marketplace', auction.id]"
                           >
-                            {{ actionLabel(row) }}
+                            @if (row.standing === 'outbid') {
+                              <app-icon name="gavel" [size]="13" />
+                            } @else {
+                              <app-icon name="eye" [size]="13" />
+                            }
+                            <span>{{ actionLabel(row) }}</span>
                           </a>
                         }
                       </td>
@@ -267,11 +278,8 @@ interface MyBidRow {
         }
       </div>
 
-      <app-alert tone="info" title="How results are determined">
-        A bid is only valid if it meets the minimum for the auction at the moment the server
-        receives it. When the auction ends, the highest valid bid determines the outcome. The
-        platform derives that result — there is no separate winner record, and a leading bid before
-        the close is not a win.
+      <app-alert tone="info" title="Penentuan Hasil Pemenang Lelang">
+        Penawaran dinyatakan sah jika memenuhi batas minimal saat diterima server secara real-time. Ketika batas waktu lelang berakhir, penawaran sah tertinggi otomatis ditetapkan sebagai pemenang oleh sistem.
       </app-alert>
     </div>
   `,
@@ -344,7 +352,7 @@ export class MyBidsComponent {
       return {
         bid,
         standing: 'pending',
-        label: 'Auction unavailable',
+        label: 'Lelang tidak tersedia',
         highestAmount,
         isHighestBid,
       };
@@ -354,28 +362,28 @@ export class MyBidsComponent {
       return {
         bid,
         standing: 'cancelled',
-        label: 'Auction cancelled',
+        label: 'Lelang dibatalkan',
         highestAmount,
         isHighestBid,
       };
     }
 
     if (auction.status === AuctionStatus.ENDED) {
-      return { bid, standing: 'ended', label: 'Auction ended', highestAmount, isHighestBid };
+      return { bid, standing: 'ended', label: 'Lelang berakhir', highestAmount, isHighestBid };
     }
 
     if (auction.status === AuctionStatus.DRAFT || auction.status === AuctionStatus.SCHEDULED) {
-      return { bid, standing: 'pending', label: 'Not started', highestAmount, isHighestBid };
+      return { bid, standing: 'pending', label: 'Belum dimulai', highestAmount, isHighestBid };
     }
 
     // ActiveRecord: either leading, or the window has closed and we await the close.
     if (!resolveTiming(auction).acceptingBids) {
-      return { bid, standing: 'pending', label: 'Awaiting close', highestAmount, isHighestBid };
+      return { bid, standing: 'pending', label: 'Menunggu penutupan', highestAmount, isHighestBid };
     }
 
     return isHighestBid
-      ? { bid, standing: 'winning', label: 'Highest bid', highestAmount, isHighestBid }
-      : { bid, standing: 'outbid', label: 'Outbid', highestAmount, isHighestBid };
+      ? { bid, standing: 'winning', label: 'Tawaran Tertinggi', highestAmount, isHighestBid }
+      : { bid, standing: 'outbid', label: 'Terlampaui', highestAmount, isHighestBid };
   }
 
   countStanding(standing: BidStanding): number {
@@ -400,12 +408,12 @@ export class MyBidsComponent {
   actionLabel(row: MyBidRow): string {
     switch (row.standing) {
       case 'outbid':
-        return 'Bid again';
+        return 'Tawar Lagi';
       case 'winning':
       case 'pending':
-        return 'View auction';
+        return 'Lihat Lot';
       default:
-        return 'View result';
+        return 'Lihat Hasil';
     }
   }
 
@@ -424,26 +432,26 @@ export class MyBidsComponent {
   emptyTitle(): string {
     switch (this.filter()) {
       case 'winning':
-        return 'You are not leading any auctions';
+        return 'Belum ada lelang yang Anda pimpin saat ini';
       case 'outbid':
-        return 'You have not been outbid';
+        return 'Tidak ada tawaran Anda yang terlampaui';
       case 'closed':
-        return 'No closed auctions yet';
+        return 'Belum ada lelang yang telah selesai';
       default:
-        return 'You have not placed any bids';
+        return 'Anda belum memasang tawaran apapun';
     }
   }
 
   emptyDescription(): string {
     switch (this.filter()) {
       case 'winning':
-        return 'When your bid is the highest on a live auction, it will appear here.';
+        return 'Saat tawaran Anda memimpin pada lelang yang sedang berlangsung, lot tersebut akan tampil di sini.';
       case 'outbid':
-        return 'All of your active bids are currently the highest.';
+        return 'Semua tawaran aktif Anda saat ini masih berada di posisi teratas.';
       case 'closed':
-        return 'Auctions you bid on that have ended or been cancelled will appear here.';
+        return 'Lelang yang Anda ikuti dan telah berakhir atau dibatalkan akan muncul di sini.';
       default:
-        return 'Browse the marketplace to find an active auction and place your first bid.';
+        return 'Jelajahi marketplace untuk menemukan lot lelang aktif dan mulai memasang tawaran pertama Anda.';
     }
   }
 
