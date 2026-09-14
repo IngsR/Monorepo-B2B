@@ -113,4 +113,3 @@ npm run build
 ---
 
 **Author**: Ings
-_Project ini dibuat untuk tujuan pembelajaran dan portofolio._

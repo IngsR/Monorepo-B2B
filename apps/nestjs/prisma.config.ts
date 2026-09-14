@@ -1,5 +1,13 @@
-import 'dotenv/config';
-import { defineConfig, env } from 'prisma/config';
+import { config } from 'dotenv';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'prisma/config';
+
+const here = dirname(fileURLToPath(import.meta.url));
+config({ path: resolve(here, '.env') });
+config({ path: resolve(here, '../../.env') });
+
+const dbUrl = process.env.PRISMA_DATABASE_URL || process.env.DATABASE_URL || '';
 
 /**
  * Prisma 7 configuration.
@@ -12,6 +20,7 @@ export default defineConfig({
     path: 'prisma/migrations',
   },
   datasource: {
-    url: env('DATABASE_URL'),
+    url: dbUrl,
   },
 });
+
