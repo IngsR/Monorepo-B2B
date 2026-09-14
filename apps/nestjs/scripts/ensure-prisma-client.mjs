@@ -25,18 +25,22 @@ const rootSource = resolve(
   'client',
 );
 
-if (existsSync(localTarget)) {
-  console.log('[prisma] @prisma/client already local — nothing to do');
-  process.exit(0);
-}
+try {
+  if (existsSync(localTarget)) {
+    console.log('[prisma] @prisma/client already local — nothing to do');
+    process.exit(0);
+  }
 
-if (!existsSync(rootSource)) {
-  console.log(
-    '[prisma] @prisma/client not found at root — skipping local copy',
-  );
-  process.exit(0);
-}
+  if (!existsSync(rootSource)) {
+    console.log(
+      '[prisma] @prisma/client not found at root — skipping local copy',
+    );
+    process.exit(0);
+  }
 
-mkdirSync(dirname(localTarget), { recursive: true });
-cpSync(rootSource, localTarget, { recursive: true });
-console.log('[prisma] copied @prisma/client into apps/nestjs/node_modules');
+  mkdirSync(dirname(localTarget), { recursive: true });
+  cpSync(rootSource, localTarget, { recursive: true, dereference: true });
+  console.log('[prisma] copied @prisma/client into apps/nestjs/node_modules');
+} catch (error) {
+  console.warn('[prisma] non-blocking notice for @prisma/client:', error?.message || error);
+}

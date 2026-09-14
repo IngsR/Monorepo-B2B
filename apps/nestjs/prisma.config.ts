@@ -7,7 +7,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 config({ path: resolve(here, '.env') });
 config({ path: resolve(here, '../../.env') });
 
-const dbUrl = process.env.PRISMA_DATABASE_URL || process.env.DATABASE_URL || '';
+const dbUrl =
+  process.env.PRISMA_DATABASE_URL ||
+  process.env.DATABASE_URL ||
+  'postgresql://postgres:postgres@localhost:5432/scrapbid?schema=public';
 
 /**
  * Prisma 7 configuration.
