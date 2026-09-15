@@ -1,13 +1,14 @@
 /**
- * Ensures Prisma CLI can resolve @prisma/client from this workspace.
+ * Ensures the Prisma CLI can resolve @prisma/client from this workspace.
  *
  * In an npm workspaces monorepo, @prisma/client is hoisted to the root
- * node_modules while the `prisma` CLI lives in apps/nestjs/node_modules.
- * Prisma 7 resolves @prisma/client relative to its own install location and
- * fails with "Could not resolve @prisma/client" when it only exists at root.
+ * node_modules while the `prisma` CLI runs from apps/nestjs. Prisma 7 resolves
+ * @prisma/client from apps/nestjs and fails with "Could not resolve
+ * @prisma/client" when it only exists at the root.
  *
- * This script creates a local copy inside apps/nestjs/node_modules/@prisma/client
- * so `prisma generate` works regardless of hoisting. It is idempotent.
+ * This script guarantees a real local copy exists at
+ * apps/nestjs/node_modules/@prisma/client, replacing any hoisted symlink or
+ * stale copy. It is idempotent and safe to run before every `prisma generate`.
  */
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -26,21 +27,16 @@ const rootSource = resolve(
 );
 
 try {
-  if (existsSync(localTarget)) {
-    console.log('[prisma] @prisma/client already local — nothing to do');
-    process.exit(0);
-  }
-
   if (!existsSync(rootSource)) {
-    console.log(
-      '[prisma] @prisma/client not found at root — skipping local copy',
-    );
+    console.log('[prisma] @prisma/client not found at root — nothing to copy');
     process.exit(0);
   }
 
+  // Always replace whatever is there (symlink, stale copy) with a real copy.
+  rmSync(localTarget, { recursive: true, force: true });
   mkdirSync(dirname(localTarget), { recursive: true });
   cpSync(rootSource, localTarget, { recursive: true, dereference: true });
-  console.log('[prisma] copied @prisma/client into apps/nestjs/node_modules');
+  console.log('[prisma] @prisma/client ready at apps/nestjs/node_modules');
 } catch (error) {
-  console.warn('[prisma] non-blocking notice for @prisma/client:', error?.message || error);
+  console.warn('[prisma] notice handling @prisma/client copy:', error?.message || error);
 }
