@@ -1,115 +1,79 @@
-# BidForge — B2B Auction Platform Monorepo (NestJS + Angular)
+# BidForge
 
-Selamat datang di repository project **BidForge**, platform lelang B2B. Project ini dibangun dengan arsitektur **Monorepo** yang menggabungkan **NestJS** (Backend) dan **Angular** (Frontend) dalam satu workflow pengembangan.
+BidForge adalah platform lelang B2B yang dibangun sebagai satu monorepo: Angular sebagai frontend, NestJS sebagai backend, PostgreSQL dengan Prisma sebagai persistence layer, dan Turborepo untuk menjalankan kedua aplikasi dalam satu workflow.
 
-Project ini dirancang sebagai demonstrasi kemampuan teknis dalam membangun aplikasi skala menengah-besar dengan praktik _Software Engineering_ yang baik.
+Yang membedakan lelang dari CRUD biasa adalah aturan domainnya. Harga tidak boleh mundur, bid hanya sah dalam rentang waktu dan status tertentu, dan setiap perubahan `currentPrice` harus konsisten dengan bid yang diterima. Kesalahan sekecil apa pun pada logika ini menghasilkan data yang tidak bisa dipercaya, jadi sebagian besar keputusan desain di project ini berangkat dari sana.
 
-## 🚀 Tech Stack
+Sisi aplikasinya terbagi untuk tiga peran: `ADMIN` mengelola platform, `VENDOR` memasang produk dan membuka lelang, dan `BIDDER` menawar. Lelang mengikuti lifecycle `DRAFT → SCHEDULED → ACTIVE → ENDED`, dengan `CANCELLED` sebagai jalan keluar di tengah. Pemenang tidak disimpan sebagai kolom terpisah, melainkan diturunkan dari bid tertinggi.
 
-### Core
+## Engineering Focus
 
-- **Monorepo Manager**: [Turborepo](https://turbo.build/) (High-performance build system)
-- **Package Manager**: NPM Workspaces
+1. **Concurrent bidding dan konsistensi `currentPrice`.** Pola read-check-write biasa bisa kehilangan update ketika dua bid masuk hampir bersamaan. Backend menempatkan validasi dan update di dalam satu transaksi, dengan row-level lock pada baris auction, sehingga request kedua membaca state setelah transaksi pertama selesai. Pendekatan ini bergantung pada batas transaksi satu database, bukan solusi untuk arsitektur terdistribusi.
+2. **Perhitungan nilai uang.** Kolom harga memakai `Decimal(18,2)`, tetapi angka yang masuk ke JavaScript berisiko kehilangan presisi. Aritmetika uang di backend dihitung lewat representasi integer sen agar tidak bergantung pada floating point.
+3. **Auction lifecycle dan validasi waktu.** Status dan time-window diperlakukan sebagai dua hal berbeda: status adalah lifecycle bisnis, waktu menentukan apakah bid masih diterima. Perpindahan status dibatasi tabel transisi dengan state terminal.
+4. **Authentication dan authorization berbasis role.** Autentikasi memakai JWT, otorisasi memakai role guard, ditambah pengecekan kepemilikan resource pada operasi vendor dan bidder.
+5. **Konsistensi kontrak frontend–backend.** Frontend dan backend mengikuti satu bentuk response envelope dan pagination. Perbedaan penamaan field diselesaikan pada satu adapter di frontend, bukan disebar ke setiap komponen.
 
-### Backend (`apps/nestjs`)
+## Architecture
 
-- **Framework**: [NestJS](https://nestjs.com/) (Node.js framework yang modular & scalable)
-- **Language**: TypeScript
-- **Database**: PostgreSQL (via Prisma ORM)
- **API Documentation**: Swagger / OpenAPI (di `/api/docs`)
-- **Authentication**: JWT (JSON Web Token) & Passport
-### Frontend (`apps/angular`)
-
-- **Framework**: [Angular 22](https://angular.dev/) (standalone components, zoneless)
-- **Language**: TypeScript
-- **Styling**: SCSS (design-token based)
-- **Data Fetching**: `HttpClient` + interceptor-based API adapter
-
----
-
-## 📂 Struktur Project
-
-Struktur folder menggunakan konsep Monorepo untuk memisahkan tanggung jawab namun tetap memudahkan integrasi.
-
-```text
-.
-├── apps/
-│   ├── nestjs/        # Server-side logic, REST API, Prisma ORM
-│   └── angular/       # Client-side UI, SPA
-├── packages/          # Shared libraries (DTOs, configs, utilities) - *Coming Soon*
-├── package.json       # Root configuration untuk Workspace
-└── turbo.json         # Konfigurasi pipeline build Turborepo
+```
+Angular  ──▶  REST API /api/v1  ──▶  NestJS  ──▶  Prisma  ──▶  PostgreSQL
 ```
 
----
+Peran pengguna:
 
-## 🛠️ Cara Menjalankan (Getting Started)
+- `ADMIN` — administrasi platform (users, vendors, bidders, categories).
+- `VENDOR` — mengelola produk dan lelang miliknya.
+- `BIDDER` — menawar pada lelang yang aktif.
 
-Ikuti langkah-langkah ini untuk menjalankan project di komputer lokal Anda.
+Lifecycle lelang:
 
-### Prasyarat
+```
+DRAFT ──▶ SCHEDULED ──▶ ACTIVE ──▶ ENDED
+   │           │           │
+   └───────────┴───────────┴──▶ CANCELLED
+```
 
-- [Node.js](https://nodejs.org/) (Versi 18 atau terbaru)
-- [PostgreSQL](https://www.postgresql.org/) (Pastikan database sudah berjalan)
+`ENDED` dan `CANCELLED` bersifat terminal. Bid hanya diterima pada lelang berstatus `ACTIVE` dan di dalam rentang `startAt`–`endAt`.
 
-### 1. Instalasi Dependencies
+## What Has Been Validated
 
-Jalankan perintah ini di root folder untuk menginstall dependencies bagi Backend dan Frontend sekaligus.
+- **Unit test backend** — 13 file, 117 test lulus. Fokus pada aturan domain dan batas modul: guard role, siklus hidup lelang, pemetaan error, aritmetika decimal, dan service per domain.
+- **Unit test frontend** — 3 file, 97 test lulus. Fokus pada aturan lelang (transisi, minimum bid), pemilihan pesan pada `ApiFailure`, dan perilaku mock API.
+- **E2E test backend** — suite supertest yang menjalankan proses lelang end-to-end lewat HTTP (vendor membuat produk dan lelang, bidder menawar, lelang diakhiri, pemenang ditentukan), termasuk skenario bid bersamaan. E2E ini memakai `InMemoryPrisma` sebagai pengganti `PrismaService`, jadi yang divalidasi adalah perilaku wiring (guard, validasi DTO, controller, service) terhadap kontrak HTTP, bukan row lock pada PostgreSQL sungguhan.
+- **Lint** — `oxlint` pada backend dan `ng build` sebagai bagian pipeline build.
+- **Prisma** — validasi schema dan migrasi (`prisma validate`, `prisma migrate`).
+
+## Run Locally
+
+Prasyarat: Node.js dan PostgreSQL.
 
 ```bash
+# root — install semua workspace
 npm install
-```
 
-### 2. Konfigurasi Environment
+# backend — siapkan database dan data demo
+cd apps/nestjs
+npm run prisma:migrate
+npm run seed
 
-- **Backend**: Masuk ke `apps/backend`, copy `.env.example` (jika ada) atau buat `.env` baru sesuai konfigurasi database Anda.
-- **Frontend**: Masuk ke `apps/frontend`, sesuaikan `.env.local` jika diperlukan.
-
-### 3. Menjalankan Mode Development
-
-Perintah ini akan menjalankan **kedua aplikasi** (Backend & Frontend) secara paralel menggunakan Turborepo.
-
-```bash
+# kembali ke root dan jalankan kedua aplikasi
+cd ../..
 npm run dev
 ```
 
-- **Backend API**: Berjalan di [http://localhost:8000/api/v1](http://localhost:8000/api/v1)
-- **Swagger Docs**: [http://localhost:8000/api/docs](http://localhost:8000/api/docs)
-- **Frontend UI**: Berjalan di [http://localhost:3000](http://localhost:3000)
+- API dan Swagger: `http://localhost:8000/api/v1` dan `http://localhost:8000/api/docs`
+- Frontend: `http://localhost:3000`
 
-### Database & Seed
-Pastikan PostgreSQL berjalan, lalu:
+Akun demo dari `prisma seed` (password `Password123`):
 
-```bash
-cd apps/nestjs
-npm run prisma:migrate   # buat/selaraskan tabel
-npm run seed             # isi user, kategori, dan contoh lelang
-```
+| Role | Email |
+| --- | --- |
+| Admin | `admin@bidforge.test` |
+| Vendor | `vendor@bidforge.test` |
+| Bidder | `bidder@bidforge.test` |
 
-Akun demo (lihat `apps/nestjs/src/database/seed.ts`):
+## Read More
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Admin | `admin@scrapbid.test` | `Password123` |
-| Vendor | `vendor@scrapbid.test` | `Password123` |
-| Bidder | `bidder@scrapbid.test` | `Password123` |
-
-### 4. Build untuk Production
-
-Untuk memastikan tidak ada error TypeScript dan membuat build production:
-
-```bash
-npm run build
-```
-
----
-
-## 📚 Dokumentasi Detail
-
-- [**Backend Documentation**](./apps/backend/README.md): Penjelasan detail tentang API, Database, dan Auth.
-- [**Frontend Documentation**](./apps/frontend/README.md): Penjelasan tentang struktur UI dan Routing.
-- [**Architecture & Strategy**](./PROJECT_STRATEGY.md): Penjelasan mendalam tentang keputusan teknis dan desain sistem.
-
----
-
-**Author**: Ings
+- [`apps/nestjs/README.md`](./apps/nestjs/README.md) — masalah backend yang diselesaikan dan cara penanganannya: concurrent bidding, perhitungan uang, lifecycle, error handling, dan auth.
+- [`apps/angular/README.md`](./apps/angular/README.md) — masalah frontend yang diselesaikan dan cara penanganannya: kontrak API, async state, route guard, dan error handling.
