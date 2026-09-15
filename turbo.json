@@ -1,5 +1,15 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "NODE_ENV",
+    "PORT",
+    "JWT_SECRET",
+    "JWT_EXPIRES_IN",
+    "CORS_ORIGIN",
+    "DATABASE_URL",
+    "POSTGRES_URL",
+    "PRISMA_DATABASE_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

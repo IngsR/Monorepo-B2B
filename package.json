@@ -8,8 +8,10 @@
         "test": "turbo test",
         "format": "prettier --write \"**/*.{ts,tsx,md}\""
     },
+    "dependencies": {
+        "turbo": "latest"
+    },
     "devDependencies": {
-        "turbo": "latest",
         "prettier": "latest"
     },
     "packageManager": "npm@10.8.2",

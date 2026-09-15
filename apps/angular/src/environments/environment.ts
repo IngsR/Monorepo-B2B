@@ -7,5 +7,5 @@
  */
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8000/api/v1',
+  apiUrl: 'http://backending.vercel.app/api/v1',
 };
