@@ -1,8 +1,5 @@
 ﻿{
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd ../.. && npx turbo build --filter=angular",
-  "outputDirectory": "dist/angular/browser",
-  "framework": null,
   "rewrites": [
     {
       "source": "/((?!.*\\..*).*)",
