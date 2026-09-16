@@ -32,8 +32,12 @@ export class PrismaService
   }
 
   async onModuleInit(): Promise<void> {
-    await this.$connect();
-    this.logger.log('Connected to PostgreSQL via Prisma');
+    // In serverless / Vercel, connect asynchronously without blocking app initialization
+    this.$connect()
+      .then(() => this.logger.log('Connected to PostgreSQL via Prisma'))
+      .catch((err) =>
+        this.logger.warn(`Initial database connection deferred: ${err.message}`),
+      );
   }
 
   async onModuleDestroy(): Promise<void> {
