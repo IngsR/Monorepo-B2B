@@ -10,5 +10,5 @@ export const environment = {
   // Must match the deployed NestJS backend URL, over HTTPS. The browser blocks
   // HTTPS pages from calling an HTTP API (mixed content), so never use http://
   // here for a deployed frontend.
-  apiUrl: 'https://backending.vercel.app/api/v1',
+  apiUrl: 'https://ingnest.vercel.app/api/v1',
 };

@@ -12,13 +12,15 @@ import {
 const NODE_ENV_VALUES = ['development', 'test', 'production'] as const;
 
 export class EnvironmentVariables {
+  @IsOptional()
   @IsIn(NODE_ENV_VALUES)
-  NODE_ENV: (typeof NODE_ENV_VALUES)[number];
+  NODE_ENV: (typeof NODE_ENV_VALUES)[number] = 'development';
 
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(65535)
-  PORT: number;
+  PORT: number = 8000;
 
   @IsString()
   DATABASE_URL: string;
@@ -30,8 +32,9 @@ export class EnvironmentVariables {
   @IsString()
   JWT_EXPIRES_IN?: string;
 
+  @IsOptional()
   @IsString()
-  CORS_ORIGIN: string;
+  CORS_ORIGIN: string = 'http://localhost:3000,https://angularse.vercel.app';
 }
 
 export function validateEnv(
