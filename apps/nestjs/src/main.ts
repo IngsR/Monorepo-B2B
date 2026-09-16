@@ -15,8 +15,22 @@ async function bootstrap(): Promise<void> {
     defaultVersion: '1',
   });
 
-  const origin = config.get<string>('CORS_ORIGIN');
-  app.enableCors({ origin, credentials: true });
+  // CORS_ORIGIN accepts a comma-separated list so local development and the
+  // deployed frontend can both be allowed at once (e.g.
+  // "http://localhost:3000,https://bidforge.vercel.app"). "*" allows any
+  // origin but cannot be combined with credentials, so it is handled
+  // separately.
+  const rawOrigin = config.get<string>('CORS_ORIGIN', '');
+  const allowlist = rawOrigin
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  app.enableCors({
+    origin:
+      allowlist.length === 0 || allowlist.includes('*') ? true : allowlist,
+    credentials: true,
+  });
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('ScrapBid Auction API')
