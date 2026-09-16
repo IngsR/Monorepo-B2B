@@ -1,4 +1,4 @@
-﻿import { Logger, VersioningType } from '@nestjs/common';
+import { Logger, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
@@ -19,9 +19,18 @@ async function createApp() {
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
   const rawOrigin = config.get<string>('CORS_ORIGIN', '');
-  const allowlist = rawOrigin.split(',').map((v) => v.trim()).filter(Boolean);
+  const userOrigins = rawOrigin
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const defaultOrigins = [
+    'https://angularse.vercel.app',
+    'http://localhost:3000',
+  ];
+  const allowlist = Array.from(new Set([...defaultOrigins, ...userOrigins]));
+
   app.enableCors({
-    origin: allowlist.length === 0 || allowlist.includes('*') ? true : allowlist,
+    origin: userOrigins.includes('*') ? true : allowlist,
     credentials: true,
   });
 
