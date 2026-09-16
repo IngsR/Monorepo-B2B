@@ -7,5 +7,8 @@
  */
 export const environment = {
   production: false,
-  apiUrl: 'http://backending.vercel.app/api/v1',
+  // Must match the deployed NestJS backend URL, over HTTPS. The browser blocks
+  // HTTPS pages from calling an HTTP API (mixed content), so never use http://
+  // here for a deployed frontend.
+  apiUrl: 'https://backending.vercel.app/api/v1',
 };
