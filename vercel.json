@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npx turbo build",
   "installCommand": "npm install",
-  "outputDirectory": "apps/angular/dist/angular/browser",
+  "outputDirectory": "apps/angular/dist/angular",
   "framework": null,
   "functions": {
     "apps/nestjs/api/index.js": {
