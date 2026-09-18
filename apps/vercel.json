@@ -3,14 +3,14 @@
   "outputDirectory": "angular/dist/angular",
   "framework": null,
   "functions": {
-    "nestjs/api/index.js": {
+    "api/index.js": {
       "includeFiles": "{nestjs/dist/**,nestjs/generated/**,nestjs/prisma/schema.prisma}"
     }
   },
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "/nestjs/api/index.js"
+      "destination": "/api/index.js"
     },
     {
       "source": "/((?!.*\\..*).*)",
