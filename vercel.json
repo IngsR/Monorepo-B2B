@@ -2,17 +2,17 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npx turbo build",
   "installCommand": "npm install",
-  "outputDirectory": "apps/angular/dist/angular",
+  "outputDirectory": "angular/dist/angular",
   "framework": null,
   "functions": {
-    "apps/nestjs/api/index.js": {
-      "includeFiles": "{apps/nestjs/dist/**,apps/nestjs/generated/**,apps/nestjs/prisma/schema.prisma}"
+    "nestjs/api/index.js": {
+      "includeFiles": "{nestjs/dist/**,nestjs/generated/**,nestjs/prisma/schema.prisma}"
     }
   },
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/apps/nestjs/api/index.js"
+      "destination": "/nestjs/api/index.js"
     },
     {
       "source": "/((?!.*\\..*).*)",
