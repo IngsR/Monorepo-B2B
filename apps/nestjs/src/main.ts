@@ -21,14 +21,17 @@ async function bootstrap(): Promise<void> {
   // origin but cannot be combined with credentials, so it is handled
   // separately.
   const rawOrigin = config.get<string>('CORS_ORIGIN', '');
-  const allowlist = rawOrigin
+  const userOrigins = rawOrigin
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
+  const defaultOrigins = [
+    'http://localhost:3000',
+  ];
+  const allowlist = Array.from(new Set([...defaultOrigins, ...userOrigins]));
 
   app.enableCors({
-    origin:
-      allowlist.length === 0 || allowlist.includes('*') ? true : allowlist,
+    origin: userOrigins.includes('*') ? true : allowlist,
     credentials: true,
   });
 
