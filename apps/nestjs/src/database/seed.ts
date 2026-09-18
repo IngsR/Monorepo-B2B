@@ -11,12 +11,15 @@ import * as bcrypt from 'bcrypt';
 import { PrismaClient } from '../../generated/prisma/client.js';
 
 const connectionString =
+  process.env.PRISMA_DATABASE_URL ??
   process.env.DATABASE_URL ??
   `postgresql://${process.env.DATABASE_USER ?? 'postgres'}:${process.env.DATABASE_PASSWORD ?? ''}@${process.env.DATABASE_HOST ?? 'localhost'}:${process.env.DATABASE_PORT ?? 5432}/${process.env.DATABASE_NAME ?? 'scrapbid'}`;
 
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString }),
-});
+const prisma =
+  connectionString.startsWith('prisma://') ||
+  connectionString.startsWith('prisma+postgres://')
+    ? new PrismaClient({ accelerateUrl: connectionString })
+    : new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
 
 const SEED_PASSWORD = 'Password123';
 

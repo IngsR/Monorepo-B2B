@@ -22,13 +22,22 @@ export class PrismaService
   private readonly logger = new Logger(PrismaService.name);
 
   constructor(config: ConfigService) {
-    const connectionString = config.get<string>('DATABASE_URL');
+    const connectionString =
+      config.get<string>('DATABASE_URL') ||
+      config.get<string>('PRISMA_DATABASE_URL');
 
     if (!connectionString) {
       throw new Error('DATABASE_URL is not configured');
     }
 
-    super({ adapter: new PrismaPg({ connectionString }) });
+    if (
+      connectionString.startsWith('prisma://') ||
+      connectionString.startsWith('prisma+postgres://')
+    ) {
+      super({ accelerateUrl: connectionString });
+    } else {
+      super({ adapter: new PrismaPg({ connectionString }) });
+    }
   }
 
   async onModuleInit(): Promise<void> {
