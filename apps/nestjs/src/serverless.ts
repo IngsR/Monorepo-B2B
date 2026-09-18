@@ -24,7 +24,6 @@ async function createApp() {
     .map((v) => v.trim())
     .filter(Boolean);
   const defaultOrigins = [
-    'https://angularse.vercel.app',
     'http://localhost:3000',
   ];
   const allowlist = Array.from(new Set([...defaultOrigins, ...userOrigins]));

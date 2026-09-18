@@ -26,7 +26,6 @@ async function bootstrap(): Promise<void> {
     .map((value) => value.trim())
     .filter(Boolean);
   const defaultOrigins = [
-    'https://angularse.vercel.app',
     'http://localhost:3000',
   ];
   const allowlist = Array.from(new Set([...defaultOrigins, ...userOrigins]));

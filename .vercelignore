@@ -1,0 +1,12 @@
+# Development artifacts not needed on Vercel
+apps/angular/.angular
+apps/angular/dist
+apps/nestjs/dist
+apps/nestjs/coverage
+apps/nestjs/backend-err.log
+apps/nestjs/backend-out.log
+apps/nestjs/tsconfig.build.tsbuildinfo
+
+# Test and script files
+apps/nestjs/test
+apps/nestjs/scripts
